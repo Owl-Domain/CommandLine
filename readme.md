@@ -48,23 +48,23 @@ Turning into a CLI that looks a little like this:
 > list-manager -h
 
 NAME
-	list-manager									A CLI that manages lists.
+    list-manager                        A CLI that manages lists.
 
 SUMMARY
-	list-manager add <item>							Adds a new item to the list.
-	list-manager remove <item>						Removes an existing item from the list.
+    list-manager add <item>             Adds a new item to the list.
+    list-manager remove <item>          Removes an existing item from the list.
 
 GLOBAL FLAGS
-	-l --list										The list to manage. [Default: main]
+    -l --list                           The list to manage. [Default: main]
 
 COMMANDS
-	list-manager add <item>							Adds a new item to the list.
-		ARGUMENTS
-			item									The item to add to the list.
+    list-manager add <item>             Adds a new item to the list.
+        ARGUMENTS
+            item                        The item to add to the list.
 
-	list-manager remove <item>						Removes an existing item from the list.
-		ARGUMENTS
-			item									The item to remove from the list.
+    list-manager remove <item>          Removes an existing item from the list.
+        ARGUMENTS
+            item                        The item to remove from the list.
 ```
 
 ## Features
