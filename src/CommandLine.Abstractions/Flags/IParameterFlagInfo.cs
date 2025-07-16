@@ -17,4 +17,9 @@ public interface IParameterFlagInfo : IFlagInfo
 /// 	Represents information about a flag that is linked to a parameter.
 /// </summary>
 /// <typeparam name="T">The type of the flag's value.</typeparam>
-public interface IParameterFlagInfo<out T> : IParameterFlagInfo, IFlagInfo<T> { }
+public interface IParameterFlagInfo<out T> : IParameterFlagInfo, IFlagInfo<T>
+{
+	#region Properties
+	Type IFlagInfo.ValueType => typeof(T);
+	#endregion
+}

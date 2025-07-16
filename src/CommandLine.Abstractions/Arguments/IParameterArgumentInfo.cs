@@ -17,4 +17,9 @@ public interface IParameterArgumentInfo : IArgumentInfo
 /// 	Represents information about an argument that is linked to a parameter.
 /// </summary>
 /// <typeparam name="T">The type of the argument's value.</typeparam>
-public interface IParameterArgumentInfo<out T> : IParameterArgumentInfo, IArgumentInfo<T> { }
+public interface IParameterArgumentInfo<out T> : IParameterArgumentInfo, IArgumentInfo<T>
+{
+	#region Properties
+	Type IArgumentInfo.ValueType => typeof(T);
+	#endregion
+}
