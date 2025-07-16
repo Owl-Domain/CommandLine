@@ -34,6 +34,7 @@ public sealed class MethodCommandInfo : IMethodCommandInfo
 		name?.ThrowIfEmptyOrWhitespace(nameof(name));
 
 		Method = method;
+		Name = name;
 		Group = group;
 		Flags = flags;
 		Arguments = arguments;

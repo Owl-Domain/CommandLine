@@ -1,9 +1,10 @@
 namespace OwlDomain.CommandLine.Groups;
 
 /// <summary>
-/// 	Represents information about a command group that is associated with a class.
+/// 	Represents information about a command group.
 /// </summary>
-public sealed class VirtualCommandGroupInfo : IVirtualCommandGroupInfo
+[DebuggerDisplay($"{{{nameof(DebuggerDisplay)}(), nq}}")]
+public sealed class CommandGroupInfo : ICommandGroupInfo
 {
 	#region Properties
 	/// <inheritdoc/>
@@ -13,7 +14,7 @@ public sealed class VirtualCommandGroupInfo : IVirtualCommandGroupInfo
 	public ICommandGroupInfo? Parent { get; }
 
 	/// <inheritdoc/>
-	public IReadOnlyCollection<IFlagInfo> Flags { get; }
+	public IReadOnlyCollection<IFlagInfo> SharedFlags { get; }
 
 	/// <inheritdoc/>
 	public IReadOnlyDictionary<string, ICommandGroupInfo> Groups { get; }
@@ -26,14 +27,14 @@ public sealed class VirtualCommandGroupInfo : IVirtualCommandGroupInfo
 	#endregion
 
 	#region Constructors
-	/// <summary>Creates a new instance of the <see cref="VirtualCommandGroupInfo"/>.</summary>
+	/// <summary>Creates a new instance of the <see cref="CommandGroupInfo"/>.</summary>
 	/// <param name="name">The name associated with the command group.</param>
 	/// <param name="parent">The parent command group.</param>
 	/// <param name="flags">The flags that can be passed to all of the commands in the group.</param>
 	/// <param name="groups">The child command groups in the group.</param>
 	/// <param name="commands">The child commands in the group.</param>
 	/// <param name="implicitCommand">The implicit command for the group.</param>
-	public VirtualCommandGroupInfo(
+	public CommandGroupInfo(
 		string? name,
 		ICommandGroupInfo? parent,
 		IReadOnlyCollection<IFlagInfo> flags,
@@ -45,10 +46,14 @@ public sealed class VirtualCommandGroupInfo : IVirtualCommandGroupInfo
 
 		Name = name;
 		Parent = parent;
-		Flags = flags;
+		SharedFlags = flags;
 		Groups = groups;
 		Commands = commands;
 		ImplicitCommand = implicitCommand;
 	}
+	#endregion
+
+	#region Methods
+	private string DebuggerDisplay() => $"Group {{ Name = ({Name}) }}";
 	#endregion
 }

@@ -3,6 +3,7 @@ namespace OwlDomain.CommandLine.Commands;
 /// <summary>
 /// 	Represents information about a command that isn't linked to anything.
 /// </summary>
+[DebuggerDisplay($"{{{nameof(DebuggerDisplay)}(), nq}}")]
 public sealed class VirtualCommandInfo : IVirtualCommandInfo
 {
 	#region Properties
@@ -33,5 +34,9 @@ public sealed class VirtualCommandInfo : IVirtualCommandInfo
 		Flags = flags;
 		Arguments = arguments;
 	}
+	#endregion
+
+	#region Methods
+	private string DebuggerDisplay() => $"Command {{ Name = ({Name}) }}";
 	#endregion
 }

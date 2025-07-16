@@ -4,6 +4,7 @@ namespace OwlDomain.CommandLine.Flags;
 /// 	Represents information about a flag that is linked to a parameter.
 /// </summary>
 /// <typeparam name="T">The type of the flag's value.</typeparam>
+[DebuggerDisplay($"{{{nameof(DebuggerDisplay)}(), nq}}")]
 public class PropertyFlagInfo<T> : IPropertyFlagInfo<T>
 {
 	#region Properties
@@ -46,5 +47,9 @@ public class PropertyFlagInfo<T> : IPropertyFlagInfo<T>
 		IsRequired = isRequired;
 		DefaultValue = defaultValue;
 	}
+	#endregion
+
+	#region Methods
+	private string DebuggerDisplay() => $"Flag {{ LongName = ({LongName}), ShortName = ({ShortName}), ValueType = ({typeof(T)}) }}";
 	#endregion
 }

@@ -6,6 +6,12 @@ namespace OwlDomain.CommandLine;
 public interface ICommandEngineBuilder
 {
 	#region Methods
+	/// <summary>Includes the commands from the given <paramref name="class"/> type.</summary>
+	/// <param name="class">The class type to include the commands from.</param>
+	/// <returns>The used builder instance.</returns>
+	/// <exception cref="ArgumentException">Thrown if the given <paramref name="class"/> type is not a .NET <see langword="class"/>.</exception>
+	ICommandEngineBuilder From(Type @class);
+
 	/// <summary>Includes the commands from the given type <typeparamref name="T"/>.</summary>
 	/// <typeparam name="T">The type to include the commands from.</typeparam>
 	/// <returns>The used builder instance.</returns>
