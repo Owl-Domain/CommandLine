@@ -13,7 +13,7 @@
 		<Deterministic>true</Deterministic>
 	</PropertyGroup>
 
-		<!-- NuGet package -->
+	<!-- NuGet package -->
 	<PropertyGroup Label="nuget">
 		<IncludeSymbols>true</IncludeSymbols>
 		<SymbolPackageFormat>snupkg</SymbolPackageFormat>
