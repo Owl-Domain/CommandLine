@@ -3,7 +3,7 @@ namespace OwlDomain.CommandLine.Arguments;
 /// <summary>
 /// 	Represents information about an argument that is linked to a parameter.
 /// </summary>
-public interface IParameterArgumentInfo : IArgumentInfo
+public interface IParameterArgumentInfo : IArgumentInfo, IHasAttributes
 {
 	#region Properties
 	Type IArgumentInfo.ValueType => Parameter.ParameterType;

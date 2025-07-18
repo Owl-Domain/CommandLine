@@ -48,6 +48,34 @@ public sealed class ParameterArgumentInfo<T> : IParameterArgumentInfo<T>
 	#endregion
 
 	#region Methods
+	/// <inheritdoc/>
+	public TAttribute? GetAttribute<TAttribute>()
+			where TAttribute : Attribute
+	{
+		return Parameter.GetCustomAttribute<TAttribute>();
+	}
+
+	/// <inheritdoc/>
+	public bool TryGetAttribute<TAttribute>([NotNullWhen(true)] out TAttribute? attribute)
+		where TAttribute : Attribute
+	{
+		return Parameter.TryGetCustomAttribute(out attribute);
+	}
+
+	/// <inheritdoc/>
+	public IEnumerable<TAttribute> GetAttributes<TAttribute>()
+		where TAttribute : Attribute
+	{
+		return Parameter.GetCustomAttributes<TAttribute>();
+	}
+
+	/// <inheritdoc/>
+	public bool TryGetAttributes<TAttribute>([NotNullWhen(true)] out IEnumerable<TAttribute>? attributes)
+		where TAttribute : Attribute
+	{
+		return Parameter.TryGetCustomAttributes(out attributes);
+	}
+
 	private string DebuggerDisplay() => $"Argument {{ Name = ({Name}), ValueType = ({typeof(T)}) }}";
 	#endregion
 }

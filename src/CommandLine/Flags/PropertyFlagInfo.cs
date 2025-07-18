@@ -50,6 +50,34 @@ public class PropertyFlagInfo<T> : IPropertyFlagInfo<T>
 	#endregion
 
 	#region Methods
+	/// <inheritdoc/>
+	public TAttribute? GetAttribute<TAttribute>()
+		where TAttribute : Attribute
+	{
+		return Property.GetCustomAttribute<TAttribute>();
+	}
+
+	/// <inheritdoc/>
+	public bool TryGetAttribute<TAttribute>([NotNullWhen(true)] out TAttribute? attribute)
+		where TAttribute : Attribute
+	{
+		return Property.TryGetCustomAttribute(out attribute);
+	}
+
+	/// <inheritdoc/>
+	public IEnumerable<TAttribute> GetAttributes<TAttribute>()
+		where TAttribute : Attribute
+	{
+		return Property.GetCustomAttributes<TAttribute>();
+	}
+
+	/// <inheritdoc/>
+	public bool TryGetAttributes<TAttribute>([NotNullWhen(true)] out IEnumerable<TAttribute>? attributes)
+		where TAttribute : Attribute
+	{
+		return Property.TryGetCustomAttributes(out attributes);
+	}
+
 	private string DebuggerDisplay() => $"Flag {{ LongName = ({LongName}), ShortName = ({ShortName}), ValueType = ({typeof(T)}) }}";
 	#endregion
 }

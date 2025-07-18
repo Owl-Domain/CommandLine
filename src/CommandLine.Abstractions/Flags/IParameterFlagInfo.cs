@@ -3,7 +3,7 @@ namespace OwlDomain.CommandLine.Flags;
 /// <summary>
 /// 	Represents information about a flag that is linked to a parameter.
 /// </summary>
-public interface IParameterFlagInfo : IFlagInfo
+public interface IParameterFlagInfo : IFlagInfo, IHasAttributes
 {
 	#region Properties
 	Type IFlagInfo.ValueType => Parameter.ParameterType;
