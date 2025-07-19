@@ -22,6 +22,9 @@ public sealed class ParameterArgumentInfo<T> : IParameterArgumentInfo<T>
 
 	/// <inheritdoc/>
 	public T? DefaultValue { get; }
+
+	/// <inheritdoc/>
+	public IValueParser<T> Parser { get; }
 	#endregion
 
 	#region Constructors
@@ -31,7 +34,8 @@ public sealed class ParameterArgumentInfo<T> : IParameterArgumentInfo<T>
 	/// <param name="position">The position of the argument.</param>
 	/// <param name="isRequired">Whether the argument has to be set when executing the command.</param>
 	/// <param name="defaultValue">The default value for the argument.</param>
-	public ParameterArgumentInfo(ParameterInfo parameter, string name, int position, bool isRequired, T? defaultValue)
+	/// <param name="parser">The value parser selected for the argument.</param>
+	public ParameterArgumentInfo(ParameterInfo parameter, string name, int position, bool isRequired, T? defaultValue, IValueParser<T> parser)
 	{
 		name.ThrowIfEmptyOrWhitespace(nameof(name));
 		position.ThrowIfLessThan(0, nameof(position));
@@ -44,6 +48,7 @@ public sealed class ParameterArgumentInfo<T> : IParameterArgumentInfo<T>
 		Position = position;
 		IsRequired = isRequired;
 		DefaultValue = defaultValue;
+		Parser = parser;
 	}
 	#endregion
 

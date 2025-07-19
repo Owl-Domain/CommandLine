@@ -20,6 +20,9 @@ public interface IArgumentInfo
 
 	/// <summary>The default value for the argument.</summary>
 	object? DefaultValue { get; }
+
+	/// <summary>The value parser selected for the argument.</summary>
+	IValueParser Parser { get; }
 	#endregion
 }
 
@@ -35,5 +38,9 @@ public interface IArgumentInfo<out T> : IArgumentInfo
 	/// <summary>The default value for the argument.</summary>
 	new T? DefaultValue { get; }
 	object? IArgumentInfo.DefaultValue => DefaultValue;
+
+	/// <summary>The value parser selected for the argument.</summary>
+	new IValueParser<T> Parser { get; }
+	IValueParser IArgumentInfo.Parser => Parser;
 	#endregion
 }

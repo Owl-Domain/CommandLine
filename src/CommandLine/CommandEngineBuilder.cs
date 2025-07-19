@@ -1,3 +1,5 @@
+using OwlDomain.CommandLine.Parsing.Values.Primitives;
+
 namespace OwlDomain.CommandLine;
 
 /// <summary>
@@ -7,6 +9,7 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 {
 	#region Fields
 	private readonly HashSet<Type> _classes = [];
+	private readonly List<IValueParserSelector> _selectors = [];
 	#endregion
 
 	#region Methods
@@ -16,13 +19,16 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 		if (@class.IsClass is false)
 			Throw.New.ArgumentException(nameof(@class), "The given type was not a class.");
 
+		if (@class.GetConstructor([]) is not null)
+			Throw.New.ArgumentException(nameof(@class), "The given class did not have a parameterless constructor.");
+
 		_classes.Add(@class);
 
 		return this;
 	}
 
 	/// <inheritdoc/>
-	public ICommandEngineBuilder From<T>() where T : class
+	public ICommandEngineBuilder From<T>() where T : class, new()
 	{
 		_classes.Add(typeof(T));
 
@@ -30,10 +36,28 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 	}
 
 	/// <inheritdoc/>
+	public ICommandEngineBuilder WithSelector(IValueParserSelector selector)
+	{
+		if (_selectors.Contains(selector) is false)
+			_selectors.Add(selector);
+
+		return this;
+	}
+
+	/// <inheritdoc/>
+	public ICommandEngineBuilder WithSelector<T>() where T : IValueParserSelector, new()
+	{
+		T selector = new();
+		return WithSelector(selector);
+	}
+
+	/// <inheritdoc/>
 	public ICommandEngine Build()
 	{
 		if (_classes.Count is 0) Throw.New.InvalidOperationException("No classes were provided to extract the commands from.");
 		if (_classes.Count > 1) Throw.New.NotSupportedException("Extracting commands from multiple classes is not supported yet.");
+
+		WithSelector<PrimitiveValueParserSelector>();
 
 		Type classType = _classes.Single();
 
@@ -53,8 +77,8 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 	}
 	#endregion
 
-	#region Helpers
-	private static IReadOnlyCollection<IMethodCommandInfo> GetCommands(Type classType, ICommandGroupInfo group, IReadOnlyCollection<IFlagInfo> classFlags)
+	#region Build helpers
+	private IReadOnlyCollection<IMethodCommandInfo> GetCommands(Type classType, ICommandGroupInfo group, IReadOnlyCollection<IFlagInfo> classFlags)
 	{
 		List<IMethodCommandInfo> commands = [];
 
@@ -77,7 +101,7 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 
 		return commands;
 	}
-	private static IReadOnlyCollection<IFlagInfo> GetFlags(Type type)
+	private IReadOnlyCollection<IFlagInfo> GetFlags(Type type)
 	{
 		List<IFlagInfo> flags = [];
 
@@ -97,15 +121,16 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 
 			string longName = property.Name.ToLower();
 			char shortName = longName[0];
+			IValueParser parser = SelectValueParser(property);
 
-			IPropertyFlagInfo flag = CreatePropertyFlag(property, longName, shortName, isRequired, defaultValue);
+			IPropertyFlagInfo flag = CreatePropertyFlag(property, longName, shortName, isRequired, defaultValue, parser);
 
 			flags.Add(flag);
 		}
 
 		return flags;
 	}
-	private static IReadOnlyList<IArgumentInfo> GetArguments(MethodInfo method)
+	private IReadOnlyList<IArgumentInfo> GetArguments(MethodInfo method)
 	{
 		List<IArgumentInfo> arguments = [];
 
@@ -118,8 +143,9 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 
 			bool isRequired = parameter.HasDefaultValue is false;
 			object? defaultValue = parameter.HasDefaultValue ? parameter.RawDefaultValue : null;
+			IValueParser parser = SelectValueParser(parameter);
 
-			IArgumentInfo argument = CreateParameterArgument(parameter, name, position, isRequired, defaultValue);
+			IArgumentInfo argument = CreateParameterArgument(parameter, name, position, isRequired, defaultValue, parser);
 			arguments.Add(argument);
 		}
 
@@ -127,30 +153,55 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 	}
 	#endregion
 
+	#region Helpers
+	private IValueParser SelectValueParser(PropertyInfo property)
+	{
+		foreach (IValueParserSelector selector in _selectors)
+		{
+			if (selector.TrySelect(property, out IValueParser? parser))
+				return parser;
+		}
+
+		Throw.New.NotSupportedException($"Couldn't select a value parser for the property ({property}).");
+		return default;
+	}
+	private IValueParser SelectValueParser(ParameterInfo parameter)
+	{
+		foreach (IValueParserSelector selector in _selectors)
+		{
+			if (selector.TrySelect(parameter, out IValueParser? parser))
+				return parser;
+		}
+
+		Throw.New.NotSupportedException($"Couldn't select a value parser for the parameter ({parameter}).");
+		return default;
+	}
+	#endregion
+
 	#region Generic type helpers
-	private static IPropertyFlagInfo CreatePropertyFlag(PropertyInfo property, string? longName, char? shortName, bool isRequired, object? defaultValue)
+	private static IPropertyFlagInfo CreatePropertyFlag(PropertyInfo property, string? longName, char? shortName, bool isRequired, object? defaultValue, IValueParser parser)
 	{
 		Type type = typeof(PropertyFlagInfo<>).MakeGenericType(property.PropertyType);
 
-		object? untyped = Activator.CreateInstance(type, [property, longName, shortName, isRequired, defaultValue]);
+		object? untyped = Activator.CreateInstance(type, [property, longName, shortName, isRequired, defaultValue, parser]);
 		Debug.Assert(untyped is not null);
 
 		return (IPropertyFlagInfo)untyped;
 	}
-	private static IParameterFlagInfo CreateParameterFlag(ParameterInfo parameter, string? longName, char? shortName, bool isRequired, object? defaultValue)
+	private static IParameterFlagInfo CreateParameterFlag(ParameterInfo parameter, string? longName, char? shortName, bool isRequired, object? defaultValue, IValueParser parser)
 	{
 		Type type = typeof(ParameterFlagInfo<>).MakeGenericType(parameter.ParameterType);
 
-		object? untyped = Activator.CreateInstance(type, [parameter, longName, shortName, isRequired, defaultValue]);
+		object? untyped = Activator.CreateInstance(type, [parameter, longName, shortName, isRequired, defaultValue, parser]);
 		Debug.Assert(untyped is not null);
 
 		return (IParameterFlagInfo)untyped;
 	}
-	private static IParameterArgumentInfo CreateParameterArgument(ParameterInfo parameter, string name, int position, bool isRequired, object? defaultValue)
+	private static IParameterArgumentInfo CreateParameterArgument(ParameterInfo parameter, string name, int position, bool isRequired, object? defaultValue, IValueParser parser)
 	{
 		Type type = typeof(ParameterArgumentInfo<>).MakeGenericType(parameter.ParameterType);
 
-		object? untyped = Activator.CreateInstance(type, [parameter, name, position, isRequired, defaultValue]);
+		object? untyped = Activator.CreateInstance(type, [parameter, name, position, isRequired, defaultValue, parser]);
 		Debug.Assert(untyped is not null);
 
 		return (IParameterArgumentInfo)untyped;

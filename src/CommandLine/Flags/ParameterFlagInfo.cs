@@ -22,6 +22,9 @@ public class ParameterFlagInfo<T> : IParameterFlagInfo<T>
 
 	/// <inheritdoc/>
 	public T? DefaultValue { get; }
+
+	/// <inheritdoc/>
+	public IValueParser<T> Parser { get; }
 	#endregion
 
 	#region Constructors
@@ -31,7 +34,8 @@ public class ParameterFlagInfo<T> : IParameterFlagInfo<T>
 	/// <param name="shortName">The short name of the flag.</param>
 	/// <param name="isRequired">Whether the flag has to be set when executing the command.</param>
 	/// <param name="defaultValue">The default value for the flag.</param>
-	public ParameterFlagInfo(ParameterInfo parameter, string? longName, char? shortName, bool isRequired, T? defaultValue)
+	/// <param name="parser">The value parser selected for the flag.</param>
+	public ParameterFlagInfo(ParameterInfo parameter, string? longName, char? shortName, bool isRequired, T? defaultValue, IValueParser<T> parser)
 	{
 		longName?.ThrowIfEmptyOrWhitespace(nameof(longName));
 
@@ -46,6 +50,7 @@ public class ParameterFlagInfo<T> : IParameterFlagInfo<T>
 		ShortName = shortName;
 		IsRequired = isRequired;
 		DefaultValue = defaultValue;
+		Parser = parser;
 	}
 	#endregion
 

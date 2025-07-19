@@ -67,3 +67,33 @@ public interface ITextParser
 	void SkipWhitespace();
 	#endregion
 }
+
+/// <summary>
+/// 	Contains various extension methods related to the <see cref="ITextParser"/>.
+/// </summary>
+public static class ITextParserExtensions
+{
+	#region Methods
+	/// <summary>Advances the given text <paramref name="parser"/> until the end of the text remaining in the current fragment.</summary>
+	/// <param name="parser">The text parser to advance.</param>
+	/// <returns>The string that was skipped.</returns>
+	public static string AdvanceText(this ITextParser parser)
+	{
+		string value = parser.Text.ToString();
+		parser.Advance(value.Length);
+
+		return value;
+	}
+
+	/// <summary>Advances the given text <paramref name="parser"/> until the next natural break in the text remaining in the current fragment.</summary>
+	/// <param name="parser">The text parser to advance.</param>
+	/// <returns>The string that was skipped.</returns>
+	public static string AdvanceUntilBreak(this ITextParser parser)
+	{
+		string value = parser.TextUntilBreak.ToString();
+		parser.Advance(value.Length);
+
+		return value;
+	}
+	#endregion
+}
