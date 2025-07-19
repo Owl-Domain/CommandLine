@@ -1,0 +1,69 @@
+namespace OwlDomain.CommandLine.Parsing;
+
+/// <summary>
+/// 	Represents a general text parser.
+/// </summary>
+public interface ITextParser
+{
+	#region Properties
+	/// <summary>The collection of the fragments that make up the text that should be parsed.</summary>
+	IReadOnlyList<string> Fragments { get; }
+
+	/// <summary>The index of the current fragment that is being parsed.</summary>
+	int CurrentFragmentIndex { get; }
+
+	/// <summary>The current fragment that is being parsed.</summary>
+	string CurrentFragment { get; }
+
+	/// <summary>whether the current fragment is the last fragment.</summary>
+	bool IsLastFragment { get; }
+
+	/// <summary>The offset in the current fragment.</summary>
+	int Offset { get; }
+
+	/// <summary>The remaining text in the current fragment.</summary>
+	ReadOnlySpan<char> Text { get; }
+
+	/// <summary>The remaining text until the next natural breaking point in the current fragment.</summary>
+	/// <remarks>If the parser is in greedy mode then this will be equivalent to <see cref="Text"/>.</remarks>
+	ReadOnlySpan<char> TextUntilBreak { get; }
+
+	/// <summary>The current character to parse in the current fragment.</summary>
+	char Current { get; }
+
+	/// <summary>The next character to parse in the current fragment.</summary>
+	char Next { get; }
+
+	/// <summary>Whether the end of the current fragment has been reached.</summary>
+	bool IsAtEnd { get; }
+
+	/// <summary>Whether the current fragment should be greedy or lazy parsed.</summary>
+	bool IsLazy { get; }
+	#endregion
+
+	#region Methods
+	/// <summary>Changes whether the current fragment should be greedy or lazy parsed.</summary>
+	/// <param name="isLazy">Whether the current fragment should be greedy or lazy parsed.</param>
+	void SetLazy(bool isLazy);
+
+	/// <summary>Moves the parser back to the fragment at the given <paramref name="fragmentIndex"/>.</summary>
+	/// <param name="fragmentIndex">The index of the fragment to return to.</param>
+	/// <param name="offset">The offset inside of the fragment to return to.</param>
+	/// <exception cref="ArgumentOutOfRangeException">
+	/// 	Thrown if either the given <paramref name="fragmentIndex"/> or the given <paramref name="offset"/> are out of their valid ranges.
+	/// </exception>
+	void Restore(int fragmentIndex, int offset);
+
+	/// <summary>Selects the next fragment for parsing.</summary>
+	/// <exception cref="InvalidOperationException">Thrown if the current fragment is the last one.</exception>
+	void NextFragment();
+
+	/// <summary>Advances the offset in the current fragment by the given <paramref name="amount"/>.</summary>
+	/// <param name="amount">The amount of characters to advance the fragment by.</param>
+	/// <exception cref="ArgumentOutOfRangeException">Thrown if the given <paramref name="amount"/> is less than <c>1</c>.</exception>
+	void Advance(int amount = 1);
+
+	/// <summary>Skips any white-space characters that the parser is currently on.</summary>
+	void SkipWhitespace();
+	#endregion
+}
