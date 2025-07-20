@@ -38,14 +38,11 @@ public interface ITextParser
 	bool IsAtEnd { get; }
 
 	/// <summary>Whether the current fragment should be greedy or lazy parsed.</summary>
-	bool IsLazy { get; }
+	/// <remarks>Only specialised parsers should ever modify this value.</remarks>
+	bool IsLazy { get; set; }
 	#endregion
 
 	#region Methods
-	/// <summary>Changes whether the current fragment should be greedy or lazy parsed.</summary>
-	/// <param name="isLazy">Whether the current fragment should be greedy or lazy parsed.</param>
-	void SetLazy(bool isLazy);
-
 	/// <summary>Moves the parser back to the fragment at the given <paramref name="fragmentIndex"/>.</summary>
 	/// <param name="fragmentIndex">The index of the fragment to return to.</param>
 	/// <param name="offset">The offset inside of the fragment to return to.</param>
