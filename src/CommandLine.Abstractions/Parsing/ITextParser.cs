@@ -7,13 +7,13 @@ public interface ITextParser
 {
 	#region Properties
 	/// <summary>The collection of the fragments that make up the text that should be parsed.</summary>
-	IReadOnlyList<string> Fragments { get; }
-
-	/// <summary>The index of the current fragment that is being parsed.</summary>
-	int CurrentFragmentIndex { get; }
+	IReadOnlyList<TextFragment> Fragments { get; }
 
 	/// <summary>The current fragment that is being parsed.</summary>
-	string CurrentFragment { get; }
+	TextFragment CurrentFragment { get; }
+
+	/// <summary>The point in the current fragment.</summary>
+	TextPoint Point { get; }
 
 	/// <summary>whether the current fragment is the last fragment.</summary>
 	bool IsLastFragment { get; }

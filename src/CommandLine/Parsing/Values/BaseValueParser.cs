@@ -12,6 +12,7 @@ public abstract class BaseValueParser<T> : IValueParser<T>
 	{
 		T? value;
 		string? error;
+		TextPoint start = parser.Point;
 
 		if (context is IFlagValueParseContext flag)
 			value = TryParse(flag, parser, out error);
@@ -24,10 +25,12 @@ public abstract class BaseValueParser<T> : IValueParser<T>
 			value = default;
 		}
 
-		if (error is not null)
-			return new ValueParseResult<T>(context, error);
+		TextPoint end = parser.Point;
 
-		return new ValueParseResult<T>(context, value);
+		if (error is not null)
+			return new ValueParseResult<T>(context, new(start, end), error);
+
+		return new ValueParseResult<T>(context, new(start, end), value);
 	}
 
 	/// <summary>Tries to parse the value using the given text <paramref name="parser"/>.</summary>

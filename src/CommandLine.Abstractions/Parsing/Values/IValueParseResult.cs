@@ -14,6 +14,15 @@ public interface IValueParseResult
 
 	/// <summary>The parsed value.</summary>
 	object? Value { get; }
+
+	/// <summary>The location of the parsed value, or the location relevant to the error.</summary>
+	TextLocation Location { get; }
+	#endregion
+
+	#region Methods
+	/// <summary>Enumerates all of the parsed text tokens.</summary>
+	/// <returns>An enumerable of all of the parsed text tokens.</returns>
+	IEnumerable<TextToken> EnumerateTokens();
 	#endregion
 }
 

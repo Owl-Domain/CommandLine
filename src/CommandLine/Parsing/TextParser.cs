@@ -5,24 +5,28 @@ namespace OwlDomain.CommandLine.Parsing;
 /// </summary>
 public sealed class TextParser : ITextParser
 {
+	#region Fields
+	private int _currentFragmentIndex;
+	#endregion
+
 	#region Properties
 	/// <inheritdoc/>
-	public IReadOnlyList<string> Fragments { get; }
+	public IReadOnlyList<TextFragment> Fragments { get; }
 
 	/// <inheritdoc/>
-	public int CurrentFragmentIndex { get; private set; }
+	public TextFragment CurrentFragment { get; private set; }
 
 	/// <inheritdoc/>
-	public string CurrentFragment { get; private set; }
+	public TextPoint Point => new(CurrentFragment, Offset);
 
 	/// <inheritdoc/>
-	public bool IsLastFragment => CurrentFragmentIndex >= Fragments.Count - 1;
+	public bool IsLastFragment => CurrentFragment.Index >= Fragments.Count - 1;
 
 	/// <inheritdoc/>
 	public int Offset { get; private set; }
 
 	/// <inheritdoc/>
-	public ReadOnlySpan<char> Text => CurrentFragment.AsSpan(Offset);
+	public ReadOnlySpan<char> Text => CurrentFragment.Text.AsSpan(Offset);
 
 	/// <inheritdoc/>
 	public ReadOnlySpan<char> TextUntilBreak
@@ -59,12 +63,25 @@ public sealed class TextParser : ITextParser
 	/// <summary>Creates a new instance of the <see cref="TextParser"/>.</summary>
 	/// <param name="fragments">The text fragments to initialise the parser with.</param>
 	/// <param name="isLazy">Whether the parser should be greedy or lazy.</param>
-	public TextParser(IReadOnlyList<string> fragments, bool isLazy)
+	public TextParser(IReadOnlyList<TextFragment> fragments, bool isLazy)
 	{
 		if (fragments.Count <= 1)
 			Throw.New.ArgumentException(nameof(fragments), $"The {nameof(TextParser)} requires at least one fragment.");
 
 		Fragments = fragments;
+		CurrentFragment = Fragments[0];
+		IsLazy = isLazy;
+	}
+
+	/// <summary>Creates a new instance of the <see cref="TextParser"/>.</summary>
+	/// <param name="fragments">The text fragments to initialise the parser with.</param>
+	/// <param name="isLazy">Whether the parser should be greedy or lazy.</param>
+	public TextParser(IReadOnlyList<string> fragments, bool isLazy)
+	{
+		if (fragments.Count <= 1)
+			Throw.New.ArgumentException(nameof(fragments), $"The {nameof(TextParser)} requires at least one fragment.");
+
+		Fragments = [.. fragments.Select((fragment, index) => new TextFragment(fragment, index))];
 		CurrentFragment = Fragments[0];
 		IsLazy = isLazy;
 	}
@@ -85,8 +102,8 @@ public sealed class TextParser : ITextParser
 		if (IsLastFragment)
 			Throw.New.InvalidOperationException($"The {nameof(TextParser)} is already at the last text fragment.");
 
-		CurrentFragmentIndex++;
-		CurrentFragment = Fragments[CurrentFragmentIndex];
+		_currentFragmentIndex++;
+		CurrentFragment = Fragments[_currentFragmentIndex];
 		Offset = 0;
 	}
 
@@ -95,10 +112,10 @@ public sealed class TextParser : ITextParser
 	{
 		fragmentIndex.ThrowIfNotBetween(0, Fragments.Count, RangeCheckMode.InclusiveExclusive, nameof(fragmentIndex));
 
-		string fragment = Fragments[fragmentIndex];
+		TextFragment fragment = Fragments[fragmentIndex];
 		offset.ThrowIfNotBetween(0, fragment.Length, RangeCheckMode.InclusiveExclusive, nameof(offset));
 
-		CurrentFragmentIndex = fragmentIndex;
+		_currentFragmentIndex = fragmentIndex;
 		CurrentFragment = fragment;
 		Offset = offset;
 	}
