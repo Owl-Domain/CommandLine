@@ -20,6 +20,9 @@ public interface IFlagInfo
 
 	/// <summary>The default value for the flag.</summary>
 	object? DefaultValue { get; }
+
+	/// <summary>The value parser selected for the flag.</summary>
+	IValueParser Parser { get; }
 	#endregion
 }
 
@@ -35,5 +38,9 @@ public interface IFlagInfo<out T> : IFlagInfo
 	/// <summary>The default value for the flag.</summary>
 	new T? DefaultValue { get; }
 	object? IFlagInfo.DefaultValue => DefaultValue;
+
+	/// <summary>The value parser selected for the flag.</summary>
+	new IValueParser<T> Parser { get; }
+	IValueParser IFlagInfo.Parser => Parser;
 	#endregion
 }

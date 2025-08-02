@@ -15,7 +15,7 @@ public interface ICommandGroupInfo
 	ICommandGroupInfo? Parent { get; }
 
 	/// <summary>The flags that can be passed to all of the commands in the group.</summary>
-	IReadOnlyCollection<IFlagInfo> Flags { get; }
+	IReadOnlyCollection<IFlagInfo> SharedFlags { get; }
 
 	/// <summary>The child command groups in the group.</summary>
 	IReadOnlyDictionary<string, ICommandGroupInfo> Groups { get; }

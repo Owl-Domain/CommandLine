@@ -1,0 +1,125 @@
+using System.Text;
+
+namespace OwlDomain.CommandLine.Parsing;
+
+/// <summary>
+/// 	Represents a general text parser.
+/// </summary>
+public interface ITextParser
+{
+	#region Properties
+	/// <summary>The collection of the fragments that make up the text that should be parsed.</summary>
+	IReadOnlyList<TextFragment> Fragments { get; }
+
+	/// <summary>The current fragment that is being parsed.</summary>
+	TextFragment CurrentFragment { get; }
+
+	/// <summary>The point in the current fragment.</summary>
+	TextPoint Point { get; }
+
+	/// <summary>whether the current fragment is the last fragment.</summary>
+	bool IsLastFragment { get; }
+
+	/// <summary>The offset in the current fragment.</summary>
+	int Offset { get; }
+
+	/// <summary>The remaining text in the current fragment.</summary>
+	ReadOnlySpan<char> Text { get; }
+
+	/// <summary>The remaining text until the next natural breaking point in the current fragment.</summary>
+	/// <remarks>If the parser is in greedy mode then this will be equivalent to <see cref="Text"/>.</remarks>
+	ReadOnlySpan<char> TextUntilBreak { get; }
+
+	/// <summary>The current character to parse in the current fragment.</summary>
+	char Current { get; }
+
+	/// <summary>The next character to parse in the current fragment.</summary>
+	char Next { get; }
+
+	/// <summary>Whether the end of the current fragment has been reached.</summary>
+	bool IsAtEnd { get; }
+
+	/// <summary>Whether the current fragment should be greedy or lazy parsed.</summary>
+	/// <remarks>Only specialised parsers should ever modify this value.</remarks>
+	bool IsLazy { get; set; }
+	#endregion
+
+	#region Methods
+	/// <summary>Moves the parser back to the fragment at the given <paramref name="fragmentIndex"/>.</summary>
+	/// <param name="fragmentIndex">The index of the fragment to return to.</param>
+	/// <param name="offset">The offset inside of the fragment to return to.</param>
+	/// <exception cref="ArgumentOutOfRangeException">
+	/// 	Thrown if either the given <paramref name="fragmentIndex"/> or the given <paramref name="offset"/> are out of their valid ranges.
+	/// </exception>
+	void Restore(int fragmentIndex, int offset);
+
+	/// <summary>Selects the next fragment for parsing.</summary>
+	/// <exception cref="InvalidOperationException">Thrown if the current fragment is the last one.</exception>
+	void NextFragment();
+
+	/// <summary>Advances the offset in the current fragment by the given <paramref name="amount"/>.</summary>
+	/// <param name="amount">The amount of characters to advance the fragment by.</param>
+	/// <exception cref="ArgumentOutOfRangeException">Thrown if the given <paramref name="amount"/> is less than <c>1</c>.</exception>
+	void Advance(int amount = 1);
+
+	/// <summary>Skips any inconsequential characters, which might including going over to the next fragment.</summary>
+	void SkipTrivia();
+
+	/// <summary>Skips any white-space characters that the parser is currently on.</summary>
+	void SkipWhitespace();
+	#endregion
+}
+
+/// <summary>
+/// 	Contains various extension methods related to the <see cref="ITextParser"/>.
+/// </summary>
+public static class ITextParserExtensions
+{
+	#region Methods
+	/// <summary>Advances the given text <paramref name="parser"/> until the end of the text remaining in the current fragment.</summary>
+	/// <param name="parser">The text parser to advance.</param>
+	/// <returns>The string that was skipped.</returns>
+	public static string AdvanceText(this ITextParser parser)
+	{
+		if (parser.Text.Length is 0)
+			return string.Empty;
+
+		string value = parser.Text.ToString();
+		parser.Advance(value.Length);
+
+		return value;
+	}
+
+	/// <summary>Advances the given text <paramref name="parser"/> until the next natural break in the text remaining in the current fragment.</summary>
+	/// <param name="parser">The text parser to advance.</param>
+	/// <returns>The string that was skipped.</returns>
+	public static string AdvanceUntilBreak(this ITextParser parser)
+	{
+		if (parser.TextUntilBreak.Length is 0)
+			return string.Empty;
+
+		string value = parser.TextUntilBreak.ToString();
+		parser.Advance(value.Length);
+
+		return value;
+	}
+
+	/// <summary>Skips to the end of the last fragment.</summary>
+	/// <param name="parser">The text parser to advance.</param>
+	public static string SkipToEnd(this ITextParser parser)
+	{
+		StringBuilder builder = new();
+
+		while (parser.IsLastFragment is false)
+		{
+			builder.Append(parser.Text);
+			parser.NextFragment();
+		}
+
+		string text = parser.AdvanceText();
+		builder.Append(text);
+
+		return builder.ToString();
+	}
+	#endregion
+}

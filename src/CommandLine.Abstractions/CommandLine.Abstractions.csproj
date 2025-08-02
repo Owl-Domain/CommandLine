@@ -2,7 +2,7 @@
 
 	<!-- Project -->
 	<PropertyGroup Label="project">
-		<TargetFrameworks>netstandard2.1</TargetFrameworks>
+		<TargetFrameworks>net7.0;netstandard2.1</TargetFrameworks>
 		<LangVersion>13</LangVersion>
 		<Nullable>enable</Nullable>
 
@@ -12,6 +12,11 @@
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>
 		<Deterministic>true</Deterministic>
 	</PropertyGroup>
+
+	<!-- Package references -->
+	<ItemGroup Label="packages">
+		<PackageReference Include="OwlDomain.Common" Version="1.5.1" />
+	</ItemGroup>
 
 	<!-- NuGet package -->
 	<PropertyGroup Label="nuget">
