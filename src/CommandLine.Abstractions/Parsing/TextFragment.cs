@@ -10,9 +10,13 @@ public readonly struct TextFragment :
 #endif
 	IEquatable<TextFragment>
 {
+	#region Fields
+	private readonly string? _text;
+	#endregion
+
 	#region Properties
 	/// <summary>The text that makes up the fragment.</summary>
-	public readonly string Text { get; }
+	public readonly string Text => _text ?? string.Empty;
 
 	/// <summary>The index of the fragment.</summary>
 	public readonly int Index { get; }
@@ -30,12 +34,9 @@ public readonly struct TextFragment :
 	{
 		index.ThrowIfLessThan(0, nameof(index));
 
-		Text = text;
+		_text = text;
 		Index = index;
 	}
-
-	/// <summary>Creates a new empty instance of the <see cref="TextFragment"/>.</summary>
-	public TextFragment() => Text = string.Empty;
 	#endregion
 
 	#region Methods
@@ -61,6 +62,7 @@ public readonly struct TextFragment :
 	#endregion
 
 	#region Helpers
+	[ExcludeFromCodeCoverage]
 	private readonly string DebuggerDisplay()
 	{
 		const string typeName = nameof(TextFragment);
