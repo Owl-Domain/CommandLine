@@ -85,7 +85,10 @@ public sealed class CommandEngine(ICommandGroupInfo rootGroup) : ICommandEngine
 			object? container = null;
 			if (methodCommand.Method.IsStatic is false)
 			{
-				container = Activator.CreateInstance(methodCommand.Method.ReflectedType);
+				Type? containerType = methodCommand.Method.ReflectedType;
+				Debug.Assert(containerType is not null);
+
+				container = Activator.CreateInstance(containerType);
 				Debug.Assert(container is not null);
 			}
 

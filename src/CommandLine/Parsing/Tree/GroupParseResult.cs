@@ -54,7 +54,7 @@ public sealed class GroupParseResult : IGroupParseResult
 		tokens = tokens.Concat(Flags.EnumerateTokens());
 
 		if (CommandOrGroup is not null)
-			tokens = tokens.Concat(CommandOrGroup?.EnumerateTokens());
+			tokens = tokens.Concat(CommandOrGroup.EnumerateTokens());
 
 		return tokens.Sort();
 	}
