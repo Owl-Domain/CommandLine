@@ -78,7 +78,7 @@ public sealed class TextParser : ITextParser
 	/// <param name="isLazy">Whether the parser should be greedy or lazy.</param>
 	public TextParser(IReadOnlyList<string> fragments, bool isLazy)
 	{
-		if (fragments.Count <= 1)
+		if (fragments.Count < 1)
 			Throw.New.ArgumentException(nameof(fragments), $"The {nameof(TextParser)} requires at least one fragment.");
 
 		Fragments = [.. fragments.Select((fragment, index) => new TextFragment(fragment, index))];
@@ -93,7 +93,7 @@ public sealed class TextParser : ITextParser
 	{
 		amount.ThrowIfLessThan(1, nameof(amount));
 
-		Offset = Math.Min(Text.Length, Offset + amount);
+		Offset = Math.Min(CurrentFragment.Length, Offset + amount);
 	}
 
 	/// <inheritdoc/>
@@ -118,6 +118,15 @@ public sealed class TextParser : ITextParser
 		_currentFragmentIndex = fragmentIndex;
 		CurrentFragment = fragment;
 		Offset = offset;
+	}
+
+	/// <inheritdoc/>
+	public void SkipTrivia()
+	{
+		SkipWhitespace();
+
+		if (IsLazy is false && IsLastFragment is false && IsAtEnd)
+			NextFragment();
 	}
 
 	/// <inheritdoc/>

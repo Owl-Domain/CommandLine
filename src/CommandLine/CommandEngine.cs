@@ -47,7 +47,26 @@ public sealed class CommandEngine(ICommandGroupInfo rootGroup) : ICommandEngine
 		Context context = new(parser);
 		IParseResult? result = ParseGroup(context, RootGroup);
 
-		return new EngineParseResult(this, context.Diagnostics, result, []);
+		parser.SkipTrivia();
+		bool hasLeftOver = (parser.IsAtEnd && parser.IsLastFragment) is false;
+
+		if (hasLeftOver)
+		{
+			if (parser.IsAtEnd)
+				parser.NextFragment();
+
+			TextPoint start = parser.Point;
+			string leftOver = parser.SkipToEnd();
+			TextPoint end = parser.Point;
+
+			TextLocation location = new(start, end);
+			TextToken token = new(TextTokenKind.Error, location, leftOver);
+
+			context.ExtraTokens.Add(token);
+			context.Diagnostics.Add(DiagnosticSource.Parsing, new(start, end), $"Not all of the input was parsed.");
+		}
+
+		return new EngineParseResult(this, context.Diagnostics, result, context.ExtraTokens);
 	}
 	#endregion
 
@@ -70,14 +89,12 @@ public sealed class CommandEngine(ICommandGroupInfo rootGroup) : ICommandEngine
 			{
 				if (group.Groups.TryGetValue(name, out ICommandGroupInfo? childGroup))
 				{
-					context.Parser.SkipWhitespace();
 					IParseResult subResult = ParseGroup(context, childGroup);
 
 					return subResult;
 				}
 				else if (group.Commands.TryGetValue(name, out ICommandInfo? command))
 				{
-					context.Parser.SkipWhitespace();
 					ICommandParseResult subCommand = ParseCommand(context, command, nameToken);
 
 					return subCommand;
@@ -127,6 +144,8 @@ public sealed class CommandEngine(ICommandGroupInfo rootGroup) : ICommandEngine
 
 		if (value.Error is null)
 		{
+			context.Parser.SkipTrivia();
+
 			result = new ArgumentParseResult(argument, value);
 			return true;
 		}
@@ -154,9 +173,6 @@ public sealed class CommandEngine(ICommandGroupInfo rootGroup) : ICommandEngine
 		name = parser.AdvanceUntilBreak();
 		TextPoint end = parser.Point;
 
-		if (parser.IsLastFragment is false && parser.IsAtEnd)
-			parser.NextFragment();
-
 		if (string.IsNullOrEmpty(name))
 		{
 			token = default;
@@ -164,6 +180,8 @@ public sealed class CommandEngine(ICommandGroupInfo rootGroup) : ICommandEngine
 
 			return false;
 		}
+
+		parser.SkipTrivia();
 
 		token = new(TextTokenKind.GroupName, new(start, end), name);
 		return true;

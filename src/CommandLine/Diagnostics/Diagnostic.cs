@@ -3,6 +3,7 @@ namespace OwlDomain.CommandLine.Diagnostics;
 /// <summary>
 /// 	Represents a diagnostic.
 /// </summary>
+[DebuggerDisplay($"{{{nameof(DebuggerDisplay)}(), nq}}")]
 public sealed class Diagnostic : IDiagnostic
 {
 	#region Properties
@@ -31,6 +32,17 @@ public sealed class Diagnostic : IDiagnostic
 		Source = source;
 		Location = location;
 		Message = message;
+	}
+	#endregion
+
+	#region Helpers
+	private string DebuggerDisplay()
+	{
+		const string typeName = nameof(Diagnostic);
+		const string sourceName = nameof(Source);
+		const string messageName = nameof(Message);
+
+		return $"{typeName} {{ {sourceName} = ({Source}), {messageName} = ({Message}) }}";
 	}
 	#endregion
 }

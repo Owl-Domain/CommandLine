@@ -1,3 +1,5 @@
+using System.Text;
+
 namespace OwlDomain.CommandLine.Parsing;
 
 /// <summary>
@@ -60,6 +62,9 @@ public interface ITextParser
 	/// <exception cref="ArgumentOutOfRangeException">Thrown if the given <paramref name="amount"/> is less than <c>1</c>.</exception>
 	void Advance(int amount = 1);
 
+	/// <summary>Skips any inconsequential characters, which might including going over to the next fragment.</summary>
+	void SkipTrivia();
+
 	/// <summary>Skips any white-space characters that the parser is currently on.</summary>
 	void SkipWhitespace();
 	#endregion
@@ -97,6 +102,24 @@ public static class ITextParserExtensions
 		parser.Advance(value.Length);
 
 		return value;
+	}
+
+	/// <summary>Skips to the end of the last fragment.</summary>
+	/// <param name="parser">The text parser to advance.</param>
+	public static string SkipToEnd(this ITextParser parser)
+	{
+		StringBuilder builder = new();
+
+		while (parser.IsLastFragment is false)
+		{
+			builder.Append(parser.Text);
+			parser.NextFragment();
+		}
+
+		string text = parser.AdvanceText();
+		builder.Append(text);
+
+		return builder.ToString();
 	}
 	#endregion
 }

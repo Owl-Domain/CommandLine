@@ -3,6 +3,7 @@ namespace OwlDomain.CommandLine.Diagnostics;
 /// <summary>
 /// 	Represents a bag that stores a collection of diagnostics.
 /// </summary>
+[DebuggerDisplay($"{{{nameof(DebuggerDisplay)}(), nq}}")]
 public sealed class DiagnosticBag : IDiagnosticBag, ICollection<IDiagnostic>
 {
 	#region Nested types
@@ -64,5 +65,15 @@ public sealed class DiagnosticBag : IDiagnosticBag, ICollection<IDiagnostic>
 	/// <inheritdoc/>
 	public IEnumerator<IDiagnostic> GetEnumerator() => _diagnostics.Values.GetEnumerator();
 	IEnumerator IEnumerable.GetEnumerator() => ((IEnumerable)_diagnostics.Values).GetEnumerator();
+	#endregion
+
+	#region Helpers
+	private string DebuggerDisplay()
+	{
+		const string typeName = nameof(DiagnosticBag);
+		const string countName = nameof(Count);
+
+		return $"{typeName} {{ {countName} = ({Count:n0}) }}";
+	}
 	#endregion
 }
