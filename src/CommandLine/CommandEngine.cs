@@ -47,30 +47,44 @@ public sealed class CommandEngine(ICommandGroupInfo rootGroup) : ICommandEngine
 		Context context = new(parser);
 		IParseResult? result = ParseGroup(context, RootGroup);
 
-		parser.SkipTrivia();
-		bool hasLeftOver = (parser.IsAtEnd && parser.IsLastFragment) is false;
-
-		if (hasLeftOver)
-		{
-			if (parser.IsAtEnd)
-				parser.NextFragment();
-
-			TextPoint start = parser.Point;
-			string leftOver = parser.SkipToEnd();
-			TextPoint end = parser.Point;
-
-			TextLocation location = new(start, end);
-			TextToken token = new(TextTokenKind.Error, location, leftOver);
-
-			context.ExtraTokens.Add(token);
-			context.Diagnostics.Add(DiagnosticSource.Parsing, new(start, end), $"Not all of the input was parsed.");
-		}
+		CheckForLeftOverInput(context);
 
 		return new EngineParseResult(this, context.Diagnostics, result, context.ExtraTokens);
 	}
 	#endregion
 
 	#region Parse helpers
+	private void CheckForLeftOverInput(Context context)
+	{
+		context.Parser.SkipTrivia();
+		bool hasLeftOver = (context.Parser.IsAtEnd && context.Parser.IsLastFragment) is false;
+
+		if (hasLeftOver)
+		{
+			if (context.Parser.IsAtEnd)
+				context.Parser.NextFragment();
+
+			TextPoint start = context.Parser.Point;
+			string leftOver = context.Parser.SkipToEnd();
+			TextPoint end = context.Parser.Point;
+
+			TextLocation location = new(start, end);
+
+			TextToken token;
+			if (context.Diagnostics.Any())
+			{
+				// Note(Nightowl): Has other diagnostics, likely a carry-over error from early quitting;
+				token = new(TextTokenKind.Unprocessed, location, leftOver);
+			}
+			else
+			{
+				token = new(TextTokenKind.Error, location, leftOver);
+				context.Diagnostics.Add(DiagnosticSource.Parsing, location, $"Not all of the input was parsed.");
+			}
+
+			context.ExtraTokens.Add(token);
+		}
+	}
 	private IParseResult ParseGroup(Context context, ICommandGroupInfo group)
 	{
 		string? groupCommandError = (group.Groups.Count > 0, group.Commands.Count > 0) switch

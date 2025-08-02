@@ -45,7 +45,7 @@ public sealed class ValueFlagParseResult(
 
 		tokens = tokens.Concat(Value.EnumerateTokens());
 
-		return tokens.OrderBy(token => token.Location.Start);
+		return tokens.Sort();
 	}
 	#endregion
 

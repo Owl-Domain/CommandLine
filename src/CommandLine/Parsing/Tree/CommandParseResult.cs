@@ -38,13 +38,11 @@ public sealed class CommandParseResult(
 		if (Name is not null)
 			tokens = tokens.Append(Name.Value);
 
-		foreach (IFlagParseResult flag in Flags)
-			tokens = tokens.Concat(flag.EnumerateTokens());
+		tokens = tokens
+			.Concat(Flags.EnumerateTokens())
+			.Concat(Arguments.EnumerateTokens());
 
-		foreach (IArgumentParseResult argument in Arguments)
-			tokens = tokens.Concat(argument.EnumerateTokens());
-
-		return tokens.OrderBy(token => token.Location.Start);
+		return tokens.Sort();
 	}
 	#endregion
 

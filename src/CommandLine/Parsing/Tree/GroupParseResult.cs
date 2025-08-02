@@ -51,13 +51,12 @@ public sealed class GroupParseResult : IGroupParseResult
 		if (Name is not null)
 			tokens = tokens.Append(Name.Value);
 
-		foreach (IFlagParseResult flag in Flags)
-			tokens = tokens.Concat(flag.EnumerateTokens());
+		tokens = tokens.Concat(Flags.EnumerateTokens());
 
 		if (CommandOrGroup is not null)
-			tokens = tokens.Concat(CommandOrGroup.EnumerateTokens());
+			tokens = tokens.Concat(CommandOrGroup?.EnumerateTokens());
 
-		return tokens.OrderBy(token => token.Location.Start);
+		return tokens.Sort();
 	}
 	#endregion
 

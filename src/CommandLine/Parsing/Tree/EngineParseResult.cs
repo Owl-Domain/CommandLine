@@ -46,13 +46,8 @@ public sealed class EngineParseResult : IEngineParseResult
 	/// <inheritdoc/>
 	public IEnumerable<TextToken> EnumerateTokens()
 	{
-		IEnumerable<TextToken> tokens;
-		if (CommandOrGroup is null)
-			tokens = [];
-		else
-			tokens = CommandOrGroup.EnumerateTokens();
-
-		return tokens.Concat(_extraTokens).OrderBy(token => token.Location.Start);
+		IEnumerable<TextToken> tokens = CommandOrGroup?.EnumerateTokens() ?? [];
+		return tokens.Concat(_extraTokens).Sort();
 	}
 	#endregion
 }

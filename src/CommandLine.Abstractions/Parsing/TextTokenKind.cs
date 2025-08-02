@@ -8,6 +8,9 @@ public enum TextTokenKind : byte
 	/// <summary>Represents an error token.</summary>
 	Error,
 
+	/// <summary>Represents a token that hasn't been processed.</summary>
+	Unprocessed,
+
 	/// <summary>Represents a token for the name of a command group.</summary>
 	GroupName,
 
