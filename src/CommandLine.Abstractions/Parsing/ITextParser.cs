@@ -76,6 +76,9 @@ public static class ITextParserExtensions
 	/// <returns>The string that was skipped.</returns>
 	public static string AdvanceText(this ITextParser parser)
 	{
+		if (parser.Text.Length is 0)
+			return string.Empty;
+
 		string value = parser.Text.ToString();
 		parser.Advance(value.Length);
 
@@ -87,6 +90,9 @@ public static class ITextParserExtensions
 	/// <returns>The string that was skipped.</returns>
 	public static string AdvanceUntilBreak(this ITextParser parser)
 	{
+		if (parser.TextUntilBreak.Length is 0)
+			return string.Empty;
+
 		string value = parser.TextUntilBreak.ToString();
 		parser.Advance(value.Length);
 

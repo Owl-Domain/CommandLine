@@ -11,4 +11,7 @@ global using OwlDomain.CommandLine.Commands;
 global using OwlDomain.CommandLine.Diagnostics;
 global using OwlDomain.CommandLine.Groups;
 global using OwlDomain.CommandLine.Parsing;
+global using OwlDomain.CommandLine.Parsing.Tree;
 global using OwlDomain.CommandLine.Parsing.Values;
+
+global using DiagnosticSource = OwlDomain.CommandLine.Diagnostics.DiagnosticSource;

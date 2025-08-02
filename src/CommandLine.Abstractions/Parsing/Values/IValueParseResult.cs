@@ -3,7 +3,7 @@ namespace OwlDomain.CommandLine.Parsing.Values;
 /// <summary>
 /// 	Represents the result of a value parsing operation.
 /// </summary>
-public interface IValueParseResult
+public interface IValueParseResult : IParseResult
 {
 	#region Properties
 	/// <summary>The context for the value that was parsed.</summary>
@@ -17,12 +17,6 @@ public interface IValueParseResult
 
 	/// <summary>The location of the parsed value, or the location relevant to the error.</summary>
 	TextLocation Location { get; }
-	#endregion
-
-	#region Methods
-	/// <summary>Enumerates all of the parsed text tokens.</summary>
-	/// <returns>An enumerable of all of the parsed text tokens.</returns>
-	IEnumerable<TextToken> EnumerateTokens();
 	#endregion
 }
 

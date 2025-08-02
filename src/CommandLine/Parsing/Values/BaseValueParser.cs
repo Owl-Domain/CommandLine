@@ -55,7 +55,7 @@ public abstract class BaseValueParser<T> : IValueParser<T>
 	/// <remarks>If you override this, you should also override <see cref="TryParse(IArgumentValueParseContext, ITextParser, out string?)"/>.</remarks>
 	protected virtual T? TryParse(IFlagValueParseContext context, ITextParser parser, out string? error)
 	{
-		return TryParse(context, parser, out error);
+		return TryParse((IValueParseContext)context, parser, out error);
 	}
 
 	/// <summary>Tries to parse the value using the given text <paramref name="parser"/>.</summary>
@@ -66,7 +66,7 @@ public abstract class BaseValueParser<T> : IValueParser<T>
 	/// <remarks>If you override this, you should also override <see cref="TryParse(IFlagValueParseContext, ITextParser, out string?)"/>.</remarks>
 	protected virtual T? TryParse(IArgumentValueParseContext context, ITextParser parser, out string? error)
 	{
-		return TryParse(context, parser, out error);
+		return TryParse((IValueParseContext)context, parser, out error);
 	}
 	#endregion
 }

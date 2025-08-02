@@ -53,7 +53,7 @@ public sealed class TextParser : ITextParser
 	public char Next => Peek(1);
 
 	/// <inheritdoc/>
-	public bool IsAtEnd { get; }
+	public bool IsAtEnd => Offset >= CurrentFragment.Length;
 
 	/// <inheritdoc/>
 	public bool IsLazy { get; set; }
@@ -124,6 +124,9 @@ public sealed class TextParser : ITextParser
 	public void SkipWhitespace()
 	{
 		ReadOnlySpan<char> text = Text;
+
+		if (text.Length is 0)
+			return;
 
 #if NET7_0_OR_GREATER
 		int index = text.IndexOfAnyExcept(' ');

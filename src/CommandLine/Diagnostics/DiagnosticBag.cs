@@ -37,7 +37,17 @@ public sealed class DiagnosticBag : IDiagnosticBag, ICollection<IDiagnostic>
 
 	#region Methods
 	/// <inheritdoc/>
-	public void Add(IDiagnostic item) => _diagnostics.Add(item, item);
+	public void Add(IDiagnostic diagnostic) => _diagnostics.Add(diagnostic, diagnostic);
+
+	/// <summary>Creates a new diagnostic and adds it to the bag.</summary>
+	/// <param name="source">The source of the diagnostic.</param>
+	/// <param name="location">The location that the diagnostic is referring to.</param>
+	/// <param name="message">The diagnostic message.</param>
+	public void Add(DiagnosticSource source, TextLocation location, string message)
+	{
+		Diagnostic diagnostic = new(source, location, message);
+		Add(diagnostic);
+	}
 
 	/// <inheritdoc/>
 	public bool Contains(IDiagnostic item) => _diagnostics.ContainsValue(item);

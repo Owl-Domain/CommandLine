@@ -11,12 +11,14 @@ public interface ICommandEngine
 	#endregion
 
 	#region Methods
-	/// <summary>Parses and executes the given command <paramref name="fragments"/>.</summary>
-	/// <param name="fragments">The fragments to parse and execute.</param>
-	void Run(string[] fragments);
+	/// <summary>Parses the given <paramref name="fragments"/>.</summary>
+	/// <param name="fragments">The fragments to parse.</param>
+	/// <returns>The result of the parse operation.</returns>
+	IEngineParseResult Parse(string[] fragments);
 
-	/// <summary>Parses and executes the given <paramref name="command"/> text.</summary>
-	/// <param name="command">The command text to parse and execute.</param>
-	void Run(string command);
+	/// <summary>Parses the given command <paramref name="text"/>.</summary>
+	/// <param name="text">The command text to parse.</param>
+	/// <returns>The result of the parse operation.</returns>
+	IEngineParseResult Parse(string text);
 	#endregion
 }
