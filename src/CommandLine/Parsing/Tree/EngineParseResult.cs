@@ -18,6 +18,15 @@ public sealed class EngineParseResult : IEngineParseResult
 
 	/// <inheritdoc/>
 	public IParseResult? CommandOrGroup { get; }
+
+	/// <inheritdoc/>
+	public ICommandParseResult? LeafCommand { get; }
+
+	/// <inheritdoc/>
+	public IReadOnlyList<IFlagParseResult> Flags { get; }
+
+	/// <inheritdoc/>
+	public IReadOnlyList<IArgumentParseResult> Arguments { get; }
 	#endregion
 
 	#region Constructors
@@ -39,6 +48,10 @@ public sealed class EngineParseResult : IEngineParseResult
 		Diagnostics = diagnostics;
 		CommandOrGroup = commandOrGroup;
 		_extraTokens = extraTokens;
+
+		LeafCommand = GetLeafCommand(commandOrGroup);
+		Flags = GetAllFlags(commandOrGroup);
+		Arguments = LeafCommand?.Arguments ?? [];
 	}
 	#endregion
 
@@ -48,6 +61,43 @@ public sealed class EngineParseResult : IEngineParseResult
 	{
 		IEnumerable<TextToken> tokens = CommandOrGroup?.EnumerateTokens() ?? [];
 		return tokens.Concat(_extraTokens).Sort();
+	}
+	#endregion
+
+	#region Helpers
+	private static ICommandParseResult? GetLeafCommand(IParseResult? result)
+	{
+		while (result is not null)
+		{
+			if (result is ICommandParseResult command)
+				return command;
+
+			if (result is IGroupParseResult group)
+				result = group.CommandOrGroup;
+		}
+
+		return null;
+	}
+	private static List<IFlagParseResult> GetAllFlags(IParseResult? result)
+	{
+		List<IFlagParseResult> flags = [];
+
+		while (result is not null)
+		{
+			if (result is ICommandParseResult command)
+			{
+				flags.AddRange(command.Flags);
+				break;
+			}
+
+			if (result is IGroupParseResult group)
+			{
+				flags.AddRange(group.Flags);
+				result = group.CommandOrGroup;
+			}
+		}
+
+		return flags;
 	}
 	#endregion
 }

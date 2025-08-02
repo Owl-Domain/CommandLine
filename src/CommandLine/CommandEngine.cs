@@ -51,6 +51,60 @@ public sealed class CommandEngine(ICommandGroupInfo rootGroup) : ICommandEngine
 
 		return new EngineParseResult(this, context.Diagnostics, result, context.ExtraTokens);
 	}
+
+	/// <inheritdoc/>
+	public IEngineValidationResult Validate(IEngineParseResult parseResult)
+	{
+		if (parseResult.Diagnostics.Any())
+			Throw.New.ArgumentException(nameof(parseResult), $"Validation cannot be performed if there were parsing errors.");
+
+		DiagnosticBag diagnostics = [];
+		EngineValidationResult result = new(parseResult, diagnostics);
+
+		return result;
+	}
+
+	/// <inheritdoc/>
+	public IEngineExecutionResult Execute(IEngineValidationResult validationResult)
+	{
+		if (validationResult.Diagnostics.Any())
+			Throw.New.ArgumentException(nameof(validationResult), $"Execution cannot be performed if there were validation errors.");
+
+		if (validationResult.ParseResult.LeafCommand is not ICommandParseResult command)
+		{
+			Throw.New.ArgumentException(nameof(validationResult), $"The given validation result did not have a parsed command to execute.");
+			return default; // Note(Nightowl): Never happens, needed for analysis to know the 'command' variable is always assigned later on;
+		}
+
+		DiagnosticBag diagnostics = [];
+
+		Debug.Assert(command.Arguments.Count == command.CommandInfo.Arguments.Count);
+
+		if (command.CommandInfo is IMethodCommandInfo methodCommand)
+		{
+			object? container = null;
+			if (methodCommand.Method.IsStatic is false)
+			{
+				container = Activator.CreateInstance(methodCommand.Method.ReflectedType);
+				Debug.Assert(container is not null);
+			}
+
+			object?[] parameters = new object?[methodCommand.Method.GetParameters().Length];
+
+			foreach (IArgumentParseResult argument in command.Arguments)
+				parameters[argument.ArgumentInfo.Position] = argument.Value.Value;
+
+			_ = methodCommand.Method.Invoke(container, parameters);
+		}
+		else if (command.CommandInfo is IVirtualCommandInfo)
+			Throw.New.NotImplementedException($"Executing virtual commands has not been implemented yet.");
+		else
+			Throw.New.InvalidOperationException($"Unknown command type ({command.CommandInfo?.GetType()}).");
+
+		EngineExecutionResult result = new(validationResult, diagnostics);
+
+		return result;
+	}
 	#endregion
 
 	#region Parse helpers
@@ -130,7 +184,6 @@ public sealed class CommandEngine(ICommandGroupInfo rootGroup) : ICommandEngine
 
 		return new GroupParseResult(group, null, [], null);
 	}
-
 	private ICommandParseResult ParseCommand(Context context, ICommandInfo command, TextToken? nameToken)
 	{
 		if (nameToken is not null)
