@@ -30,7 +30,7 @@ public readonly struct TextPoint :
 	{
 		offset.ThrowIfLessThan(0, nameof(offset));
 
-		if (fragment.Length > 0 && offset > fragment.Length)
+		if ((fragment.Length > 0 && offset > fragment.Length) || (fragment.Length is 0 && offset is not 0))
 			Throw.New.ArgumentOutOfRangeException(nameof(offset), offset, $"The given offset ({offset:n0}) was greater than the length of the fragment ({fragment.Length:n0}).");
 
 		Fragment = fragment;
@@ -70,6 +70,7 @@ public readonly struct TextPoint :
 	#endregion
 
 	#region Helpers
+	[ExcludeFromCodeCoverage]
 	private readonly string DebuggerDisplay()
 	{
 		const string typeName = nameof(TextPoint);
