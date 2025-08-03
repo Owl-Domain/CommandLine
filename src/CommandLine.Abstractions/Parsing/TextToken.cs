@@ -36,6 +36,7 @@ public readonly struct TextToken
 	#endregion
 
 	#region Helpers
+	[ExcludeFromCodeCoverage]
 	private readonly string DebuggerDisplay()
 	{
 		const string typeName = nameof(TextToken);
