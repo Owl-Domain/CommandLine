@@ -47,6 +47,7 @@ public sealed class CommandParseResult(
 	#endregion
 
 	#region Helpers
+	[ExcludeFromCodeCoverage]
 	private string DebuggerDisplay()
 	{
 		const string typeName = nameof(CommandParseResult);

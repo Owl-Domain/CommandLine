@@ -37,6 +37,7 @@ public sealed class VirtualCommandInfo : IVirtualCommandInfo
 	#endregion
 
 	#region Methods
+	[ExcludeFromCodeCoverage]
 	private string DebuggerDisplay() => $"Command {{ Name = ({Name}) }}";
 	#endregion
 }

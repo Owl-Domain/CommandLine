@@ -50,6 +50,7 @@ public sealed class ValueFlagParseResult(
 	#endregion
 
 	#region Helpers
+	[ExcludeFromCodeCoverage]
 	private string DebuggerDisplay()
 	{
 		const string typeName = nameof(ValueFlagParseResult);

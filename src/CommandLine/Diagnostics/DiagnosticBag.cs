@@ -68,6 +68,7 @@ public sealed class DiagnosticBag : IDiagnosticBag, ICollection<IDiagnostic>
 	#endregion
 
 	#region Helpers
+	[ExcludeFromCodeCoverage]
 	private string DebuggerDisplay()
 	{
 		const string typeName = nameof(DiagnosticBag);

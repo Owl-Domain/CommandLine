@@ -70,7 +70,10 @@ public sealed class MethodCommandInfo : IMethodCommandInfo
 	{
 		return Method.TryGetCustomAttributes(out attributes);
 	}
+	#endregion
 
+	#region Helpers
+	[ExcludeFromCodeCoverage]
 	private string DebuggerDisplay() => $"Command {{ Name = ({Name}) }}";
 	#endregion
 }

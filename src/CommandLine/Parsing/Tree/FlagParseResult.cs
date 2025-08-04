@@ -26,6 +26,7 @@ public sealed class FlagParseResult(IFlagInfo flagInfo, TextToken prefix, TextTo
 	#endregion
 
 	#region Helpers
+	[ExcludeFromCodeCoverage]
 	private string DebuggerDisplay()
 	{
 		const string typeName = nameof(FlagParseResult);

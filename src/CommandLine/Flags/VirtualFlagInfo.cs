@@ -50,7 +50,8 @@ public class VirtualFlagInfo<T> : IVirtualFlagInfo<T>
 	}
 	#endregion
 
-	#region Methods
+	#region Helpers
+	[ExcludeFromCodeCoverage]
 	private string DebuggerDisplay() => $"Flag {{ LongName = ({LongName}), ShortName = ({ShortName}), ValueType = ({typeof(T)}) }}";
 	#endregion
 }

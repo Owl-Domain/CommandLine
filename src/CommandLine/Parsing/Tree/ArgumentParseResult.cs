@@ -22,6 +22,7 @@ public sealed class ArgumentParseResult(IArgumentInfo argumentInfo, IValueParseR
 	#endregion
 
 	#region Helpers
+	[ExcludeFromCodeCoverage]
 	private string DebuggerDisplay()
 	{
 		const string typeName = nameof(ArgumentParseResult);

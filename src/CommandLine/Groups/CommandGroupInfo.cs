@@ -53,7 +53,8 @@ public sealed class CommandGroupInfo : ICommandGroupInfo
 	}
 	#endregion
 
-	#region Methods
+	#region Helpers
+	[ExcludeFromCodeCoverage]
 	private string DebuggerDisplay() => $"Group {{ Name = ({Name}) }}";
 	#endregion
 }

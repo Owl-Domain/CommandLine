@@ -80,7 +80,10 @@ public sealed class ParameterArgumentInfo<T> : IParameterArgumentInfo<T>
 	{
 		return Parameter.TryGetCustomAttributes(out attributes);
 	}
+	#endregion
 
+	#region Helpers
+	[ExcludeFromCodeCoverage]
 	private string DebuggerDisplay() => $"Argument {{ Name = ({Name}), ValueType = ({typeof(T)}) }}";
 	#endregion
 }
