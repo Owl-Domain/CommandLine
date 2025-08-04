@@ -37,10 +37,12 @@ public sealed class TextParser : ITextParser
 				return Text;
 
 			ReadOnlySpan<char> span = Text;
-			int index = span.IndexOf(' ');
 
-			if (index >= 0)
-				return span[..index];
+			for (int i = 0; i < span.Length; i++)
+			{
+				if (char.IsWhiteSpace(span[i]))
+					return span[..i];
+			}
 
 			return span;
 		}
@@ -65,8 +67,14 @@ public sealed class TextParser : ITextParser
 	/// <param name="isLazy">Whether the parser should be greedy or lazy.</param>
 	public TextParser(IReadOnlyList<TextFragment> fragments, bool isLazy)
 	{
-		if (fragments.Count <= 1)
+		if (fragments.Count < 1)
 			Throw.New.ArgumentException(nameof(fragments), $"The {nameof(TextParser)} requires at least one fragment.");
+
+		for (int i = 0; i < fragments.Count; i++)
+		{
+			if (fragments[i].Index != i)
+				Throw.New.ArgumentException(nameof(fragments), $"The fragment at index #{i:n0} had the incorrect index of #({fragments[i].Index:n0}).");
+		}
 
 		Fragments = fragments;
 		CurrentFragment = Fragments[0];
@@ -113,7 +121,7 @@ public sealed class TextParser : ITextParser
 		fragmentIndex.ThrowIfNotBetween(0, Fragments.Count, RangeCheckMode.InclusiveExclusive, nameof(fragmentIndex));
 
 		TextFragment fragment = Fragments[fragmentIndex];
-		offset.ThrowIfNotBetween(0, fragment.Length, RangeCheckMode.InclusiveExclusive, nameof(offset));
+		offset.ThrowIfNotBetween(0, fragment.Length, RangeCheckMode.Inclusive, nameof(offset));
 
 		_currentFragmentIndex = fragmentIndex;
 		CurrentFragment = fragment;
@@ -132,29 +140,8 @@ public sealed class TextParser : ITextParser
 	/// <inheritdoc/>
 	public void SkipWhitespace()
 	{
-		ReadOnlySpan<char> text = Text;
-
-		if (text.Length is 0)
-			return;
-
-#if NET7_0_OR_GREATER
-		int index = text.IndexOfAnyExcept(' ');
-#else
-		int index = -1;
-		for (int i = 0; i < text.Length; i++)
-		{
-			if (text[i] is not ' ')
-			{
-				index = i;
-				break;
-			}
-		}
-#endif
-
-		if (index > 0)
-			Advance(index);
-		else if (index < 0)
-			Advance(text.Length);
+		while (char.IsWhiteSpace(Current))
+			Advance();
 	}
 	#endregion
 
@@ -164,7 +151,7 @@ public sealed class TextParser : ITextParser
 		offset.ThrowIfLessThan(0, nameof(offset));
 
 		int index = Offset + offset;
-		ReadOnlySpan<char> text = Text;
+		ReadOnlySpan<char> text = CurrentFragment.Text;
 
 		return index < text.Length ? text[index] : '\0';
 	}

@@ -63,6 +63,7 @@ public interface ITextParser
 	void Advance(int amount = 1);
 
 	/// <summary>Skips any inconsequential characters, which might including going over to the next fragment.</summary>
+	/// <exception cref="InvalidOperationException">Thrown if the text parser is at the end of the last fragment.</exception>
 	void SkipTrivia();
 
 	/// <summary>Skips any white-space characters that the parser is currently on.</summary>
