@@ -47,10 +47,12 @@ public sealed class CommandParser : BaseCommandParser
 				if (group.Groups.TryGetValue(name, out ICommandGroupInfo? childGroup))
 				{
 					IParseResult subResult = ParseGroup(context, childGroup);
+					GroupParseResult groupResult = new(childGroup, nameToken, [], subResult);
 
-					return subResult;
+					return groupResult;
 				}
-				else if (group.Commands.TryGetValue(name, out ICommandInfo? command))
+
+				if (group.Commands.TryGetValue(name, out ICommandInfo? command))
 				{
 					ICommandParseResult subCommand = ParseCommand(context, command, nameToken);
 
