@@ -13,6 +13,7 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 	private INameExtractor? _nameExtractor;
 	private ICommandParser? _commandParser;
 	private ICommandValidator? _commandValidator;
+	private ICommandExecutor? _commandExecutor;
 	#endregion
 
 	#region Methods
@@ -61,9 +62,12 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 		if (_classes.Count > 1) Throw.New.NotSupportedException("Extracting commands from multiple classes is not supported yet.");
 
 		WithSelector<PrimitiveValueParserSelector>();
+
 		_nameExtractor ??= NameExtractor.Instance;
 		_commandParser ??= new CommandParser();
 		_commandValidator ??= new CommandValidator();
+		_commandExecutor ??= new CommandExecutor();
+
 
 		Dictionary<string, ICommandGroupInfo> childGroups = [];
 		Dictionary<string, ICommandInfo> childCommands = [];
@@ -79,7 +83,7 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 			childCommands.Add(command.Name, command);
 		}
 
-		return new CommandEngine(group, _commandParser, _commandValidator);
+		return new CommandEngine(group, _commandParser, _commandValidator, _commandExecutor);
 	}
 	#endregion
 

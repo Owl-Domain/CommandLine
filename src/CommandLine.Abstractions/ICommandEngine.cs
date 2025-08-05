@@ -14,6 +14,9 @@ public interface ICommandEngine
 
 	/// <summary>The validator to use for validating the parsed commands.</summary>
 	ICommandValidator Validator { get; }
+
+	/// <summary>The executor to use for executing the validated commands.</summary>
+	ICommandExecutor Executor { get; }
 	#endregion
 
 	#region Methods
@@ -36,6 +39,7 @@ public interface ICommandEngine
 	/// <summary>Executes the given <paramref name="validatorResult"/>.</summary>
 	/// <param name="validatorResult">The validation result to execute.</param>
 	/// <returns>The execution result.</returns>
-	IEngineExecutionResult Execute(ICommandValidatorResult validatorResult);
+	/// <exception cref="ArgumentException">Thrown if the given <paramref name="validatorResult"/> cannot be executed.</exception>
+	ICommandExecutorResult Execute(ICommandValidatorResult validatorResult);
 	#endregion
 }
