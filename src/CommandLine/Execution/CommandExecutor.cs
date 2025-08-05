@@ -46,7 +46,7 @@ public sealed class CommandExecutor : ICommandExecutor
 		else
 			Throw.New.InvalidOperationException($"Unknown command type ({command.CommandInfo?.GetType()}).");
 
-		CommandExecutorResult result = new(validatorResult.Engine, validatorResult, diagnostics);
+		CommandExecutorResult result = new(validatorResult, diagnostics);
 
 		return result;
 	}

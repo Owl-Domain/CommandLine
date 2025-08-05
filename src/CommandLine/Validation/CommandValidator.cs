@@ -13,7 +13,7 @@ public sealed class CommandValidator : ICommandValidator
 			Throw.New.ArgumentException(nameof(parserResult), $"Validation cannot be performed if there were parsing errors.");
 
 		DiagnosticBag diagnostics = [];
-		CommandValidatorResult result = new(parserResult.Engine, parserResult, diagnostics);
+		CommandValidatorResult result = new(parserResult, diagnostics);
 
 		return result;
 	}

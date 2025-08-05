@@ -3,11 +3,9 @@ namespace OwlDomain.CommandLine.Validation;
 /// <summary>
 /// 	Represents the validation result for a parsed command.
 /// </summary>
-/// <param name="engine">The engine that was used for the parsing operation.</param>
 /// <param name="parserResult">The parsing result that was validated.</param>
 /// <param name="diagnostics">The diagnostics that occurred during validation.</param>
 public sealed class CommandValidatorResult(
-	ICommandEngine engine,
 	ICommandParserResult parserResult,
 	IDiagnosticBag diagnostics)
 	: ICommandValidatorResult
@@ -17,7 +15,7 @@ public sealed class CommandValidatorResult(
 	public DiagnosticSource Stage => DiagnosticSource.Validation;
 
 	/// <inheritdoc/>
-	public ICommandEngine Engine { get; } = engine;
+	public ICommandEngine Engine => ParserResult.Engine;
 
 	/// <inheritdoc/>
 	public ICommandParserResult ParserResult { get; } = parserResult;
