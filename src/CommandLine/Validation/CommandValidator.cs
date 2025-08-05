@@ -9,11 +9,14 @@ public sealed class CommandValidator : ICommandValidator
 	/// <inheritdoc/>
 	public ICommandValidatorResult Validate(ICommandParserResult parserResult)
 	{
-		if (parserResult.Diagnostics.Any())
-			Throw.New.ArgumentException(nameof(parserResult), $"Validation cannot be performed if there were parsing errors.");
+		if (parserResult.Successful is false)
+			return new CommandValidatorResult(false, parserResult, new DiagnosticBag(), default);
 
+		Stopwatch watch = Stopwatch.StartNew();
 		DiagnosticBag diagnostics = [];
-		CommandValidatorResult result = new(parserResult, diagnostics);
+
+		watch.Stop();
+		CommandValidatorResult result = new(diagnostics.Any() is false, parserResult, diagnostics, watch.Elapsed);
 
 		return result;
 	}

@@ -21,12 +21,14 @@ public sealed class CommandParser : BaseCommandParser
 	/// <inheritdoc/>
 	protected override ICommandParserResult Parse(ICommandEngine engine, ITextParser parser)
 	{
+		Stopwatch watch = Stopwatch.StartNew();
 		Context context = new(engine, parser);
 		IParseResult? result = ParseGroup(context, engine.RootGroup);
 
 		CheckForLeftOverInput(context);
 
-		return new CommandParserResult(context.Engine, this, context.Diagnostics, result, context.ExtraTokens);
+		watch.Stop();
+		return new CommandParserResult(context.Diagnostics.Any() is false, context.Engine, this, context.Diagnostics, result, context.ExtraTokens, watch.Elapsed);
 	}
 	private IParseResult ParseGroup(Context context, ICommandGroupInfo group)
 	{
@@ -38,12 +40,16 @@ public sealed class CommandParser : BaseCommandParser
 			(false, false) => null,
 		};
 
+		TextPoint start = context.Parser.Point;
+		TextToken? foundName = null;
+
 		if (groupCommandError is not null)
 		{
 			int fragmentIndex = context.Parser.CurrentFragment.Index, offset = context.Parser.Offset;
 
 			if (TryParseName(context.Parser, out TextToken? nameToken, out string? name))
 			{
+				foundName = nameToken;
 				if (group.Groups.TryGetValue(name, out ICommandGroupInfo? childGroup))
 				{
 					IParseResult subResult = ParseGroup(context, childGroup);
@@ -66,12 +72,15 @@ public sealed class CommandParser : BaseCommandParser
 		if (group.ImplicitCommand is not null)
 			return ParseCommand(context, group.ImplicitCommand, null);
 
-		TextLocation location = new(context.Parser.Point, context.Parser.Point);
+		TextLocation location = new(start, context.Parser.Point);
 
 		if (groupCommandError is null && group.Parent is not null)
 			context.Diagnostics.Add(DiagnosticSource.Parsing, location, "There is nothing that can possibly be parsed because nothing was registered in this command group.");
 
-		context.Diagnostics.Add(DiagnosticSource.Parsing, location, $"Expected the {groupCommandError} name.");
+		if (foundName is not null)
+			context.Diagnostics.Add(DiagnosticSource.Parsing, foundName.Value.Location, $"'{foundName.Value.Value}' is not a known {groupCommandError} name.");
+		else
+			context.Diagnostics.Add(DiagnosticSource.Parsing, location, $"Expected the {groupCommandError} name.");
 
 		return new GroupParseResult(group, null, [], null);
 	}

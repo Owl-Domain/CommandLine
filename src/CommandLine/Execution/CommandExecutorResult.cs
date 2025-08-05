@@ -3,14 +3,21 @@ namespace OwlDomain.CommandLine.Execution;
 /// <summary>
 /// 	Represents the execution result for a validated command.
 /// </summary>
+/// <param name="successful">Whether the operation was successful.</param>
 /// <param name="validatorResult">The validation result that was executed.</param>
 /// <param name="diagnostics">The diagnostics that occurred during execution.</param>
+/// <param name="duration">The amount of time that the execution operation took.</param>
 public sealed class CommandExecutorResult(
+	bool successful,
 	ICommandValidatorResult validatorResult,
-	IDiagnosticBag diagnostics)
+	IDiagnosticBag diagnostics,
+	TimeSpan duration)
 	: ICommandExecutorResult
 {
 	#region Properties
+	/// <inheritdoc/>
+	public bool Successful { get; } = successful;
+
 	/// <inheritdoc/>
 	public DiagnosticSource Stage => DiagnosticSource.Execution;
 
@@ -22,5 +29,8 @@ public sealed class CommandExecutorResult(
 
 	/// <inheritdoc/>
 	public IDiagnosticBag Diagnostics { get; } = diagnostics;
+
+	/// <inheritdoc/>
+	public TimeSpan Duration { get; } = duration;
 	#endregion
 }

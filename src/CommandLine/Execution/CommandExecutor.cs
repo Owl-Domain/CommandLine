@@ -9,8 +9,8 @@ public sealed class CommandExecutor : ICommandExecutor
 	/// <inheritdoc/>
 	public ICommandExecutorResult Execute(ICommandValidatorResult validatorResult)
 	{
-		if (validatorResult.Diagnostics.Any())
-			Throw.New.ArgumentException(nameof(validatorResult), $"Execution cannot be performed if there were validation errors.");
+		if (validatorResult.Successful is false)
+			return new CommandExecutorResult(false, validatorResult, new DiagnosticBag(), default);
 
 		if (validatorResult.ParserResult.LeafCommand is not ICommandParseResult command)
 		{
@@ -18,6 +18,7 @@ public sealed class CommandExecutor : ICommandExecutor
 			return default; // Note(Nightowl): Never happens, needed for analysis to know the 'command' variable is always assigned later on;
 		}
 
+		Stopwatch watch = Stopwatch.StartNew();
 		DiagnosticBag diagnostics = [];
 
 		Debug.Assert(command.Arguments.Count == command.CommandInfo.Arguments.Count);
@@ -46,7 +47,8 @@ public sealed class CommandExecutor : ICommandExecutor
 		else
 			Throw.New.InvalidOperationException($"Unknown command type ({command.CommandInfo?.GetType()}).");
 
-		CommandExecutorResult result = new(validatorResult, diagnostics);
+		watch.Stop();
+		CommandExecutorResult result = new(diagnostics.Any() is false, validatorResult, diagnostics, watch.Elapsed);
 
 		return result;
 	}
