@@ -10,6 +10,7 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 	#region Fields
 	private readonly HashSet<Type> _classes = [];
 	private readonly List<IValueParserSelector> _selectors = [];
+	private INameExtractor? _nameExtractor;
 	#endregion
 
 	#region Methods
@@ -58,11 +59,12 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 		if (_classes.Count > 1) Throw.New.NotSupportedException("Extracting commands from multiple classes is not supported yet.");
 
 		WithSelector<PrimitiveValueParserSelector>();
-
-		Type classType = _classes.Single();
+		_nameExtractor ??= NameExtractor.Instance;
 
 		Dictionary<string, ICommandGroupInfo> childGroups = [];
 		Dictionary<string, ICommandInfo> childCommands = [];
+
+		Type classType = _classes.Single();
 		IReadOnlyCollection<IFlagInfo> classFlags = GetFlags(classType);
 
 		CommandGroupInfo group = new(null, null, classFlags, childGroups, childCommands, null);
@@ -80,6 +82,8 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 	#region Build helpers
 	private IReadOnlyCollection<IMethodCommandInfo> GetCommands(Type classType, ICommandGroupInfo group, IReadOnlyCollection<IFlagInfo> classFlags)
 	{
+		Debug.Assert(_nameExtractor is not null);
+
 		List<IMethodCommandInfo> commands = [];
 
 		foreach (MethodInfo method in classType.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static | BindingFlags.FlattenHierarchy))
@@ -90,7 +94,9 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 			if (method.ReturnType != typeof(void))
 				Throw.New.NotSupportedException("Command return values are not supported yet.");
 
-			string name = method.Name.ToLower();
+			string? name = _nameExtractor.GetCommandName(method);
+			if (name is null)
+				Throw.New.InvalidOperationException($"Couldn't extract a command name from the method ({method}).");
 
 			IReadOnlyCollection<IFlagInfo> flags = method.IsStatic ? [] : classFlags;
 			IReadOnlyList<IArgumentInfo> arguments = GetArguments(method);
@@ -103,6 +109,8 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 	}
 	private IReadOnlyCollection<IFlagInfo> GetFlags(Type type)
 	{
+		Debug.Assert(_nameExtractor is not null);
+
 		List<IFlagInfo> flags = [];
 
 		object? instance = Activator.CreateInstance(type);
@@ -119,8 +127,8 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 
 			object? defaultValue = isRequired ? null : property.GetValue(instance);
 
-			string longName = property.Name.ToLower();
-			char shortName = longName[0];
+			string? longName = _nameExtractor.GetLongFlagName(property);
+			char? shortName = _nameExtractor.GetShortFlagName(property);
 			IValueParser parser = SelectValueParser(property);
 
 			IPropertyFlagInfo flag = CreatePropertyFlag(property, longName, shortName, isRequired, defaultValue, parser);
@@ -132,13 +140,15 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 	}
 	private IReadOnlyList<IArgumentInfo> GetArguments(MethodInfo method)
 	{
+		Debug.Assert(_nameExtractor is not null);
+
 		List<IArgumentInfo> arguments = [];
 
 		foreach (ParameterInfo parameter in method.GetParameters())
 		{
 			Debug.Assert(parameter.Name is not null);
 
-			string name = parameter.Name;
+			string name = _nameExtractor.GetArgumentName(parameter.Name);
 			int position = parameter.Position;
 
 			bool isRequired = parameter.HasDefaultValue is false;

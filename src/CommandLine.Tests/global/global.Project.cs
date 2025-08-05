@@ -4,6 +4,7 @@ global using OwlDomain.CommandLine.Commands;
 global using OwlDomain.CommandLine.Groups;
 global using OwlDomain.CommandLine.Parsing;
 global using OwlDomain.CommandLine.Diagnostics;
+global using OwlDomain.CommandLine.Discovery;
 global using OwlDomain.CommandLine.Parsing.Tree;
 global using OwlDomain.CommandLine.Parsing.Values;
 global using OwlDomain.CommandLine.Validation;
