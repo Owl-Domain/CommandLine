@@ -5,7 +5,8 @@ namespace OwlDomain.CommandLine;
 /// </summary>
 /// <param name="rootGroup">The root command group.</param>
 /// <param name="parser">The parser to use for parsing the commands.</param>
-public sealed class CommandEngine(ICommandGroupInfo rootGroup, ICommandParser parser) : ICommandEngine
+/// <param name="validator">The validator to use for validating the parsing commands.</param>
+public sealed class CommandEngine(ICommandGroupInfo rootGroup, ICommandParser parser, ICommandValidator validator) : ICommandEngine
 {
 	#region Properties
 	/// <inheritdoc/>
@@ -13,6 +14,9 @@ public sealed class CommandEngine(ICommandGroupInfo rootGroup, ICommandParser pa
 
 	/// <inheritdoc/>
 	public ICommandParser Parser { get; } = parser;
+
+	/// <inheritdoc/>
+	public ICommandValidator Validator { get; } = validator;
 	#endregion
 
 	#region Functions
@@ -29,26 +33,17 @@ public sealed class CommandEngine(ICommandGroupInfo rootGroup, ICommandParser pa
 	public ICommandParserResult Parse(string command) => Parser.Parse(this, command);
 
 	/// <inheritdoc/>
-	public IEngineValidationResult Validate(ICommandParserResult parseResult)
-	{
-		if (parseResult.Diagnostics.Any())
-			Throw.New.ArgumentException(nameof(parseResult), $"Validation cannot be performed if there were parsing errors.");
-
-		DiagnosticBag diagnostics = [];
-		EngineValidationResult result = new(parseResult, diagnostics);
-
-		return result;
-	}
+	public ICommandValidatorResult Validate(ICommandParserResult parserResult) => Validator.Validate(parserResult);
 
 	/// <inheritdoc/>
-	public IEngineExecutionResult Execute(IEngineValidationResult validationResult)
+	public IEngineExecutionResult Execute(ICommandValidatorResult validatorResult)
 	{
-		if (validationResult.Diagnostics.Any())
-			Throw.New.ArgumentException(nameof(validationResult), $"Execution cannot be performed if there were validation errors.");
+		if (validatorResult.Diagnostics.Any())
+			Throw.New.ArgumentException(nameof(validatorResult), $"Execution cannot be performed if there were validation errors.");
 
-		if (validationResult.ParseResult.LeafCommand is not ICommandParseResult command)
+		if (validatorResult.ParserResult.LeafCommand is not ICommandParseResult command)
 		{
-			Throw.New.ArgumentException(nameof(validationResult), $"The given validation result did not have a parsed command to execute.");
+			Throw.New.ArgumentException(nameof(validatorResult), $"The given validation result did not have a parsed command to execute.");
 			return default; // Note(Nightowl): Never happens, needed for analysis to know the 'command' variable is always assigned later on;
 		}
 
@@ -80,7 +75,7 @@ public sealed class CommandEngine(ICommandGroupInfo rootGroup, ICommandParser pa
 		else
 			Throw.New.InvalidOperationException($"Unknown command type ({command.CommandInfo?.GetType()}).");
 
-		EngineExecutionResult result = new(validationResult, diagnostics);
+		EngineExecutionResult result = new(validatorResult, diagnostics);
 
 		return result;
 	}

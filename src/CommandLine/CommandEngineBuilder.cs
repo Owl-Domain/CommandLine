@@ -12,6 +12,7 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 	private readonly List<IValueParserSelector> _selectors = [];
 	private INameExtractor? _nameExtractor;
 	private ICommandParser? _commandParser;
+	private ICommandValidator? _commandValidator;
 	#endregion
 
 	#region Methods
@@ -62,6 +63,7 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 		WithSelector<PrimitiveValueParserSelector>();
 		_nameExtractor ??= NameExtractor.Instance;
 		_commandParser ??= new CommandParser();
+		_commandValidator ??= new CommandValidator();
 
 		Dictionary<string, ICommandGroupInfo> childGroups = [];
 		Dictionary<string, ICommandInfo> childCommands = [];
@@ -77,7 +79,7 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 			childCommands.Add(command.Name, command);
 		}
 
-		return new CommandEngine(group, _commandParser);
+		return new CommandEngine(group, _commandParser, _commandValidator);
 	}
 	#endregion
 

@@ -11,6 +11,9 @@ public interface ICommandEngine
 
 	/// <summary>The parser to use for parsing the commands.</summary>
 	ICommandParser Parser { get; }
+
+	/// <summary>The validator to use for validating the parsed commands.</summary>
+	ICommandValidator Validator { get; }
 	#endregion
 
 	#region Methods
@@ -24,14 +27,15 @@ public interface ICommandEngine
 	/// <returns>The result of the parse operation.</returns>
 	ICommandParserResult Parse(string command);
 
-	/// <summary>Validates the given <paramref name="parseResult"/>.</summary>
-	/// <param name="parseResult">The parsing result to validate.</param>
+	/// <summary>Validates the given <paramref name="parserResult"/>.</summary>
+	/// <param name="parserResult">The parsing result to validate.</param>
 	/// <returns>The validation result.</returns>
-	IEngineValidationResult Validate(ICommandParserResult parseResult);
+	/// /// <exception cref="ArgumentException">Thrown if the given <paramref name="parserResult"/> cannot be validated.</exception>
+	ICommandValidatorResult Validate(ICommandParserResult parserResult);
 
-	/// <summary>Executes the given <paramref name="validationResult"/>.</summary>
-	/// <param name="validationResult">The validation result to execute.</param>
+	/// <summary>Executes the given <paramref name="validatorResult"/>.</summary>
+	/// <param name="validatorResult">The validation result to execute.</param>
 	/// <returns>The execution result.</returns>
-	IEngineExecutionResult Execute(IEngineValidationResult validationResult);
+	IEngineExecutionResult Execute(ICommandValidatorResult validatorResult);
 	#endregion
 }

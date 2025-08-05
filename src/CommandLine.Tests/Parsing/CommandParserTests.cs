@@ -16,12 +16,13 @@ public sealed class CommandParserTests
 
 		ICommandInfo command = Substitute.For<ICommandInfo>();
 		ICommandGroupInfo rootGroup = Substitute.For<ICommandGroupInfo>();
+		ICommandEngine engine = Substitute.For<ICommandEngine>();
 
 		command.Name.Returns(commandName);
 		rootGroup.Commands.Returns(new Dictionary<string, ICommandInfo>() { { commandName, command } });
+		engine.RootGroup.Returns(rootGroup);
 
 		CommandParser sut = new();
-		CommandEngine engine = new(rootGroup, sut);
 
 		// Act
 		ICommandParserResult result = isLazy ? sut.Parse(engine, commandName) : sut.Parse(engine, [commandName]);
@@ -58,6 +59,7 @@ public sealed class CommandParserTests
 		IArgumentInfo argument = Substitute.For<IArgumentInfo>();
 		ICommandInfo command = Substitute.For<ICommandInfo>();
 		ICommandGroupInfo rootGroup = Substitute.For<ICommandGroupInfo>();
+		ICommandEngine engine = Substitute.For<ICommandEngine>();
 
 		argument.DefaultValue.Returns(null);
 		argument.Parser.Returns(new StringValueParser());
@@ -66,9 +68,9 @@ public sealed class CommandParserTests
 		command.Arguments.Returns([argument]);
 
 		rootGroup.Commands.Returns(new Dictionary<string, ICommandInfo>() { { commandName, command } });
+		engine.RootGroup.Returns(rootGroup);
 
 		CommandParser sut = new();
-		CommandEngine engine = new(rootGroup, sut);
 
 		// Act
 		ICommandParserResult result = isLazy ? sut.Parse(engine, $"{commandName} {argumentValue}") : sut.Parse(engine, [commandName, argumentValue]);
@@ -111,6 +113,7 @@ public sealed class CommandParserTests
 		IArgumentInfo argument = Substitute.For<IArgumentInfo>();
 		ICommandInfo command = Substitute.For<ICommandInfo>();
 		ICommandGroupInfo rootGroup = Substitute.For<ICommandGroupInfo>();
+		ICommandEngine engine = Substitute.For<ICommandEngine>();
 
 		argument.DefaultValue.Returns(null);
 		argument.Parser.Returns(new StringValueParser());
@@ -119,9 +122,9 @@ public sealed class CommandParserTests
 		command.Arguments.Returns([argument]);
 
 		rootGroup.ImplicitCommand.Returns(command);
+		engine.RootGroup.Returns(rootGroup);
 
 		CommandParser sut = new();
-		CommandEngine engine = new(rootGroup, sut);
 
 		// Act
 		ICommandParserResult result = isLazy ? sut.Parse(engine, argumentValue) : sut.Parse(engine, [argumentValue]);
@@ -163,6 +166,7 @@ public sealed class CommandParserTests
 		ICommandGroupInfo group = Substitute.For<ICommandGroupInfo>();
 		ICommandInfo command = Substitute.For<ICommandInfo>();
 		ICommandGroupInfo rootGroup = Substitute.For<ICommandGroupInfo>();
+		ICommandEngine engine = Substitute.For<ICommandEngine>();
 
 		group.Name.Returns(groupName);
 		group.Parent.Returns(rootGroup);
@@ -172,9 +176,9 @@ public sealed class CommandParserTests
 
 		rootGroup.Groups.Returns(new Dictionary<string, ICommandGroupInfo>() { { groupName, group } });
 		group.Commands.Returns(new Dictionary<string, ICommandInfo>() { { commandName, command } });
+		engine.RootGroup.Returns(rootGroup);
 
 		CommandParser sut = new();
-		CommandEngine engine = new(rootGroup, sut);
 
 		// Act
 		ICommandParserResult result = isLazy ? sut.Parse(engine, $"{groupName} {commandName}") : sut.Parse(engine, [groupName, commandName]);
@@ -214,15 +218,16 @@ public sealed class CommandParserTests
 		ICommandInfo command = Substitute.For<ICommandInfo>();
 		ICommandGroupInfo group = Substitute.For<ICommandGroupInfo>();
 		ICommandGroupInfo rootGroup = Substitute.For<ICommandGroupInfo>();
+		ICommandEngine engine = Substitute.For<ICommandEngine>();
 
 		command.Name.Returns("command");
 		group.Name.Returns("group");
 
 		rootGroup.Groups.Returns(new Dictionary<string, ICommandGroupInfo>() { { "group", group } });
 		rootGroup.ImplicitCommand.Returns(command);
+		engine.RootGroup.Returns(rootGroup);
 
 		CommandParser sut = new();
-		CommandEngine engine = new(rootGroup, sut);
 
 		// Act
 		ICommandParserResult result = isLazy ? sut.Parse(engine, "") : sut.Parse(engine, [""]);
