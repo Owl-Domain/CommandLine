@@ -46,5 +46,40 @@ public sealed class CommandEngine(
 
 	/// <inheritdoc/>
 	public ICommandExecutorResult Execute(ICommandValidatorResult validatorResult) => Executor.Execute(validatorResult);
+
+	/// <inheritdoc/>
+	public ICommandRunResult Run(string[] fragments)
+	{
+		Stopwatch watch = Stopwatch.StartNew();
+		ICommandParserResult parserResult = Parser.Parse(this, fragments);
+
+		return Run(watch, parserResult);
+	}
+
+	/// <inheritdoc/>
+	public ICommandRunResult Run(string command)
+	{
+		Stopwatch watch = Stopwatch.StartNew();
+		ICommandParserResult parserResult = Parser.Parse(this, command);
+
+		return Run(watch, parserResult);
+	}
+
+	private ICommandRunResult Run(Stopwatch watch, ICommandParserResult parserResult)
+	{
+		ICommandValidatorResult validatorResult = Validator.Validate(parserResult);
+		ICommandExecutorResult executorResult = Executor.Execute(validatorResult);
+
+		DiagnosticBag diagnostics =
+		[
+			..parserResult.Diagnostics,
+			.. validatorResult.Diagnostics,
+			.. executorResult.Diagnostics
+		];
+
+		watch.Stop();
+
+		return new CommandRunResult(executorResult.Successful, parserResult, validatorResult, executorResult, diagnostics, watch.Elapsed);
+	}
 	#endregion
 }

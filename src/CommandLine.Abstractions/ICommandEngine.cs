@@ -20,14 +20,22 @@ public interface ICommandEngine
 	#endregion
 
 	#region Methods
-	/// <summary>Parses the given <paramref name="fragments"/>.</summary>
-	/// <param name="fragments">The fragments to parse.</param>
+	/// <summary>Parses the given command <paramref name="fragments"/>.</summary>
+	/// <param name="fragments">The command fragments to parse.</param>
 	/// <returns>The result of the parse operation.</returns>
+	/// <remarks>
+	/// 	This overload is intended to be used when you have the tokenised command fragments,
+	/// 	for example when you have access to the <see cref="Environment.GetCommandLineArgs"/>.
+	/// </remarks>
 	ICommandParserResult Parse(string[] fragments);
 
 	/// <summary>Parses the given <paramref name="command"/> text.</summary>
 	/// <param name="command">The command text to parse.</param>
 	/// <returns>The result of the parse operation.</returns>
+	/// <remarks>
+	/// 	This overload is intended to be used in REPL-like circumstances
+	/// 	where you only have access to the full command.
+	/// </remarks>
 	ICommandParserResult Parse(string command);
 
 	/// <summary>Validates the given <paramref name="parserResult"/>.</summary>
@@ -41,5 +49,23 @@ public interface ICommandEngine
 	/// <returns>The execution result.</returns>
 	/// <exception cref="ArgumentException">Thrown if the given <paramref name="validatorResult"/> cannot be executed.</exception>
 	ICommandExecutorResult Execute(ICommandValidatorResult validatorResult);
+
+	/// <summary>Parses, validates and executes the given command <paramref name="fragments"/>.</summary>
+	/// <param name="fragments">The command fragments to process.</param>
+	/// <returns>The result of the run operation.</returns>
+	/// <remarks>
+	/// 	This overload is intended to be used when you have the tokenised command fragments,
+	/// 	for example when you have access to the <see cref="Environment.GetCommandLineArgs"/>.
+	/// </remarks>
+	ICommandRunResult Run(string[] fragments);
+
+	/// <summary>Parses, validates and executes the given <paramref name="command"/> text.</summary>
+	/// <param name="command">The command to process.</param>
+	/// <returns>The result of the run operation.</returns>
+	/// <remarks>
+	/// 	This overload is intended to be used in REPL-like circumstances
+	/// 	where you only have access to the full command.
+	/// </remarks>
+	ICommandRunResult Run(string command);
 	#endregion
 }
