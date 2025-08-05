@@ -36,6 +36,7 @@ public sealed class Diagnostic : IDiagnostic
 	#endregion
 
 	#region Helpers
+	[ExcludeFromCodeCoverage]
 	private string DebuggerDisplay()
 	{
 		const string typeName = nameof(Diagnostic);

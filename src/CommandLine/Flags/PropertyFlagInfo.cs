@@ -82,7 +82,10 @@ public class PropertyFlagInfo<T> : IPropertyFlagInfo<T>
 	{
 		return Property.TryGetCustomAttributes(out attributes);
 	}
+	#endregion
 
+	#region Helpers
+	[ExcludeFromCodeCoverage]
 	private string DebuggerDisplay() => $"Flag {{ LongName = ({LongName}), ShortName = ({ShortName}), ValueType = ({typeof(T)}) }}";
 	#endregion
 }

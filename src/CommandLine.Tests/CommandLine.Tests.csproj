@@ -1,0 +1,32 @@
+<Project Sdk="MSTest.Sdk/3.6.4">
+
+	<!-- Project -->
+	<PropertyGroup Label="project">
+		<TargetFrameworks>net9.0</TargetFrameworks>
+		<LangVersion>13</LangVersion>
+		<Nullable>enable</Nullable>
+
+		<AssemblyName>OwlDomain.CommandLine.Tests</AssemblyName>
+		<RootNamespace>OwlDomain.CommandLine.Tests</RootNamespace>
+
+		<UseVSTest>true</UseVSTest>
+	</PropertyGroup>
+
+	<!-- Project references -->
+	<ItemGroup Label="projects">
+		<ProjectReference Include="../CommandLine/CommandLine.csproj" />
+	</ItemGroup>
+
+	<!-- Package references -->
+	<ItemGroup Label="packages">
+		<PackageReference Include="OwlDomain.Testing.Assertions" Version="1.3.0" />
+		<PackageReference Include="OwlDomain.Testing.MSTest" Version="1.1.0" />
+
+		<PackageReference Include="NSubstitute" Version="5.3.0" />
+		<PackageReference Include="NSubstitute.Analyzers.CSharp" Version="1.0.17">
+		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		  <PrivateAssets>all</PrivateAssets>
+		</PackageReference>
+	</ItemGroup>
+
+</Project>

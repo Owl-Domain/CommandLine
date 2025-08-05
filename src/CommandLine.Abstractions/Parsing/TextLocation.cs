@@ -29,6 +29,7 @@ public readonly struct TextLocation
 	#endregion
 
 	#region Helpers
+	[ExcludeFromCodeCoverage]
 	private readonly string DebuggerDisplay()
 	{
 		const string typeName = nameof(TextLocation);

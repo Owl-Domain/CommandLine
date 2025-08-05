@@ -82,7 +82,10 @@ public class ParameterFlagInfo<T> : IParameterFlagInfo<T>
 	{
 		return Parameter.TryGetCustomAttributes(out attributes);
 	}
+	#endregion
 
+	#region Helpers
+	[ExcludeFromCodeCoverage]
 	private string DebuggerDisplay() => $"Flag {{ LongName = ({LongName}), ShortName = ({ShortName}), ValueType = ({typeof(T)}) }}";
 	#endregion
 }

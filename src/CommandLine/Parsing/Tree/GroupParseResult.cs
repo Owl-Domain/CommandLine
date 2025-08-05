@@ -61,6 +61,7 @@ public sealed class GroupParseResult : IGroupParseResult
 	#endregion
 
 	#region Helpers
+	[ExcludeFromCodeCoverage]
 	private string DebuggerDisplay()
 	{
 		const string typeName = nameof(GroupParseResult);

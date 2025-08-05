@@ -1,9 +1,9 @@
-namespace OwlDomain.CommandLine.Parsing.Tree;
+namespace OwlDomain.CommandLine.Parsing;
 
 /// <summary>
 /// 	Represents the result of a command engine parse operation.
 /// </summary>
-public sealed class EngineParseResult : IEngineParseResult
+public sealed class CommandParserResult : ICommandParserResult
 {
 	#region Fields
 	private readonly IReadOnlyCollection<TextToken> _extraTokens;
@@ -11,7 +11,13 @@ public sealed class EngineParseResult : IEngineParseResult
 
 	#region Properties
 	/// <inheritdoc/>
+	public DiagnosticSource Stage => DiagnosticSource.Parsing;
+
+	/// <inheritdoc/>
 	public ICommandEngine Engine { get; }
+
+	/// <inheritdoc/>
+	public ICommandParser Parser { get; }
 
 	/// <inheritdoc/>
 	public IDiagnosticBag Diagnostics { get; }
@@ -30,13 +36,15 @@ public sealed class EngineParseResult : IEngineParseResult
 	#endregion
 
 	#region Constructors
-	/// <summary>Creates a new instance of the <see cref="EngineParseResult"/>.</summary>
+	/// <summary>Creates a new instance of the <see cref="CommandParserResult"/>.</summary>
 	/// <param name="engine">The engine that was used for the parsing operation.</param>
+	/// <param name="parser">The parser that was used to parse the command.</param>
 	/// <param name="diagnostics">The diagnostics that occurred during the parsing operation.</param>
 	/// <param name="commandOrGroup">The result for the parsed command or command group.</param>
 	/// <param name="extraTokens">Any extra tokens that were parsed that might not fit into the tree.</param>
-	public EngineParseResult(
+	public CommandParserResult(
 		ICommandEngine engine,
+		ICommandParser parser,
 		IDiagnosticBag diagnostics,
 		IParseResult? commandOrGroup,
 		IReadOnlyCollection<TextToken> extraTokens)
@@ -45,6 +53,7 @@ public sealed class EngineParseResult : IEngineParseResult
 			Throw.New.ArgumentException(nameof(IParseResult), $"The given parse result ({commandOrGroup.GetType()}) was not a command or a group parse result.");
 
 		Engine = engine;
+		Parser = parser;
 		Diagnostics = diagnostics;
 		CommandOrGroup = commandOrGroup;
 		_extraTokens = extraTokens;
