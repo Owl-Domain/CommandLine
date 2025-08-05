@@ -9,6 +9,7 @@ namespace OwlDomain.CommandLine;
 /// <param name="executorResult">The result from executing the command</param>
 /// <param name="diagnostics">All of the diagnostics that have occurred while processing the command.</param>
 /// <param name="duration">The total amount of time it took to process the command.</param>
+[DebuggerDisplay($"{{{nameof(DebuggerDisplay)}(), nq}}")]
 public sealed class CommandRunResult(
 	bool successful,
 	ICommandParserResult parserResult,
@@ -36,5 +37,16 @@ public sealed class CommandRunResult(
 
 	/// <inheritdoc/>
 	public TimeSpan Duration { get; } = duration;
+	#endregion
+
+	#region Helpers
+	private string DebuggerDisplay()
+	{
+		const string typeName = nameof(CommandRunResult);
+		const string successfulName = nameof(Successful);
+		const string durationName = nameof(Duration);
+
+		return $"{typeName} {{ {successfulName} = ({Successful}), {durationName} = ({Duration}) }}";
+	}
 	#endregion
 }

@@ -7,6 +7,7 @@ namespace OwlDomain.CommandLine.Execution;
 /// <param name="validatorResult">The validation result that was executed.</param>
 /// <param name="diagnostics">The diagnostics that occurred during execution.</param>
 /// <param name="duration">The amount of time that the execution operation took.</param>
+[DebuggerDisplay($"{{{nameof(DebuggerDisplay)}(), nq}}")]
 public sealed class CommandExecutorResult(
 	bool successful,
 	ICommandValidatorResult validatorResult,
@@ -32,5 +33,17 @@ public sealed class CommandExecutorResult(
 
 	/// <inheritdoc/>
 	public TimeSpan Duration { get; } = duration;
+	#endregion
+
+	#region Helpers
+	[ExcludeFromCodeCoverage]
+	private string DebuggerDisplay()
+	{
+		const string typeName = nameof(CommandExecutorResult);
+		const string successfulName = nameof(Successful);
+		const string durationName = nameof(Duration);
+
+		return $"{typeName} {{ {successfulName} = ({Successful}), {durationName} = ({Duration}) }}";
+	}
 	#endregion
 }

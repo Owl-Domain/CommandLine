@@ -3,6 +3,7 @@ namespace OwlDomain.CommandLine.Parsing;
 /// <summary>
 /// 	Represents the result of a command engine parse operation.
 /// </summary>
+[DebuggerDisplay($"{{{nameof(DebuggerDisplay)}(), nq}}")]
 public sealed class CommandParserResult : ICommandParserResult
 {
 	#region Fields
@@ -86,6 +87,15 @@ public sealed class CommandParserResult : ICommandParserResult
 	#endregion
 
 	#region Helpers
+	[ExcludeFromCodeCoverage]
+	private string DebuggerDisplay()
+	{
+		const string typeName = nameof(CommandParserResult);
+		const string successfulName = nameof(Successful);
+		const string durationName = nameof(Duration);
+
+		return $"{typeName} {{ {successfulName} = ({Successful}), {durationName} = ({Duration}) }}";
+	}
 	private static ICommandParseResult? GetLeafCommand(IParseResult? result)
 	{
 		while (result is not null)
