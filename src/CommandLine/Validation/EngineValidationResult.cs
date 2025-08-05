@@ -6,13 +6,13 @@ namespace OwlDomain.CommandLine.Validation;
 /// <param name="parseResult">The parsing result that was validated.</param>
 /// <param name="diagnostics">The diagnostics that occurred during validation.</param>
 public sealed class EngineValidationResult(
-	IEngineParseResult parseResult,
+	ICommandParserResult parseResult,
 	IDiagnosticBag diagnostics)
 	: IEngineValidationResult
 {
 	#region Properties
 	/// <inheritdoc/>
-	public IEngineParseResult ParseResult { get; } = parseResult;
+	public ICommandParserResult ParseResult { get; } = parseResult;
 
 	/// <inheritdoc/>
 	public IDiagnosticBag Diagnostics { get; } = diagnostics;

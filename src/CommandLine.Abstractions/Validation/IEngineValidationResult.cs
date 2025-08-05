@@ -7,7 +7,7 @@ public interface IEngineValidationResult
 {
 	#region Properties
 	/// <summary>The parsing result that was validated.</summary>
-	IEngineParseResult ParseResult { get; }
+	ICommandParserResult ParseResult { get; }
 
 	/// <summary>The diagnostics that occurred during validation.</summary>
 	IDiagnosticBag Diagnostics { get; }

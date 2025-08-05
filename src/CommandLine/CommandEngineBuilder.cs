@@ -11,6 +11,7 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 	private readonly HashSet<Type> _classes = [];
 	private readonly List<IValueParserSelector> _selectors = [];
 	private INameExtractor? _nameExtractor;
+	private ICommandParser? _commandParser;
 	#endregion
 
 	#region Methods
@@ -60,6 +61,7 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 
 		WithSelector<PrimitiveValueParserSelector>();
 		_nameExtractor ??= NameExtractor.Instance;
+		_commandParser ??= new CommandParser();
 
 		Dictionary<string, ICommandGroupInfo> childGroups = [];
 		Dictionary<string, ICommandInfo> childCommands = [];
@@ -75,7 +77,7 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 			childCommands.Add(command.Name, command);
 		}
 
-		return new CommandEngine(group);
+		return new CommandEngine(group, _commandParser);
 	}
 	#endregion
 
