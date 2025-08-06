@@ -35,6 +35,13 @@ public readonly struct TextToken
 	}
 	#endregion
 
+	#region Methods
+	/// <summary>Clones the current token with the new <paramref name="kind"/>.</summary>
+	/// <param name="kind">The new kind of the text token.</param>
+	/// <returns>The cloned token.</returns>
+	public readonly TextToken CloneAs(TextTokenKind kind) => new(kind, Location, Value);
+	#endregion
+
 	#region Helpers
 	[ExcludeFromCodeCoverage]
 	private readonly string DebuggerDisplay()

@@ -79,7 +79,7 @@ public static class ITextParserExtensions
 	#region Methods
 	/// <summary>Advances the given text <paramref name="parser"/> until the end of the text remaining in the current fragment.</summary>
 	/// <param name="parser">The text parser to advance.</param>
-	/// <returns>The string that was skipped.</returns>
+	/// <returns>The text that was consumed.</returns>
 	public static string AdvanceText(this ITextParser parser)
 	{
 		if (parser.Text.Length is 0)
@@ -93,7 +93,7 @@ public static class ITextParserExtensions
 
 	/// <summary>Advances the given text <paramref name="parser"/> until the next natural break in the text remaining in the current fragment.</summary>
 	/// <param name="parser">The text parser to advance.</param>
-	/// <returns>The string that was skipped.</returns>
+	/// <returns>The text that was consumed.</returns>
 	public static string AdvanceUntilBreak(this ITextParser parser)
 	{
 		if (parser.TextUntilBreak.Length is 0)
@@ -105,8 +105,53 @@ public static class ITextParserExtensions
 		return value;
 	}
 
+	/// <summary>Advances the given text <paramref name="parser"/> while the given <paramref name="predicate"/> returns <see langword="true"/>.</summary>
+	/// <param name="parser">The text parser to advance.</param>
+	/// <param name="predicate">The predicate to use for controlling the advancement.</param>
+	/// <returns>The text that was consumed.</returns>
+	public static string AdvanceWhile(this ITextParser parser, Predicate<char> predicate)
+	{
+		ReadOnlySpan<char> text = parser.Text;
+
+		for (int i = 0; i < text.Length; i++)
+		{
+			if (predicate.Invoke(text[i]) is false)
+			{
+				if (i > 0)
+					parser.Advance(i);
+
+				return text[..i].ToString();
+			}
+		}
+
+		return parser.AdvanceText();
+	}
+
+	/// <summary>Advances the given text <paramref name="parser"/> until the given <paramref name="predicate"/> returns <see langword="true"/>.</summary>
+	/// <param name="parser">The text parser to advance.</param>
+	/// <param name="predicate">The predicate to use for controlling the advancement.</param>
+	/// <returns>The text that was consumed.</returns>
+	public static string AdvanceUntil(this ITextParser parser, Predicate<char> predicate)
+	{
+		ReadOnlySpan<char> text = parser.Text;
+
+		for (int i = 0; i < text.Length; i++)
+		{
+			if (predicate.Invoke(text[i]))
+			{
+				if (i > 0)
+					parser.Advance(i);
+
+				return text[..i].ToString();
+			}
+		}
+
+		return parser.AdvanceText();
+	}
+
 	/// <summary>Skips to the end of the last fragment.</summary>
 	/// <param name="parser">The text parser to advance.</param>
+	/// <returns>The text that was consumed.</returns>
 	public static string SkipToEnd(this ITextParser parser)
 	{
 		StringBuilder builder = new();

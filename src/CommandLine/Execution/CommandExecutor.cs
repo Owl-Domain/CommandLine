@@ -25,16 +25,7 @@ public sealed class CommandExecutor : ICommandExecutor
 
 		if (command.CommandInfo is IMethodCommandInfo methodCommand)
 		{
-			object? container = null;
-			if (methodCommand.Method.IsStatic is false)
-			{
-				Type? containerType = methodCommand.Method.ReflectedType;
-				Debug.Assert(containerType is not null);
-
-				container = Activator.CreateInstance(containerType);
-				Debug.Assert(container is not null);
-			}
-
+			object? container = SetupContainer(validatorResult.ParserResult, methodCommand);
 			object?[] parameters = new object?[methodCommand.Method.GetParameters().Length];
 
 			foreach (IArgumentParseResult argument in command.Arguments)
@@ -51,6 +42,36 @@ public sealed class CommandExecutor : ICommandExecutor
 		CommandExecutorResult result = new(diagnostics.Any() is false, validatorResult, diagnostics, watch.Elapsed);
 
 		return result;
+	}
+	#endregion
+
+	#region Helpers
+	private object? SetupContainer(ICommandParserResult parserResult, IMethodCommandInfo command)
+	{
+		if (command.Method.IsStatic is true)
+			return null;
+
+		Type? containerType = command.Method.ReflectedType;
+		Debug.Assert(containerType is not null);
+
+		object? container = Activator.CreateInstance(containerType);
+		Debug.Assert(container is not null);
+
+		foreach (IFlagParseResult flag in parserResult.Flags)
+		{
+			object? value = flag is IValueFlagParseResult valueFlag ? valueFlag.Value.Value : true;
+
+			if (flag.FlagInfo is IPropertyFlagInfo propertyFlag)
+			{
+				Type? declaringType = propertyFlag.Property.DeclaringType;
+				Debug.Assert(declaringType is not null);
+
+				if (containerType == declaringType || declaringType.IsAssignableFrom(containerType))
+					propertyFlag.Property.SetValue(container, value);
+			}
+		}
+
+		return container;
 	}
 	#endregion
 }

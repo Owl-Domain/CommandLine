@@ -47,13 +47,16 @@ public sealed class CommandParser : BaseCommandParser
 		{
 			int fragmentIndex = context.Parser.CurrentFragment.Index, offset = context.Parser.Offset;
 
-			if (TryParseName(context.Parser, out TextToken? nameToken, out string? name))
+			if (TryParseName(context.Parser, out TextToken nameToken, out string? name))
 			{
 				foundName = nameToken;
 				if (group.Groups.TryGetValue(name, out ICommandGroupInfo? childGroup))
 				{
+					List<IFlagParseResult> flags = [];
+					TryParseFlags(context, group.SharedFlags, flags);
+
 					IParseResult subResult = ParseGroup(context, childGroup);
-					GroupParseResult groupResult = new(childGroup, nameToken, [], subResult);
+					GroupParseResult groupResult = new(childGroup, nameToken, flags, subResult);
 
 					return groupResult;
 				}
@@ -61,12 +64,11 @@ public sealed class CommandParser : BaseCommandParser
 				if (group.Commands.TryGetValue(name, out ICommandInfo? command))
 				{
 					ICommandParseResult subCommand = ParseCommand(context, command, nameToken);
-
 					return subCommand;
 				}
 			}
-			else
-				context.Parser.Restore(fragmentIndex, offset);
+
+			context.Parser.Restore(fragmentIndex, offset);
 		}
 
 		if (group.ImplicitCommand is not null)
@@ -92,8 +94,12 @@ public sealed class CommandParser : BaseCommandParser
 		List<IFlagParseResult> flags = [];
 		List<IArgumentParseResult> arguments = [];
 
+		TryParseFlags(context, command.Flags, flags);
+
 		foreach (IArgumentInfo argumentInfo in command.Arguments)
 		{
+			TryParseFlags(context, command.Flags, flags);
+
 			if (TryParseArgument(context, argumentInfo, out IArgumentParseResult? result) is false)
 				break;
 
@@ -131,6 +137,180 @@ public sealed class CommandParser : BaseCommandParser
 
 		return false;
 	}
+	private void TryParseFlags(Context context, IReadOnlyCollection<IFlagInfo> availableFlags, List<IFlagParseResult> container)
+	{
+		do
+		{
+			int fragmentIndex = context.Parser.CurrentFragment.Index, offset = context.Parser.Offset;
+			if (TryParseFlag(context, availableFlags, out IFlagParseResult? flag) is false)
+			{
+				context.Parser.Restore(fragmentIndex, offset);
+				break;
+			}
+
+			container.Add(flag);
+			context.Parser.SkipTrivia();
+		}
+		while (true);
+	}
+	private bool TryParseFlag(Context context, IReadOnlyCollection<IFlagInfo> availableFlags, [NotNullWhen(true)] out IFlagParseResult? result)
+	{
+		if (context.Parser.Current is '-' && context.Parser.Next is '-')
+			return TryParseLongFlag(context, availableFlags, out result);
+
+		if (context.Parser.Current is '-')
+			return TryParseShortFlag(context, availableFlags, out result);
+
+		result = default;
+		return false;
+	}
+	private bool TryParseLongFlag(Context context, IReadOnlyCollection<IFlagInfo> availableFlags, [NotNullWhen(true)] out IFlagParseResult? result)
+	{
+		TextPoint start = context.Parser.Point;
+
+		Debug.Assert(context.Parser.Current is '-' && context.Parser.Next is '-');
+		context.Parser.Advance(2);
+
+		TextToken prefix = new(TextTokenKind.Symbol, new(start, context.Parser.Point), "--");
+
+		result = default;
+
+		if (TryParseFlagName(context.Parser, out TextToken nameToken, out string? name) is false)
+		{
+			context.Diagnostics.Add(DiagnosticSource.Parsing, new(context.Parser.Point, context.Parser.Point), "Couldn't parse the flag name.");
+			return false;
+		}
+
+		IFlagInfo? flag = availableFlags.SingleOrDefault(f => f.LongName == name);
+
+		if (flag is null)
+		{
+			context.Diagnostics.Add(DiagnosticSource.Parsing, nameToken.Location, $"Couldn't find a flag with the long name '{name}'.");
+			return false;
+		}
+
+		if (TryParseFlagValue(context, prefix, nameToken, flag, out IValueFlagParseResult? resultValue) is false)
+		{
+			context.Diagnostics.Add(DiagnosticSource.Parsing, nameToken.Location, $"Couldn't parse the value for the '--{name}' flag.");
+			return false;
+		}
+
+		result = resultValue;
+		return true;
+	}
+	private bool TryParseShortFlag(Context context, IReadOnlyCollection<IFlagInfo> availableFlags, [NotNullWhen(true)] out IFlagParseResult? result)
+	{
+		TextPoint start = context.Parser.Point;
+
+		Debug.Assert(context.Parser.Current is '-');
+		context.Parser.Advance();
+
+		TextToken prefix = new(TextTokenKind.Symbol, new(start, context.Parser.Point), "-");
+
+		result = default;
+
+		if (TryParseFlagName(context.Parser, out TextToken nameToken, out string? name) is false)
+		{
+			context.Diagnostics.Add(DiagnosticSource.Parsing, new(context.Parser.Point, context.Parser.Point), "Couldn't parse the flag name.");
+			return false;
+		}
+
+		Debug.Assert(name.Length > 0);
+
+		if (name.Length > 1)
+		{
+			context.Diagnostics.Add(DiagnosticSource.Parsing, nameToken.Location, $"Special short flag syntax is not supported yet.");
+			return false;
+		}
+
+		IFlagInfo? flag = availableFlags.SingleOrDefault(f => f.ShortName == name[0]);
+		if (flag is null)
+		{
+			context.Diagnostics.Add(DiagnosticSource.Parsing, nameToken.Location, $"Couldn't find a flag with the short name '{name[0]}'.");
+			return false;
+		}
+
+		if (TryParseFlagValue(context, prefix, nameToken, flag, out IValueFlagParseResult? resultValue) is false)
+		{
+			context.Diagnostics.Add(DiagnosticSource.Parsing, nameToken.Location, $"Couldn't parse the value for the '-{name[0]}' flag.");
+			return false;
+		}
+
+		result = resultValue;
+		return true;
+	}
+	private bool TryParseFlagValue(Context context, TextToken prefix, TextToken name, IFlagInfo flag, [NotNullWhen(true)] out IValueFlagParseResult? result)
+	{
+		if (TryParseFlagValueSeparator(context, flag, out TextToken? separator) is false)
+		{
+			result = default;
+			return false;
+		}
+
+		TextLocation location = new(context.Parser.Point, context.Parser.Point);
+
+		FlagValueParseContext flagContext = new(context.Engine, flag);
+		IValueParseResult value = flag.Parser.Parse(flagContext, context.Parser);
+
+		if (value.Error is null)
+		{
+			context.Parser.SkipTrivia();
+
+			result = new ValueFlagParseResult(flag, prefix, name, separator, value);
+			return true;
+		}
+
+		result = default;
+
+		if (flag.IsRequired)
+		{
+			if (value.Error == string.Empty)
+				context.Diagnostics.Add(DiagnosticSource.Parsing, location, $"Expected value for the '{prefix.Value}{name.Value}' flag.");
+			else
+				context.Diagnostics.Add(DiagnosticSource.Parsing, value.Location, value.Error);
+		}
+		else if (value.Error != string.Empty)
+			context.Diagnostics.Add(DiagnosticSource.Parsing, value.Location, value.Error);
+
+		return false;
+	}
+	private bool TryParseFlagValueSeparator(Context context, IFlagInfo flag, out TextToken? separator)
+	{
+		TextPoint start = context.Parser.Point;
+
+		if (context.Parser.Current is '=' or ':')
+		{
+			string text = context.Parser.Current.ToString();
+
+			context.Parser.Advance();
+			TextPoint end = context.Parser.Point;
+			context.Parser.SkipTrivia();
+
+			separator = new(TextTokenKind.Symbol, new(start, end), text);
+			return true;
+		}
+
+		if (char.IsWhiteSpace(context.Parser.Current) || ((context.Parser.IsLazy is false) && context.Parser.IsAtEnd))
+		{
+			if (flag.Kind is not FlagKind.Regular)
+			{
+				context.Diagnostics.Add(DiagnosticSource.Parsing, new(start, start), $"Whitespace can only be used as a flag value separator on normal flags.");
+
+				separator = default;
+				return false;
+			}
+
+			context.Parser.SkipTrivia();
+
+			separator = null;
+			return true;
+		}
+
+		context.Diagnostics.Add(DiagnosticSource.Parsing, new(start, start), $"Unknown flag value separator, use either '=' or ':' symbols.");
+
+		separator = default;
+		return false;
+	}
 	#endregion
 
 	#region Helpers
@@ -165,10 +345,27 @@ public sealed class CommandParser : BaseCommandParser
 			context.ExtraTokens.Add(token);
 		}
 	}
-	private static bool TryParseName(ITextParser parser, [NotNullWhen(true)] out TextToken? token, [NotNullWhen(true)] out string? name)
+	private static bool TryParseFlagName(ITextParser parser, out TextToken token, [NotNullWhen(true)] out string? name)
 	{
 		TextPoint start = parser.Point;
-		name = parser.AdvanceUntilBreak();
+		name = parser.AdvanceWhile(c => c is '-' or '_' || char.IsLetterOrDigit(c));
+		TextPoint end = parser.Point;
+
+		if (string.IsNullOrEmpty(name))
+		{
+			token = default;
+			name = default;
+
+			return false;
+		}
+
+		token = new(TextTokenKind.FlagName, new(start, end), name);
+		return true;
+	}
+	private static bool TryParseName(ITextParser parser, out TextToken token, [NotNullWhen(true)] out string? name)
+	{
+		TextPoint start = parser.Point;
+		name = parser.AdvanceWhile(c => c is '-' or '_' || char.IsLetterOrDigit(c));
 		TextPoint end = parser.Point;
 
 		if (string.IsNullOrEmpty(name))

@@ -139,7 +139,7 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 			char? shortName = _nameExtractor.GetShortFlagName(property);
 			IValueParser parser = SelectValueParser(property);
 
-			IPropertyFlagInfo flag = CreatePropertyFlag(property, longName, shortName, isRequired, defaultValue, parser);
+			IPropertyFlagInfo flag = CreatePropertyFlag(property, FlagKind.Regular, longName, shortName, isRequired, defaultValue, parser);
 
 			flags.Add(flag);
 		}
@@ -197,20 +197,20 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 	#endregion
 
 	#region Generic type helpers
-	private static IPropertyFlagInfo CreatePropertyFlag(PropertyInfo property, string? longName, char? shortName, bool isRequired, object? defaultValue, IValueParser parser)
+	private static IPropertyFlagInfo CreatePropertyFlag(PropertyInfo property, FlagKind kind, string? longName, char? shortName, bool isRequired, object? defaultValue, IValueParser parser)
 	{
 		Type type = typeof(PropertyFlagInfo<>).MakeGenericType(property.PropertyType);
 
-		object? untyped = Activator.CreateInstance(type, [property, longName, shortName, isRequired, defaultValue, parser]);
+		object? untyped = Activator.CreateInstance(type, [property, kind, longName, shortName, isRequired, defaultValue, parser]);
 		Debug.Assert(untyped is not null);
 
 		return (IPropertyFlagInfo)untyped;
 	}
-	private static IParameterFlagInfo CreateParameterFlag(ParameterInfo parameter, string? longName, char? shortName, bool isRequired, object? defaultValue, IValueParser parser)
+	private static IParameterFlagInfo CreateParameterFlag(ParameterInfo parameter, FlagKind kind, string? longName, char? shortName, bool isRequired, object? defaultValue, IValueParser parser)
 	{
 		Type type = typeof(ParameterFlagInfo<>).MakeGenericType(parameter.ParameterType);
 
-		object? untyped = Activator.CreateInstance(type, [parameter, longName, shortName, isRequired, defaultValue, parser]);
+		object? untyped = Activator.CreateInstance(type, [parameter, kind, longName, shortName, isRequired, defaultValue, parser]);
 		Debug.Assert(untyped is not null);
 
 		return (IParameterFlagInfo)untyped;

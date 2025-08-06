@@ -4,6 +4,7 @@ namespace OwlDomain.CommandLine.Parsing.Values;
 /// 	Represents the result of a value parsing operation.
 /// </summary>
 /// <typeparam name="T">The type of the parsed value.</typeparam>
+[DebuggerDisplay($"{{{nameof(DebuggerDisplay)}(), nq}}")]
 public sealed class ValueParseResult<T> : IValueParseResult<T>
 {
 	#region Properties
@@ -54,6 +55,19 @@ public sealed class ValueParseResult<T> : IValueParseResult<T>
 		TextToken token = new(TextTokenKind.Value, Location, Value);
 
 		return [token];
+	}
+	#endregion
+
+	#region Helpers
+	[ExcludeFromCodeCoverage]
+	private string DebuggerDisplay()
+	{
+		string typeName = nameof(ValueParseResult<object>);
+
+		if (Error is not null)
+			return $"{typeName} {{ {nameof(Error)} = ({Error}) }}";
+
+		return $"{typeName} {{ {nameof(Value)} = ({Value}) }}";
 	}
 	#endregion
 }
