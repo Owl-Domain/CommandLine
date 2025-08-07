@@ -6,6 +6,9 @@ namespace OwlDomain.CommandLine.Parsing.Tree;
 public interface IValueFlagParseResult : IFlagParseResult
 {
 	#region Properties
+	/// <summary>The parsed flag.</summary>
+	IFlagInfo FlagInfo { get; }
+
 	/// <summary>The token for the separator between the flag name and the flag value.</summary>
 	TextToken? Separator { get; }
 

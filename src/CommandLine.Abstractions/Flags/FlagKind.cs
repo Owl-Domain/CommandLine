@@ -12,5 +12,5 @@ public enum FlagKind : byte
 	Toggle,
 
 	/// <summary>Represents a repeat style flag that can represent an integer scale.</summary>
-	Numeric,
+	Repeat,
 }

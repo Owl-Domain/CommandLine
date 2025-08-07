@@ -46,7 +46,7 @@ public sealed class CommandExecutor : ICommandExecutor
 	#endregion
 
 	#region Helpers
-	private object? SetupContainer(ICommandParserResult parserResult, IMethodCommandInfo command)
+	private static object? SetupContainer(ICommandParserResult parserResult, IMethodCommandInfo command)
 	{
 		if (command.Method.IsStatic is true)
 			return null;
@@ -59,15 +59,16 @@ public sealed class CommandExecutor : ICommandExecutor
 
 		foreach (IFlagParseResult flag in parserResult.Flags)
 		{
-			object? value = flag is IValueFlagParseResult valueFlag ? valueFlag.Value.Value : true;
-
-			if (flag.FlagInfo is IPropertyFlagInfo propertyFlag)
+			if (flag is IValueFlagParseResult valueFlag)
 			{
-				Type? declaringType = propertyFlag.Property.DeclaringType;
-				Debug.Assert(declaringType is not null);
+				if (valueFlag.FlagInfo is IPropertyFlagInfo propertyFlag)
+				{
+					Type? declaringType = propertyFlag.Property.DeclaringType;
+					Debug.Assert(declaringType is not null);
 
-				if (containerType == declaringType || declaringType.IsAssignableFrom(containerType))
-					propertyFlag.Property.SetValue(container, value);
+					if (containerType == declaringType || declaringType.IsAssignableFrom(containerType))
+						propertyFlag.Property.SetValue(container, valueFlag.Value.Value);
+				}
 			}
 		}
 
