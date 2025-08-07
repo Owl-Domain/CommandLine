@@ -1,7 +1,7 @@
 namespace OwlDomain.CommandLine.Parsing.Tree;
 
 /// <summary>
-/// 	Represents the result of a flag parse operation.
+/// 	Represents the result of a value flag parse operation.
 /// </summary>
 /// <param name="flagInfo">The parsed flag.</param>
 /// <param name="prefix">The parsed flag prefix.</param>
@@ -15,18 +15,11 @@ public sealed class ValueFlagParseResult(
 	TextToken name,
 	TextToken? separator,
 	IValueParseResult value)
-	: IValueFlagParseResult
+	: BaseFlagParseResult(prefix, name), IValueFlagParseResult
 {
 	#region Properties
 	/// <inheritdoc/>
 	public IFlagInfo FlagInfo { get; } = flagInfo;
-
-	/// <inheritdoc/>
-	public TextToken Prefix { get; } = prefix;
-
-	/// <inheritdoc/>
-	public TextToken Name { get; } = name;
-
 	/// <inheritdoc/>
 	public TextToken? Separator { get; } = separator;
 
@@ -36,7 +29,7 @@ public sealed class ValueFlagParseResult(
 
 	#region Methods
 	/// <inheritdoc/>
-	public IEnumerable<TextToken> EnumerateTokens()
+	public override IEnumerable<TextToken> EnumerateTokens()
 	{
 		IEnumerable<TextToken> tokens = [Prefix, Name];
 
@@ -55,8 +48,9 @@ public sealed class ValueFlagParseResult(
 	{
 		const string typeName = nameof(ValueFlagParseResult);
 		const string nameName = nameof(Name);
+		const string valueName = nameof(Value);
 
-		return $"{typeName} {{ {nameName} = ({Name.Value}) }}";
+		return $"{typeName} {{ {nameName} = ({Name.Value}), {valueName} = ({Value.Value}) }}";
 	}
 	#endregion
 }

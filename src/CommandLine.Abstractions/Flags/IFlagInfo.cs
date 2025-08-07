@@ -6,6 +6,9 @@ namespace OwlDomain.CommandLine.Flags;
 public interface IFlagInfo
 {
 	#region Properties
+	/// <summary>The type of the flag.</summary>
+	FlagKind Kind { get; }
+
 	/// <summary>The long name of the flag.</summary>
 	string? LongName { get; }
 

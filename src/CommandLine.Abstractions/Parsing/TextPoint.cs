@@ -67,6 +67,9 @@ public readonly struct TextPoint :
 
 	/// <inheritdoc/>
 	public readonly override int GetHashCode() => HashCode.Combine(Fragment, Offset);
+
+	/// <inheritdoc/>
+	public readonly override string ToString() => $"(#{Fragment.Index:n0}, {Offset:n0})";
 	#endregion
 
 	#region Helpers

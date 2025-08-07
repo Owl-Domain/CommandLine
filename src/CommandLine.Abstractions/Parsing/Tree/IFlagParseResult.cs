@@ -6,9 +6,6 @@ namespace OwlDomain.CommandLine.Parsing.Tree;
 public interface IFlagParseResult : IParseResult
 {
 	#region Properties
-	/// <summary>The parsed flag.</summary>
-	IFlagInfo FlagInfo { get; }
-
 	/// <summary>The parsed flag prefix.</summary>
 	TextToken Prefix { get; }
 

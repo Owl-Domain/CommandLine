@@ -68,7 +68,6 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 		_commandValidator ??= new CommandValidator();
 		_commandExecutor ??= new CommandExecutor();
 
-
 		Dictionary<string, ICommandGroupInfo> childGroups = [];
 		Dictionary<string, ICommandInfo> childCommands = [];
 
@@ -138,8 +137,9 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 			string? longName = _nameExtractor.GetLongFlagName(property);
 			char? shortName = _nameExtractor.GetShortFlagName(property);
 			IValueParser parser = SelectValueParser(property);
+			FlagKind kind = GetFlagKind(property.PropertyType, property.Name, longName, shortName);
 
-			IPropertyFlagInfo flag = CreatePropertyFlag(property, longName, shortName, isRequired, defaultValue, parser);
+			IPropertyFlagInfo flag = CreatePropertyFlag(property, kind, longName, shortName, isRequired, defaultValue, parser);
 
 			flags.Add(flag);
 		}
@@ -172,6 +172,54 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 	#endregion
 
 	#region Helpers
+	private static FlagKind GetFlagKind(Type valueType, string originalName, string? longName, char? shortName)
+	{
+		if (valueType == typeof(bool))
+			return FlagKind.Toggle;
+
+		if (IsVerbosityFlag(originalName, longName, shortName) && IsNumericType(valueType))
+			return FlagKind.Repeat;
+
+		return FlagKind.Regular;
+	}
+	private static bool IsVerbosityFlag(string originalName, string? longName, char? shortName)
+	{
+		if (longName is not null)
+		{
+			if (longName.Equals("verbose", StringComparison.OrdinalIgnoreCase))
+				return true;
+
+			if (longName.Equals("verbosity", StringComparison.OrdinalIgnoreCase))
+				return true;
+		}
+
+		if (shortName is 'v' or 'V')
+		{
+			if (originalName.Equals("verbose", StringComparison.OrdinalIgnoreCase))
+				return true;
+
+			if (originalName.Equals("verbosity", StringComparison.OrdinalIgnoreCase))
+				return true;
+		}
+
+		return false;
+	}
+	private static bool IsNumericType(Type type)
+	{
+		if (type == typeof(byte)) return true;
+		if (type == typeof(sbyte)) return true;
+
+		if (type == typeof(ushort)) return true;
+		if (type == typeof(short)) return true;
+
+		if (type == typeof(uint)) return true;
+		if (type == typeof(int)) return true;
+
+		if (type == typeof(ulong)) return true;
+		if (type == typeof(long)) return true;
+
+		return false;
+	}
 	private IValueParser SelectValueParser(PropertyInfo property)
 	{
 		foreach (IValueParserSelector selector in _selectors)
@@ -197,20 +245,20 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 	#endregion
 
 	#region Generic type helpers
-	private static IPropertyFlagInfo CreatePropertyFlag(PropertyInfo property, string? longName, char? shortName, bool isRequired, object? defaultValue, IValueParser parser)
+	private static IPropertyFlagInfo CreatePropertyFlag(PropertyInfo property, FlagKind kind, string? longName, char? shortName, bool isRequired, object? defaultValue, IValueParser parser)
 	{
 		Type type = typeof(PropertyFlagInfo<>).MakeGenericType(property.PropertyType);
 
-		object? untyped = Activator.CreateInstance(type, [property, longName, shortName, isRequired, defaultValue, parser]);
+		object? untyped = Activator.CreateInstance(type, [property, kind, longName, shortName, isRequired, defaultValue, parser]);
 		Debug.Assert(untyped is not null);
 
 		return (IPropertyFlagInfo)untyped;
 	}
-	private static IParameterFlagInfo CreateParameterFlag(ParameterInfo parameter, string? longName, char? shortName, bool isRequired, object? defaultValue, IValueParser parser)
+	private static IParameterFlagInfo CreateParameterFlag(ParameterInfo parameter, FlagKind kind, string? longName, char? shortName, bool isRequired, object? defaultValue, IValueParser parser)
 	{
 		Type type = typeof(ParameterFlagInfo<>).MakeGenericType(parameter.ParameterType);
 
-		object? untyped = Activator.CreateInstance(type, [parameter, longName, shortName, isRequired, defaultValue, parser]);
+		object? untyped = Activator.CreateInstance(type, [parameter, kind, longName, shortName, isRequired, defaultValue, parser]);
 		Debug.Assert(untyped is not null);
 
 		return (IParameterFlagInfo)untyped;

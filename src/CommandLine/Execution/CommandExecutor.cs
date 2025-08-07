@@ -9,8 +9,8 @@ public sealed class CommandExecutor : ICommandExecutor
 	/// <inheritdoc/>
 	public ICommandExecutorResult Execute(ICommandValidatorResult validatorResult)
 	{
-		if (validatorResult.Diagnostics.Any())
-			Throw.New.ArgumentException(nameof(validatorResult), $"Execution cannot be performed if there were validation errors.");
+		if (validatorResult.Successful is false)
+			return new CommandExecutorResult(false, validatorResult, new DiagnosticBag(), default);
 
 		if (validatorResult.ParserResult.LeafCommand is not ICommandParseResult command)
 		{
@@ -18,22 +18,14 @@ public sealed class CommandExecutor : ICommandExecutor
 			return default; // Note(Nightowl): Never happens, needed for analysis to know the 'command' variable is always assigned later on;
 		}
 
+		Stopwatch watch = Stopwatch.StartNew();
 		DiagnosticBag diagnostics = [];
 
 		Debug.Assert(command.Arguments.Count == command.CommandInfo.Arguments.Count);
 
 		if (command.CommandInfo is IMethodCommandInfo methodCommand)
 		{
-			object? container = null;
-			if (methodCommand.Method.IsStatic is false)
-			{
-				Type? containerType = methodCommand.Method.ReflectedType;
-				Debug.Assert(containerType is not null);
-
-				container = Activator.CreateInstance(containerType);
-				Debug.Assert(container is not null);
-			}
-
+			object? container = SetupContainer(validatorResult.ParserResult, methodCommand);
 			object?[] parameters = new object?[methodCommand.Method.GetParameters().Length];
 
 			foreach (IArgumentParseResult argument in command.Arguments)
@@ -46,9 +38,77 @@ public sealed class CommandExecutor : ICommandExecutor
 		else
 			Throw.New.InvalidOperationException($"Unknown command type ({command.CommandInfo?.GetType()}).");
 
-		CommandExecutorResult result = new(validatorResult.Engine, validatorResult, diagnostics);
+		watch.Stop();
+		CommandExecutorResult result = new(diagnostics.Any() is false, validatorResult, diagnostics, watch.Elapsed);
 
 		return result;
+	}
+	#endregion
+
+	#region Helpers
+	private static object? SetupContainer(ICommandParserResult parserResult, IMethodCommandInfo command)
+	{
+		if (command.Method.IsStatic is true)
+			return null;
+
+		Type? containerType = command.Method.ReflectedType;
+		Debug.Assert(containerType is not null);
+
+		object? container = Activator.CreateInstance(containerType);
+		Debug.Assert(container is not null);
+
+		foreach (IFlagParseResult flag in parserResult.Flags)
+		{
+			if (flag is IValueFlagParseResult valueFlag)
+			{
+				if (valueFlag.FlagInfo is IPropertyFlagInfo propertyFlag)
+				{
+					Type? declaringType = propertyFlag.Property.DeclaringType;
+					Debug.Assert(declaringType is not null);
+
+					if (containerType == declaringType || declaringType.IsAssignableFrom(containerType))
+						propertyFlag.Property.SetValue(container, valueFlag.Value.Value);
+				}
+			}
+			else if (flag is IChainFlagParseResult chainFlag)
+			{
+				foreach (IFlagInfo toggleFlag in chainFlag.FlagInfos)
+				{
+					if (toggleFlag is IPropertyFlagInfo propertyFlag)
+					{
+						Type? declaringType = propertyFlag.Property.DeclaringType;
+						Debug.Assert(declaringType is not null);
+
+						if (containerType == declaringType || declaringType.IsAssignableFrom(containerType))
+							propertyFlag.Property.SetValue(container, true);
+					}
+				}
+			}
+			else if (flag is IToggleFlagParseResult toggleFlag)
+			{
+				if (toggleFlag is IPropertyFlagInfo propertyFlag)
+				{
+					Type? declaringType = propertyFlag.Property.DeclaringType;
+					Debug.Assert(declaringType is not null);
+
+					if (containerType == declaringType || declaringType.IsAssignableFrom(containerType))
+						propertyFlag.Property.SetValue(container, true);
+				}
+			}
+			else if (flag is IRepeatFlagParseResult repeatFlag)
+			{
+				if (repeatFlag is IPropertyFlagInfo propertyFlag)
+				{
+					Type? declaringType = propertyFlag.Property.DeclaringType;
+					Debug.Assert(declaringType is not null);
+
+					if (containerType == declaringType || declaringType.IsAssignableFrom(containerType))
+						propertyFlag.Property.SetValue(container, Convert.ChangeType(repeatFlag.Repetition, propertyFlag.ValueType));
+				}
+			}
+		}
+
+		return container;
 	}
 	#endregion
 }

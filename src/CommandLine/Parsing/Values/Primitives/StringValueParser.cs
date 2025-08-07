@@ -15,7 +15,11 @@ public sealed class StringValueParser : BaseValueParser<string>
 			return parser.AdvanceText();
 		}
 
-		Debug.Assert(parser.Current is not '"', "Quoted string are not currently implemented.");
+		if (parser.Current is '"')
+		{
+			error = "Quoted strings are not currently implemented";
+			return default;
+		}
 
 		string value = parser.AdvanceUntilBreak();
 

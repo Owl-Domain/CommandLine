@@ -6,6 +6,9 @@ namespace OwlDomain.CommandLine;
 public interface IStageResult
 {
 	#region Properties
+	/// <summary>Whether the operation was successful.</summary>
+	bool Successful { get; }
+
 	/// <summary>The stage the result is for.</summary>
 	DiagnosticSource Stage { get; }
 
@@ -14,5 +17,8 @@ public interface IStageResult
 
 	/// <summary>The diagnostics that occurred during the operation.</summary>
 	IDiagnosticBag Diagnostics { get; }
+
+	/// <summary>The amount of time that the operation took.</summary>
+	TimeSpan Duration { get; }
 	#endregion
 }

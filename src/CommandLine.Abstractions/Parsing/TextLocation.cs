@@ -28,6 +28,11 @@ public readonly struct TextLocation
 	}
 	#endregion
 
+	#region Methods
+	/// <inheritdoc/>
+	public readonly override string ToString() => $"(#{Start.Fragment.Index:n0}, {Start.Offset:n0}) -> (#{End.Fragment.Index:n0}, {End.Offset:n0})";
+	#endregion
+
 	#region Helpers
 	[ExcludeFromCodeCoverage]
 	private readonly string DebuggerDisplay()

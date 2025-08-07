@@ -6,26 +6,8 @@ namespace OwlDomain.CommandLine.Diagnostics;
 [DebuggerDisplay($"{{{nameof(DebuggerDisplay)}(), nq}}")]
 public sealed class DiagnosticBag : IDiagnosticBag, ICollection<IDiagnostic>
 {
-	#region Nested types
-	private sealed class DiagnosticComparer : IComparer<IDiagnostic>
-	{
-		#region Properties
-		public static DiagnosticComparer Instance = new();
-		#endregion
-
-		public int Compare(IDiagnostic? x, IDiagnostic? y)
-		{
-			if (x is null && y is null) return 0;
-			if (x is null) return -1;
-			if (y is null) return 1;
-
-			return x.Source.CompareTo(y.Source);
-		}
-	}
-	#endregion
-
 	#region Fields
-	private readonly SortedList<IDiagnostic, IDiagnostic> _diagnostics = new(DiagnosticComparer.Instance);
+	private readonly List<IDiagnostic> _diagnostics = [];
 	#endregion
 
 	#region Properties
@@ -38,7 +20,7 @@ public sealed class DiagnosticBag : IDiagnosticBag, ICollection<IDiagnostic>
 
 	#region Methods
 	/// <inheritdoc/>
-	public void Add(IDiagnostic diagnostic) => _diagnostics.Add(diagnostic, diagnostic);
+	public void Add(IDiagnostic diagnostic) => _diagnostics.Add(diagnostic);
 
 	/// <summary>Creates a new diagnostic and adds it to the bag.</summary>
 	/// <param name="source">The source of the diagnostic.</param>
@@ -51,10 +33,10 @@ public sealed class DiagnosticBag : IDiagnosticBag, ICollection<IDiagnostic>
 	}
 
 	/// <inheritdoc/>
-	public bool Contains(IDiagnostic item) => _diagnostics.ContainsValue(item);
+	public bool Contains(IDiagnostic item) => _diagnostics.Contains(item);
 
 	/// <inheritdoc/>
-	public void CopyTo(IDiagnostic[] array, int arrayIndex) => _diagnostics.Values.CopyTo(array, arrayIndex);
+	public void CopyTo(IDiagnostic[] array, int arrayIndex) => _diagnostics.CopyTo(array, arrayIndex);
 
 	/// <inheritdoc/>
 	public bool Remove(IDiagnostic item) => _diagnostics.Remove(item);
@@ -63,8 +45,8 @@ public sealed class DiagnosticBag : IDiagnosticBag, ICollection<IDiagnostic>
 	public void Clear() => _diagnostics.Clear();
 
 	/// <inheritdoc/>
-	public IEnumerator<IDiagnostic> GetEnumerator() => _diagnostics.Values.GetEnumerator();
-	IEnumerator IEnumerable.GetEnumerator() => ((IEnumerable)_diagnostics.Values).GetEnumerator();
+	public IEnumerator<IDiagnostic> GetEnumerator() => _diagnostics.OrderBy(d => d.Source).GetEnumerator();
+	IEnumerator IEnumerable.GetEnumerator() => ((IEnumerable)_diagnostics.OrderBy(d => d.Source)).GetEnumerator();
 	#endregion
 
 	#region Helpers

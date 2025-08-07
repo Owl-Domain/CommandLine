@@ -249,5 +249,150 @@ public sealed class CommandParserTests
 			.AreEqual(commandResult.Arguments.Count, 0)
 			.AreEqual(commandResult.Flags.Count, 0);
 	}
+
+	[DynamicData(nameof(VariousCommandTests), DynamicDataSourceType.Method)]
+	[TestMethod]
+	public void Parse_VariousTests_Successful(string[] fragments, bool isLazy)
+	{
+		// Arrange
+		const string groupName = "group";
+		const string commandName = "command";
+
+		StringValueParser stringParser = new();
+
+		IFlagInfo valueFlag = Substitute.For<IFlagInfo>();
+		IFlagInfo repeatFlag = Substitute.For<IFlagInfo>();
+		IFlagInfo toggleFlag = Substitute.For<IFlagInfo>();
+		IArgumentInfo argument = Substitute.For<IArgumentInfo>();
+		ICommandInfo command = Substitute.For<ICommandInfo>();
+		ICommandGroupInfo group = Substitute.For<ICommandGroupInfo>();
+		ICommandGroupInfo rootGroup = Substitute.For<ICommandGroupInfo>();
+		ICommandEngine engine = Substitute.For<ICommandEngine>();
+
+		valueFlag.LongName.Returns("flag");
+		valueFlag.ShortName.Returns('f');
+
+		repeatFlag.LongName.Returns("repeat");
+		repeatFlag.ShortName.Returns('r');
+
+		toggleFlag.LongName.Returns("toggle");
+		toggleFlag.ShortName.Returns('t');
+
+		command.Name.Returns(commandName);
+		group.Name.Returns(groupName);
+
+		valueFlag.Parser.Returns(stringParser);
+		argument.Parser.Returns(stringParser);
+		repeatFlag.Parser.Returns(new ParsableValueParser<int>());
+		toggleFlag.Parser.Returns(new BooleanValueParser());
+
+		valueFlag.Kind.Returns(FlagKind.Regular);
+		repeatFlag.Kind.Returns(FlagKind.Repeat);
+		toggleFlag.Kind.Returns(FlagKind.Toggle);
+
+		valueFlag.IsRequired.Returns(false);
+		repeatFlag.IsRequired.Returns(false);
+		toggleFlag.IsRequired.Returns(false);
+		argument.IsRequired.Returns(false);
+
+		IFlagInfo[] flags = [valueFlag, repeatFlag, toggleFlag];
+
+		command.Flags.Returns(flags);
+		group.SharedFlags.Returns(flags);
+		rootGroup.SharedFlags.Returns(flags);
+		command.Arguments.Returns([argument]);
+
+		group.ImplicitCommand.Returns(command);
+		rootGroup.ImplicitCommand.Returns(command);
+
+		rootGroup.Groups.Returns(new Dictionary<string, ICommandGroupInfo>() { { groupName, group } });
+		rootGroup.Commands.Returns(new Dictionary<string, ICommandInfo>() { { commandName, command } });
+		group.Commands.Returns(new Dictionary<string, ICommandInfo>() { { commandName, command } });
+
+		engine.RootGroup.Returns(rootGroup);
+
+		CommandParser sut = new();
+
+		// Act
+		ICommandParserResult result = isLazy ? sut.Parse(engine, fragments[0]) : sut.Parse(engine, fragments);
+
+		// Assert
+		CheckFailedResult(result, isLazy, fragments);
+	}
+	#endregion
+
+	#region Helpers
+	[ExcludeFromCodeCoverage]
+	private static void CheckFailedResult(ICommandParserResult result, bool isLazy, string[] fragments)
+	{
+		if (result.Successful is false)
+		{
+			string message = isLazy ? $"Lazy parsing failed for the command: {fragments[0]}" : $"Greedy parsing failed for the command: {string.Join("|", fragments)}";
+			message += "\n\nDiagnostics:";
+
+			foreach (IDiagnostic diagnostic in result.Diagnostics)
+				message += $"\n- [{diagnostic.Location}]: {diagnostic.Message}";
+
+			Assert.That.Fail(message + "\n");
+		}
+	}
+
+	[ExcludeFromCodeCoverage]
+	private static IEnumerable<object?[]> VariousCommandTests()
+	{
+		string[] flags =
+		[
+			"",
+
+			"-f=test",
+			"-f=|test",
+			"-f:test",
+			"-f:|test",
+			"-f | test",
+
+			"--flag=test",
+			"--flag=|test",
+			"--flag:test",
+			"--flag:|test",
+			"--flag | test",
+
+
+			"-t",
+			"-t=true",
+			"-t=|true",
+			"-t:true",
+			"-t:|true",
+
+			"-t=true",
+			"--toggle=|true",
+			"--toggle:true",
+			"--toggle:|true",
+
+			"-tr",
+			"-rr",
+			"--toggle",
+			"--repeat",
+		];
+
+		string[] arguments = ["", "argument"];
+		string[] commands = ["", "command"];
+		string[] groups = ["", "group"];
+
+		foreach (string group in groups)
+			foreach (string command in commands)
+				foreach (string flag in flags)
+					foreach (string argument in arguments)
+					{
+						string cmd = group;
+						cmd += cmd.Length is 0 || command.Length is 0 ? command : $" | {command}";
+						cmd += cmd.Length is 0 || flag.Length is 0 ? flag : $" | {flag}";
+						cmd += cmd.Length is 0 || argument.Length is 0 ? argument : $" | {argument}";
+
+						yield return [new string[] { cmd.Replace(" | ", " ").Replace("|", "") }, true];
+
+						string[] fragments = cmd.Split("|", StringSplitOptions.TrimEntries);
+						yield return [fragments, false];
+					}
+	}
 	#endregion
 }
