@@ -70,6 +70,42 @@ public sealed class CommandExecutor : ICommandExecutor
 						propertyFlag.Property.SetValue(container, valueFlag.Value.Value);
 				}
 			}
+			else if (flag is IChainFlagParseResult chainFlag)
+			{
+				foreach (IFlagInfo toggleFlag in chainFlag.FlagInfos)
+				{
+					if (toggleFlag is IPropertyFlagInfo propertyFlag)
+					{
+						Type? declaringType = propertyFlag.Property.DeclaringType;
+						Debug.Assert(declaringType is not null);
+
+						if (containerType == declaringType || declaringType.IsAssignableFrom(containerType))
+							propertyFlag.Property.SetValue(container, true);
+					}
+				}
+			}
+			else if (flag is IToggleFlagParseResult toggleFlag)
+			{
+				if (toggleFlag is IPropertyFlagInfo propertyFlag)
+				{
+					Type? declaringType = propertyFlag.Property.DeclaringType;
+					Debug.Assert(declaringType is not null);
+
+					if (containerType == declaringType || declaringType.IsAssignableFrom(containerType))
+						propertyFlag.Property.SetValue(container, true);
+				}
+			}
+			else if (flag is IRepeatFlagParseResult repeatFlag)
+			{
+				if (repeatFlag is IPropertyFlagInfo propertyFlag)
+				{
+					Type? declaringType = propertyFlag.Property.DeclaringType;
+					Debug.Assert(declaringType is not null);
+
+					if (containerType == declaringType || declaringType.IsAssignableFrom(containerType))
+						propertyFlag.Property.SetValue(container, Convert.ChangeType(repeatFlag.Repetition, propertyFlag.ValueType));
+				}
+			}
 		}
 
 		return container;
