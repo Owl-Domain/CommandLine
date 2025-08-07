@@ -30,7 +30,7 @@ public sealed class CommandParser : BaseCommandParser
 		watch.Stop();
 		return new CommandParserResult(context.Diagnostics.Any() is false, context.Engine, this, context.Diagnostics, result, context.ExtraTokens, watch.Elapsed);
 	}
-	private IParseResult ParseGroup(Context context, ICommandGroupInfo group)
+	private static IParseResult ParseGroup(Context context, ICommandGroupInfo group)
 	{
 		string? groupCommandError = (group.Groups.Any(), group.Commands.Any()) switch
 		{
@@ -86,7 +86,7 @@ public sealed class CommandParser : BaseCommandParser
 
 		return new GroupParseResult(group, null, [], null);
 	}
-	private ICommandParseResult ParseCommand(Context context, ICommandInfo command, TextToken? nameToken)
+	private static ICommandParseResult ParseCommand(Context context, ICommandInfo command, TextToken? nameToken)
 	{
 		if (nameToken is not null)
 			nameToken = new(TextTokenKind.CommandName, nameToken.Value.Location, nameToken.Value.Value);
@@ -94,7 +94,8 @@ public sealed class CommandParser : BaseCommandParser
 		List<IFlagParseResult> flags = [];
 		List<IArgumentParseResult> arguments = [];
 
-		TryParseFlags(context, command.Flags, flags);
+		if (command.Arguments.Count is 0)
+			TryParseFlags(context, command.Flags, flags);
 
 		foreach (IArgumentInfo argumentInfo in command.Arguments)
 		{
@@ -108,7 +109,7 @@ public sealed class CommandParser : BaseCommandParser
 
 		return new CommandParseResult(command, nameToken, flags, arguments);
 	}
-	private bool TryParseArgument(Context context, IArgumentInfo argument, [NotNullWhen(true)] out IArgumentParseResult? result)
+	private static bool TryParseArgument(Context context, IArgumentInfo argument, [NotNullWhen(true)] out IArgumentParseResult? result)
 	{
 		TextLocation location = new(context.Parser.Point, context.Parser.Point);
 
@@ -137,7 +138,7 @@ public sealed class CommandParser : BaseCommandParser
 
 		return false;
 	}
-	private void TryParseFlags(Context context, IReadOnlyCollection<IFlagInfo> availableFlags, List<IFlagParseResult> container)
+	private static void TryParseFlags(Context context, IReadOnlyCollection<IFlagInfo> availableFlags, List<IFlagParseResult> container)
 	{
 		do
 		{
@@ -153,7 +154,7 @@ public sealed class CommandParser : BaseCommandParser
 		}
 		while (true);
 	}
-	private bool TryParseFlag(Context context, IReadOnlyCollection<IFlagInfo> availableFlags, [NotNullWhen(true)] out IFlagParseResult? result)
+	private static bool TryParseFlag(Context context, IReadOnlyCollection<IFlagInfo> availableFlags, [NotNullWhen(true)] out IFlagParseResult? result)
 	{
 		if (context.Parser.Current is '-' && context.Parser.Next is '-')
 			return TryParseLongFlag(context, availableFlags, out result);
@@ -164,7 +165,7 @@ public sealed class CommandParser : BaseCommandParser
 		result = default;
 		return false;
 	}
-	private bool TryParseLongFlag(Context context, IReadOnlyCollection<IFlagInfo> availableFlags, [NotNullWhen(true)] out IFlagParseResult? result)
+	private static bool TryParseLongFlag(Context context, IReadOnlyCollection<IFlagInfo> availableFlags, [NotNullWhen(true)] out IFlagParseResult? result)
 	{
 		TextPoint start = context.Parser.Point;
 
@@ -189,16 +190,13 @@ public sealed class CommandParser : BaseCommandParser
 			return false;
 		}
 
-		if (TryParseFlagValue(context, prefix, nameToken, flag, out IValueFlagParseResult? resultValue) is false)
-		{
-			context.Diagnostics.Add(DiagnosticSource.Parsing, nameToken.Location, $"Couldn't parse the value for the '--{name}' flag.");
-			return false;
-		}
+		if (TryParseFlagValue(context, prefix, nameToken, flag, out result))
+			return true;
 
-		result = resultValue;
-		return true;
+		context.Diagnostics.Add(DiagnosticSource.Parsing, nameToken.Location, $"Couldn't parse the value for the '--{name}' flag.");
+		return false;
 	}
-	private bool TryParseShortFlag(Context context, IReadOnlyCollection<IFlagInfo> availableFlags, [NotNullWhen(true)] out IFlagParseResult? result)
+	private static bool TryParseShortFlag(Context context, IReadOnlyCollection<IFlagInfo> availableFlags, [NotNullWhen(true)] out IFlagParseResult? result)
 	{
 		TextPoint start = context.Parser.Point;
 
@@ -217,32 +215,139 @@ public sealed class CommandParser : BaseCommandParser
 
 		Debug.Assert(name.Length > 0);
 
-		if (name.Length > 1)
-		{
-			context.Diagnostics.Add(DiagnosticSource.Parsing, nameToken.Location, $"Special short flag syntax is not supported yet.");
-			return false;
-		}
+		if (name.Length is 1)
+			return TryParseSimpleFlag(context, availableFlags, prefix, nameToken, name, out result);
 
+		if (AllTheSame(name))
+			return TryParseRepeatFlag(context, availableFlags, prefix, nameToken, name, out result);
+
+		if (AllUnique(name))
+			return TryParseChainFlag(context, availableFlags, prefix, nameToken, name, out result);
+
+		return false;
+	}
+	private static bool TryParseSimpleFlag(
+		Context context,
+		IReadOnlyCollection<IFlagInfo> availableFlags,
+		TextToken prefix,
+		TextToken nameToken,
+		string name,
+		[NotNullWhen(true)] out IFlagParseResult? result)
+	{
 		IFlagInfo? flag = availableFlags.SingleOrDefault(f => f.ShortName == name[0]);
 		if (flag is null)
 		{
 			context.Diagnostics.Add(DiagnosticSource.Parsing, nameToken.Location, $"Couldn't find a flag with the short name '{name[0]}'.");
+
+			result = default;
 			return false;
 		}
 
-		if (TryParseFlagValue(context, prefix, nameToken, flag, out IValueFlagParseResult? resultValue) is false)
+		if (TryParseFlagValue(context, prefix, nameToken, flag, out result))
+			return true;
+
+		context.Diagnostics.Add(DiagnosticSource.Parsing, nameToken.Location, $"Couldn't parse the value for the '-{name[0]}' flag.");
+
+		result = default;
+		return false;
+	}
+	private static bool TryParseChainFlag(
+		Context context,
+		IReadOnlyCollection<IFlagInfo> availableFlags,
+		TextToken prefix,
+		TextToken nameToken,
+		string name,
+		[NotNullWhen(true)] out IFlagParseResult? result)
+	{
+		List<IFlagInfo> flags = [];
+		bool successful = true;
+
+		for (int i = 0; i < name.Length; i++)
 		{
-			context.Diagnostics.Add(DiagnosticSource.Parsing, nameToken.Location, $"Couldn't parse the value for the '-{name[0]}' flag.");
+			IFlagInfo? flag = availableFlags.SingleOrDefault(f => f.ShortName == name[i]);
+
+			if (flag is null)
+			{
+				Debug.Assert(nameToken.Location.Start.Fragment == nameToken.Location.End.Fragment);
+
+				TextLocation location = new(nameToken.Location.Start, new(nameToken.Location.Start.Fragment, nameToken.Location.Start.Offset + i + 1));
+				context.Diagnostics.Add(DiagnosticSource.Parsing, location, $"The flag -{name[i]} was not recognised.");
+
+				successful = false;
+				continue;
+			}
+
+			if (flag.Kind is not FlagKind.Repeat and not FlagKind.Toggle)
+			{
+				Debug.Assert(nameToken.Location.Start.Fragment == nameToken.Location.End.Fragment);
+
+				TextLocation location = new(nameToken.Location.Start, new(nameToken.Location.Start.Fragment, nameToken.Location.Start.Offset + i + 1));
+				context.Diagnostics.Add(DiagnosticSource.Parsing, location, $"The flag -{name[i]} was not a repeat or toggle flag and it must specify a value.");
+
+				successful = false;
+				continue;
+			}
+
+			flags.Add(flag);
+		}
+
+		if (successful is false)
+		{
+			result = default;
 			return false;
 		}
 
-		result = resultValue;
+		result = new ChainFlagParseResult(flags, prefix, nameToken);
 		return true;
 	}
-	private bool TryParseFlagValue(Context context, TextToken prefix, TextToken name, IFlagInfo flag, [NotNullWhen(true)] out IValueFlagParseResult? result)
+	private static bool TryParseRepeatFlag(Context context,
+		IReadOnlyCollection<IFlagInfo> availableFlags,
+		TextToken prefix,
+		TextToken nameToken,
+		string name,
+		[NotNullWhen(true)] out IFlagParseResult? result)
+	{
+		IFlagInfo? flag = availableFlags.SingleOrDefault(f => f.ShortName == name[0]);
+		if (flag is null)
+		{
+			context.Diagnostics.Add(DiagnosticSource.Parsing, nameToken.Location, $"The flag -{name[0]} was not recognised.");
+
+			result = default;
+			return false;
+		}
+
+		if (flag.Kind is not FlagKind.Repeat)
+		{
+			context.Diagnostics.Add(DiagnosticSource.Parsing, nameToken.Location, $"The flag -{name[0]} was not a repeat style flag and doesn't support this syntax.");
+
+			result = default;
+			return false;
+		}
+
+		result = new RepeatFlagParseResult(flag, prefix, nameToken, name.Length);
+		return true;
+	}
+	private static bool TryParseFlagValue(
+		Context context,
+		TextToken prefix,
+		TextToken name,
+		IFlagInfo flag,
+		[NotNullWhen(true)] out IFlagParseResult? result)
 	{
 		if (TryParseFlagValueSeparator(context, flag, out TextToken? separator) is false)
 		{
+			if (flag.Kind is FlagKind.Toggle)
+			{
+				result = new ToggleFlagParseResult(flag, prefix, name);
+				return true;
+			}
+
+			if (flag.Kind is FlagKind.Repeat)
+			{
+				result = new RepeatFlagParseResult(flag, prefix, name, 1);
+				return true;
+			}
+
 			result = default;
 			return false;
 		}
@@ -264,6 +369,8 @@ public sealed class CommandParser : BaseCommandParser
 
 		if (flag.IsRequired)
 		{
+			Debug.Assert(prefix.Value is not null);
+
 			if (value.Error == string.Empty)
 				context.Diagnostics.Add(DiagnosticSource.Parsing, location, $"Expected value for the '{prefix.Value}{name.Value}' flag.");
 			else
@@ -274,8 +381,9 @@ public sealed class CommandParser : BaseCommandParser
 
 		return false;
 	}
-	private bool TryParseFlagValueSeparator(Context context, IFlagInfo flag, out TextToken? separator)
+	private static bool TryParseFlagValueSeparator(Context context, IFlagInfo flag, out TextToken? separator)
 	{
+		separator = default;
 		TextPoint start = context.Parser.Point;
 
 		if (context.Parser.Current is '=' or ':')
@@ -292,29 +400,48 @@ public sealed class CommandParser : BaseCommandParser
 
 		if (char.IsWhiteSpace(context.Parser.Current) || ((context.Parser.IsLazy is false) && context.Parser.IsAtEnd))
 		{
-			if (flag.Kind is not FlagKind.Regular)
-			{
-				context.Diagnostics.Add(DiagnosticSource.Parsing, new(start, start), $"Whitespace can only be used as a flag value separator on normal flags.");
-
-				separator = default;
+			if (flag.Kind is FlagKind.Toggle or FlagKind.Repeat)
 				return false;
-			}
 
 			context.Parser.SkipTrivia();
-
-			separator = null;
 			return true;
 		}
 
-		context.Diagnostics.Add(DiagnosticSource.Parsing, new(start, start), $"Unknown flag value separator, use either '=' or ':' symbols.");
+		if (flag.Kind is FlagKind.Regular)
+			context.Diagnostics.Add(DiagnosticSource.Parsing, new(start, start), $"Unknown flag value separator, use either '=' or ':' symbols.");
 
-		separator = default;
 		return false;
 	}
 	#endregion
 
 	#region Helpers
-	private void CheckForLeftOverInput(Context context)
+	private static bool AllTheSame(string name)
+	{
+		Debug.Assert(name.Length > 0);
+
+		char first = name[0];
+
+		for (int i = 1; i < name.Length; i++)
+		{
+			if (first != name[i])
+				return false;
+		}
+
+		return true;
+	}
+	private static bool AllUnique(string name)
+	{
+		HashSet<char> chars = [];
+
+		foreach (char ch in name)
+		{
+			if (chars.Add(ch) is false)
+				return false;
+		}
+
+		return true;
+	}
+	private static void CheckForLeftOverInput(Context context)
 	{
 		context.Parser.SkipTrivia();
 		bool hasLeftOver = (context.Parser.IsAtEnd && context.Parser.IsLastFragment) is false;

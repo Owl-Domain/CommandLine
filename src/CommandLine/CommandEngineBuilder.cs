@@ -68,7 +68,6 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 		_commandValidator ??= new CommandValidator();
 		_commandExecutor ??= new CommandExecutor();
 
-
 		Dictionary<string, ICommandGroupInfo> childGroups = [];
 		Dictionary<string, ICommandInfo> childCommands = [];
 
@@ -138,8 +137,9 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 			string? longName = _nameExtractor.GetLongFlagName(property);
 			char? shortName = _nameExtractor.GetShortFlagName(property);
 			IValueParser parser = SelectValueParser(property);
+			FlagKind kind = GetFlagKind(property.PropertyType);
 
-			IPropertyFlagInfo flag = CreatePropertyFlag(property, FlagKind.Regular, longName, shortName, isRequired, defaultValue, parser);
+			IPropertyFlagInfo flag = CreatePropertyFlag(property, kind, longName, shortName, isRequired, defaultValue, parser);
 
 			flags.Add(flag);
 		}
@@ -172,6 +172,32 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 	#endregion
 
 	#region Helpers
+	private static FlagKind GetFlagKind(Type valueType)
+	{
+		if (valueType == typeof(bool))
+			return FlagKind.Toggle;
+
+		if (IsNumericType(valueType))
+			return FlagKind.Repeat;
+
+		return FlagKind.Regular;
+	}
+	private static bool IsNumericType(Type type)
+	{
+		if (type == typeof(byte)) return true;
+		if (type == typeof(sbyte)) return true;
+
+		if (type == typeof(ushort)) return true;
+		if (type == typeof(short)) return true;
+
+		if (type == typeof(uint)) return true;
+		if (type == typeof(int)) return true;
+
+		if (type == typeof(ulong)) return true;
+		if (type == typeof(long)) return true;
+
+		return false;
+	}
 	private IValueParser SelectValueParser(PropertyInfo property)
 	{
 		foreach (IValueParserSelector selector in _selectors)

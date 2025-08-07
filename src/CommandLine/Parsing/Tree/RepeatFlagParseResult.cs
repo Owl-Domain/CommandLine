@@ -3,29 +3,20 @@ namespace OwlDomain.CommandLine.Parsing.Tree;
 /// <summary>
 /// 	Represents the result of a repeat flag parse operation.
 /// </summary>
+/// <param name="flagInfo">The parsed flag.</param>
+/// <param name="prefix">The parsed flag prefix.</param>
+/// <param name="name">The name of the parsed flag.</param>
+/// <param name="repetition">The repetition count of the flag.</param>
 [DebuggerDisplay($"{{{nameof(DebuggerDisplay)}(), nq}}")]
-public sealed class RepeatFlagParseResult : BaseFlagParseResult, IRepeatFlagParseResult
+public sealed class RepeatFlagParseResult(IFlagInfo flagInfo, TextToken prefix, TextToken name, int repetition)
+: BaseFlagParseResult(prefix, name), IRepeatFlagParseResult
 {
 	#region Properties
 	/// <inheritdoc/>
-	public IFlagInfo FlagInfo { get; }
+	public IFlagInfo FlagInfo { get; } = flagInfo;
 
 	/// <inheritdoc/>
-	public int Repetition { get; }
-	#endregion
-
-	#region Constructors
-	/// <param name="flagInfo">The parsed flag.</param>
-	/// <param name="prefix">The parsed flag prefix.</param>
-	/// <param name="name">The name of the parsed flag.</param>
-	public RepeatFlagParseResult(IFlagInfo flagInfo, TextToken prefix, TextToken name) : base(prefix, name)
-	{
-		if (name.Value is not string)
-			Throw.New.ArgumentException(nameof(name), $"Expected the {nameof(name)} token to have a string value.");
-
-		FlagInfo = flagInfo;
-		Repetition = ((string)name.Value).Length;
-	}
+	public int Repetition { get; } = repetition;
 	#endregion
 
 	#region Helpers

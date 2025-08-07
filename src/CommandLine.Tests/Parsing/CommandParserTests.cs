@@ -257,32 +257,49 @@ public sealed class CommandParserTests
 		// Arrange
 		const string groupName = "group";
 		const string commandName = "command";
-		const string longFlagName = "flag";
-		const char shortFlagName = 'f';
 
 		StringValueParser stringParser = new();
 
-		IFlagInfo flag = Substitute.For<IFlagInfo>();
+		IFlagInfo valueFlag = Substitute.For<IFlagInfo>();
+		IFlagInfo repeatFlag = Substitute.For<IFlagInfo>();
+		IFlagInfo toggleFlag = Substitute.For<IFlagInfo>();
 		IArgumentInfo argument = Substitute.For<IArgumentInfo>();
 		ICommandInfo command = Substitute.For<ICommandInfo>();
 		ICommandGroupInfo group = Substitute.For<ICommandGroupInfo>();
 		ICommandGroupInfo rootGroup = Substitute.For<ICommandGroupInfo>();
 		ICommandEngine engine = Substitute.For<ICommandEngine>();
 
-		flag.LongName.Returns(longFlagName);
-		flag.ShortName.Returns(shortFlagName);
+		valueFlag.LongName.Returns("flag");
+		valueFlag.ShortName.Returns('f');
+
+		repeatFlag.LongName.Returns("repeat");
+		repeatFlag.ShortName.Returns('r');
+
+		toggleFlag.LongName.Returns("toggle");
+		toggleFlag.ShortName.Returns('t');
+
 		command.Name.Returns(commandName);
 		group.Name.Returns(groupName);
 
-		flag.Parser.Returns(stringParser);
+		valueFlag.Parser.Returns(stringParser);
 		argument.Parser.Returns(stringParser);
+		repeatFlag.Parser.Returns(new ParsableValueParser<int>());
+		toggleFlag.Parser.Returns(new BooleanValueParser());
 
-		flag.IsRequired.Returns(false);
+		valueFlag.Kind.Returns(FlagKind.Regular);
+		repeatFlag.Kind.Returns(FlagKind.Repeat);
+		toggleFlag.Kind.Returns(FlagKind.Toggle);
+
+		valueFlag.IsRequired.Returns(false);
+		repeatFlag.IsRequired.Returns(false);
+		toggleFlag.IsRequired.Returns(false);
 		argument.IsRequired.Returns(false);
 
-		command.Flags.Returns([flag]);
-		group.SharedFlags.Returns([flag]);
-		rootGroup.SharedFlags.Returns([flag]);
+		IFlagInfo[] flags = [valueFlag, repeatFlag, toggleFlag];
+
+		command.Flags.Returns(flags);
+		group.SharedFlags.Returns(flags);
+		rootGroup.SharedFlags.Returns(flags);
 		command.Arguments.Returns([argument]);
 
 		group.ImplicitCommand.Returns(command);
@@ -338,6 +355,23 @@ public sealed class CommandParserTests
 			"--flag:test",
 			"--flag:|test",
 			"--flag | test",
+
+
+			"-t",
+			"-t=true",
+			"-t=|true",
+			"-t:true",
+			"-t:|true",
+
+			"-t=true",
+			"--toggle=|true",
+			"--toggle:true",
+			"--toggle:|true",
+
+			"-tr",
+			"-rr",
+			"--toggle",
+			"--repeat",
 		];
 
 		string[] arguments = ["", "argument"];
