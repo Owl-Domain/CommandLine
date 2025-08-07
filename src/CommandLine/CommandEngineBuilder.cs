@@ -137,7 +137,7 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 			string? longName = _nameExtractor.GetLongFlagName(property);
 			char? shortName = _nameExtractor.GetShortFlagName(property);
 			IValueParser parser = SelectValueParser(property);
-			FlagKind kind = GetFlagKind(property.PropertyType);
+			FlagKind kind = GetFlagKind(property.PropertyType, property.Name, longName, shortName);
 
 			IPropertyFlagInfo flag = CreatePropertyFlag(property, kind, longName, shortName, isRequired, defaultValue, parser);
 
@@ -172,15 +172,37 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 	#endregion
 
 	#region Helpers
-	private static FlagKind GetFlagKind(Type valueType)
+	private static FlagKind GetFlagKind(Type valueType, string originalName, string? longName, char? shortName)
 	{
 		if (valueType == typeof(bool))
 			return FlagKind.Toggle;
 
-		if (IsNumericType(valueType))
+		if (IsVerbosityFlag(originalName, longName, shortName) && IsNumericType(valueType))
 			return FlagKind.Repeat;
 
 		return FlagKind.Regular;
+	}
+	private static bool IsVerbosityFlag(string originalName, string? longName, char? shortName)
+	{
+		if (longName is not null)
+		{
+			if (longName.Equals("verbose", StringComparison.OrdinalIgnoreCase))
+				return true;
+
+			if (longName.Equals("verbosity", StringComparison.OrdinalIgnoreCase))
+				return true;
+		}
+
+		if (shortName is 'v' or 'V')
+		{
+			if (originalName.Equals("verbose", StringComparison.OrdinalIgnoreCase))
+				return true;
+
+			if (originalName.Equals("verbosity", StringComparison.OrdinalIgnoreCase))
+				return true;
+		}
+
+		return false;
 	}
 	private static bool IsNumericType(Type type)
 	{
