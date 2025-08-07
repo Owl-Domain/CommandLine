@@ -59,6 +59,13 @@ public sealed class TextParser : ITextParser
 
 	/// <inheritdoc/>
 	public bool IsLazy { get; set; }
+
+	/// <inheritdoc/>
+	public bool IsGreedy
+	{
+		get => IsLazy is false;
+		set => IsLazy = value is false;
+	}
 	#endregion
 
 	#region Constructors
@@ -143,10 +150,9 @@ public sealed class TextParser : ITextParser
 		while (char.IsWhiteSpace(Current))
 			Advance();
 	}
-	#endregion
 
-	#region Helpers
-	private char Peek(int offset)
+	/// <inheritdoc/>
+	public char Peek(int offset)
 	{
 		offset.ThrowIfLessThan(0, nameof(offset));
 

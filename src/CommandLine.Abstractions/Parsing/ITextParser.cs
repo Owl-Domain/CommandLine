@@ -42,6 +42,10 @@ public interface ITextParser
 	/// <summary>Whether the current fragment should be greedy or lazy parsed.</summary>
 	/// <remarks>Only specialised parsers should ever modify this value.</remarks>
 	bool IsLazy { get; set; }
+
+	/// <summary>Whether the current fragment should be greedy or lazy parsed.</summary>
+	/// <remarks>Only specialised parsers should ever modify this value.</remarks>
+	bool IsGreedy { get; set; }
 	#endregion
 
 	#region Methods
@@ -68,6 +72,15 @@ public interface ITextParser
 
 	/// <summary>Skips any white-space characters that the parser is currently on.</summary>
 	void SkipWhitespace();
+
+	/// <summary>Gets the character at the given <paramref name="offset"/>.</summary>
+	/// <param name="offset">The offset of the character to peek at.</param>
+	/// <returns>
+	/// 	The character at the given <paramref name="offset"/>, or <c>'\0'</c>
+	/// 	if the given <paramref name="offset"/> is past the current fragment.
+	/// </returns>
+	/// <exception cref="ArgumentOutOfRangeException">Thrown if the given <paramref name="offset"/> is negative.</exception>
+	char Peek(int offset);
 	#endregion
 }
 
@@ -166,6 +179,82 @@ public static class ITextParserExtensions
 		builder.Append(text);
 
 		return builder.ToString();
+	}
+
+	/// <summary>Checks whether the given character is the current character that the given text <paramref name="parser"/> is at.</summary>
+	/// <param name="parser">The text parser to check.</param>
+	/// <param name="current">The current character to check for.</param>
+	/// <returns>
+	/// 	<see langword="true"/> if the given character is the current
+	/// 	character that the parser is on, <see langword="false"/> otherwise.
+	/// </returns>
+	/// <remarks>
+	/// 	If the given <paramref name="current"/> character is the current character that the given text
+	///	<paramref name="parser"/> is on, then this method will also advance the <paramref name="parser"/>.
+	/// </remarks>
+	public static bool Match(this ITextParser parser, char current)
+	{
+		if (parser.Current == current)
+		{
+			parser.Advance();
+			return true;
+		}
+
+		return false;
+	}
+
+	/// <summary>
+	/// 	Checks whether the next characters in the given text <paramref name="parser"/> match
+	/// 	the given <paramref name="current"/> and <paramref name="next"/> characters.
+	/// </summary>
+	/// <param name="parser">The text parser to check.</param>
+	/// <param name="current">The current character in the sequence to check for.</param>
+	/// <param name="next">The next character in the sequence to check for.</param>
+	/// <returns>
+	/// 	<see langword="true"/> if next characters in the given text parser match the given
+	/// 	<paramref name="current"/> and <paramref name="next"/> characters, <see langword="false"/> otherwise.
+	/// </returns>
+	/// <remarks>
+	/// 	If the given sequences matches the <paramref name="parser"/> then
+	/// 	this method will also advance the <paramref name="parser"/>.
+	/// </remarks>
+	public static bool Match(this ITextParser parser, char current, char next)
+	{
+		if (parser.Current == current && parser.Next == next)
+		{
+			parser.Advance(2);
+			return true;
+		}
+
+		return false;
+	}
+
+	/// <summary>
+	/// 	Checks whether the given <paramref name="sequence"/> is the next
+	/// 	sequence of characters in the given text <paramref name="parser"/>.
+	/// </summary>
+	/// <param name="parser">The text parser to check.</param>
+	/// <param name="sequence">The sequence to check for.</param>
+	/// <returns>
+	/// 	<see langword="true"/> if the given <paramref name="sequence"/> is the next sequence of
+	/// 	characters in the given text <paramref name="parser"/>, <see langword="false"/> otherwise.
+	/// </returns>
+	/// <remarks>
+	/// 	If the given <paramref name="sequence"/> is matched, then the
+	/// 	given text <paramref name="parser"/> will also be advanced.
+	/// </remarks>
+	public static bool Match(this ITextParser parser, string sequence)
+	{
+		sequence.ThrowIfEmpty(nameof(sequence));
+
+		for (int i = 0; i < sequence.Length; i++)
+		{
+			if (parser.Peek(i) != sequence[i])
+				return false;
+		}
+
+		parser.Advance(sequence.Length);
+		return true;
 	}
 	#endregion
 }
