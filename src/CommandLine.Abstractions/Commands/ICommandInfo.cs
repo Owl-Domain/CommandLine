@@ -21,5 +21,8 @@ public interface ICommandInfo
 
 	/// <summary>The documentation for the command.</summary>
 	IDocumentationInfo? Documentation { get; }
+
+	/// <summary>Whether the command has a return value.</summary>
+	bool HasResultValue { get; }
 	#endregion
 }

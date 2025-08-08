@@ -3,12 +3,14 @@ namespace OwlDomain.CommandLine;
 /// <summary>
 /// 	Represents the command line engine.
 /// </summary>
+/// <param name="settings">The settings for the engine.</param>
 /// <param name="rootGroup">The root command group.</param>
 /// <param name="parser">The parser to use for parsing the commands.</param>
 /// <param name="validator">The validator to use for validating the parsed commands.</param>
 /// <param name="executor">The executor to use for executing the validated commands.</param>
 /// <param name="documentationPrinter">The documentation printer for the engine.</param>
 public sealed class CommandEngine(
+	IEngineSettings settings,
 	ICommandGroupInfo rootGroup,
 	ICommandParser parser,
 	ICommandValidator validator,
@@ -17,6 +19,9 @@ public sealed class CommandEngine(
 	: ICommandEngine
 {
 	#region Properties
+	/// <inheritdoc/>
+	public IEngineSettings Settings { get; } = settings;
+
 	/// <inheritdoc/>
 	public ICommandGroupInfo RootGroup { get; } = rootGroup;
 

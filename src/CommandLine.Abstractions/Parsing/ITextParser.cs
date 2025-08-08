@@ -256,5 +256,90 @@ public static class ITextParserExtensions
 		parser.Advance(sequence.Length);
 		return true;
 	}
+
+	/// <summary>
+	/// 	Checks whether the given <paramref name="sequence"/> is the next
+	/// 	sequence of characters in the given text <paramref name="parser"/>.
+	/// </summary>
+	/// <param name="parser">The text parser to check.</param>
+	/// <param name="sequence">The sequence to check for.</param>
+	/// <param name="kind">The kind of the <paramref name="token"/> to match.</param>
+	/// <param name="token">The matched token.</param>
+	/// <returns>
+	/// 	<see langword="true"/> if the given <paramref name="sequence"/> is the next sequence of
+	/// 	characters in the given text <paramref name="parser"/>, <see langword="false"/> otherwise.
+	/// </returns>
+	/// <remarks>
+	/// 	If the given <paramref name="sequence"/> is matched, then the
+	/// 	given text <paramref name="parser"/> will also be advanced.
+	/// </remarks>
+	public static bool Match(this ITextParser parser, string sequence, TextTokenKind kind, out TextToken token)
+	{
+		TextPoint start = parser.Point;
+		if (Match(parser, sequence))
+		{
+			token = new(kind, new(start, parser.Point), sequence);
+			return true;
+		}
+
+		token = default;
+		return false;
+	}
+
+	/// <summary>
+	/// 	Checks whether any of the given <paramref name="sequences"/> are the next
+	/// 	sequence of characters in the given text <paramref name="parser"/>.
+	/// </summary>
+	/// <param name="parser">The text parser to check.</param>
+	/// <param name="sequences">The sequences to check for, should be in descending order of length.</param>
+	/// <param name="kind">The kind of the <paramref name="token"/> to match.</param>
+	/// <param name="token">The matched token.</param>
+	/// <returns>
+	/// 	<see langword="true"/> if any of the given <paramref name="sequences"/> are the next sequence of
+	/// 	characters in the given text <paramref name="parser"/>, <see langword="false"/> otherwise.
+	/// </returns>
+	/// <remarks>
+	/// 	If any of the given <paramref name="sequences"/> are matched, then the
+	/// 	given text <paramref name="parser"/> will also be advanced.
+	/// </remarks>
+	public static bool MatchAny(this ITextParser parser, ReadOnlySpan<string> sequences, TextTokenKind kind, out TextToken token)
+	{
+		foreach (string sequence in sequences)
+		{
+			if (Match(parser, sequence, kind, out token))
+				return true;
+		}
+
+		token = default;
+		return false;
+	}
+
+	/// <summary>
+	/// 	Checks whether any of the given <paramref name="sequences"/> are the next
+	/// 	sequence of characters in the given text <paramref name="parser"/>.
+	/// </summary>
+	/// <param name="parser">The text parser to check.</param>
+	/// <param name="sequences">The sequences to check for.</param>
+	/// <param name="kind">The kind of the <paramref name="token"/> to match.</param>
+	/// <param name="token">The matched token.</param>
+	/// <returns>
+	/// 	<see langword="true"/> if any of the given <paramref name="sequences"/> are the next sequence of
+	/// 	characters in the given text <paramref name="parser"/>, <see langword="false"/> otherwise.
+	/// </returns>
+	/// <remarks>
+	/// 	If any of the given <paramref name="sequences"/> are matched, then the
+	/// 	given text <paramref name="parser"/> will also be advanced.
+	/// </remarks>
+	public static bool MatchAny(this ITextParser parser, IEnumerable<string> sequences, TextTokenKind kind, out TextToken token)
+	{
+		foreach (string sequence in sequences.OrderByDescending(s => s.Length))
+		{
+			if (Match(parser, sequence, kind, out token))
+				return true;
+		}
+
+		token = default;
+		return false;
+	}
 	#endregion
 }

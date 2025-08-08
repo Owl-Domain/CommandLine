@@ -20,6 +20,8 @@ public sealed class CommandParserTests
 
 		command.Name.Returns(commandName);
 		rootGroup.Commands.Returns(new Dictionary<string, ICommandInfo>() { { commandName, command } });
+
+		engine.Settings.Returns(SetupSettings());
 		engine.RootGroup.Returns(rootGroup);
 
 		CommandParser sut = new();
@@ -68,6 +70,8 @@ public sealed class CommandParserTests
 		command.Arguments.Returns([argument]);
 
 		rootGroup.Commands.Returns(new Dictionary<string, ICommandInfo>() { { commandName, command } });
+
+		engine.Settings.Returns(SetupSettings());
 		engine.RootGroup.Returns(rootGroup);
 
 		CommandParser sut = new();
@@ -122,6 +126,8 @@ public sealed class CommandParserTests
 		command.Arguments.Returns([argument]);
 
 		rootGroup.ImplicitCommand.Returns(command);
+
+		engine.Settings.Returns(SetupSettings());
 		engine.RootGroup.Returns(rootGroup);
 
 		CommandParser sut = new();
@@ -176,6 +182,8 @@ public sealed class CommandParserTests
 
 		rootGroup.Groups.Returns(new Dictionary<string, ICommandGroupInfo>() { { groupName, group } });
 		group.Commands.Returns(new Dictionary<string, ICommandInfo>() { { commandName, command } });
+
+		engine.Settings.Returns(SetupSettings());
 		engine.RootGroup.Returns(rootGroup);
 
 		CommandParser sut = new();
@@ -225,6 +233,8 @@ public sealed class CommandParserTests
 
 		rootGroup.Groups.Returns(new Dictionary<string, ICommandGroupInfo>() { { "group", group } });
 		rootGroup.ImplicitCommand.Returns(command);
+
+		engine.Settings.Returns(SetupSettings());
 		engine.RootGroup.Returns(rootGroup);
 
 		CommandParser sut = new();
@@ -309,6 +319,7 @@ public sealed class CommandParserTests
 		rootGroup.Commands.Returns(new Dictionary<string, ICommandInfo>() { { commandName, command } });
 		group.Commands.Returns(new Dictionary<string, ICommandInfo>() { { commandName, command } });
 
+		engine.Settings.Returns(SetupSettings());
 		engine.RootGroup.Returns(rootGroup);
 
 		CommandParser sut = new();
@@ -393,6 +404,12 @@ public sealed class CommandParserTests
 						string[] fragments = cmd.Split("|", StringSplitOptions.TrimEntries);
 						yield return [fragments, false];
 					}
+	}
+
+	private static IEngineSettings SetupSettings()
+	{
+		BuilderSettings settings = new();
+		return EngineSettings.From(settings);
 	}
 	#endregion
 }
