@@ -71,7 +71,7 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 		if (_classes.Count is 0) Throw.New.InvalidOperationException("No classes were provided to extract the commands from.");
 		if (_classes.Count > 1) Throw.New.NotSupportedException("Extracting commands from multiple classes is not supported yet.");
 
-		IEngineSettings settings = CreateSettings(_settings);
+		IEngineSettings settings = EngineSettings.From(_settings);
 
 		WithSelector<PrimitiveValueParserSelector>();
 
@@ -262,34 +262,6 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 
 		Throw.New.NotSupportedException($"Couldn't select a value parser for the parameter ({parameter}).");
 		return default;
-	}
-	private static void ValidateSettings(IEngineSettings settings)
-	{
-		if (settings.LongFlagPrefix == settings.ShortFlagPrefix && (settings.MergeLongAndShortFlags is false))
-			Throw.New.InvalidOperationException($"The {nameof(settings.LongFlagPrefix)} and {nameof(settings.ShortFlagPrefix)} settings had the same value, but the {settings.MergeLongAndShortFlags} setting was false.");
-
-		if (settings.IncludeHelpCommand && string.IsNullOrWhiteSpace(settings.HelpCommandName))
-			Throw.New.InvalidOperationException($"{nameof(settings.IncludeHelpCommand)} setting was set to true, but the {nameof(settings.HelpCommandName)} setting ({settings.HelpCommandName}) was invalid.");
-
-		if (settings.IncludeHelpFlag && string.IsNullOrWhiteSpace(settings.LongHelpFlagName) && settings.ShortHelpFlagName is null)
-			Throw.New.InvalidOperationException($"The {nameof(settings.IncludeHelpFlag)} settings was set set to true, but both the {nameof(settings.LongHelpFlagName)} ({settings.LongHelpFlagName}) and {nameof(settings.ShortHelpFlagName)} ({settings.ShortHelpFlagName}) settings had invalid values.");
-	}
-	private IEngineSettings CreateSettings(IEngineSettings settings)
-	{
-		ValidateSettings(settings);
-
-		return new EngineSettings()
-		{
-			AllowFlagShadowing = settings.AllowFlagShadowing,
-			LongFlagPrefix = settings.LongFlagPrefix,
-			ShortFlagPrefix = settings.ShortFlagPrefix,
-			MergeLongAndShortFlags = settings.MergeLongAndShortFlags,
-			IncludeHelpFlag = settings.IncludeHelpFlag,
-			LongHelpFlagName = settings.LongHelpFlagName,
-			ShortHelpFlagName = settings.ShortHelpFlagName,
-			IncludeHelpCommand = settings.IncludeHelpCommand,
-			HelpCommandName = settings.HelpCommandName,
-		};
 	}
 	#endregion
 

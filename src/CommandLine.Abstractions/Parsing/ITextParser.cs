@@ -256,5 +256,34 @@ public static class ITextParserExtensions
 		parser.Advance(sequence.Length);
 		return true;
 	}
+
+	/// <summary>
+	/// 	Checks whether the given <paramref name="sequence"/> is the next
+	/// 	sequence of characters in the given text <paramref name="parser"/>.
+	/// </summary>
+	/// <param name="parser">The text parser to check.</param>
+	/// <param name="sequence">The sequence to check for.</param>
+	/// <param name="kind">The kind of the <paramref name="token"/> to match.</param>
+	/// <param name="token">The matched token.</param>
+	/// <returns>
+	/// 	<see langword="true"/> if the given <paramref name="sequence"/> is the next sequence of
+	/// 	characters in the given text <paramref name="parser"/>, <see langword="false"/> otherwise.
+	/// </returns>
+	/// <remarks>
+	/// 	If the given <paramref name="sequence"/> is matched, then the
+	/// 	given text <paramref name="parser"/> will also be advanced.
+	/// </remarks>
+	public static bool Match(this ITextParser parser, string sequence, TextTokenKind kind, out TextToken token)
+	{
+		TextPoint start = parser.Point;
+		if (Match(parser, sequence))
+		{
+			token = new(kind, new(start, parser.Point), sequence);
+			return true;
+		}
+
+		token = default;
+		return false;
+	}
 	#endregion
 }

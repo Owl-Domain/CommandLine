@@ -33,4 +33,35 @@ public sealed class EngineSettings : IEngineSettings
 	/// <inheritdoc/>
 	public required string HelpCommandName { get; init; }
 	#endregion
+
+	#region Functions
+	/// <summary>Validates the given <paramref name="settings"/> and creates a copy of them.</summary>
+	/// <param name="settings">The settings to validate and copy.</param>
+	/// <returns>The validated copy of the given <paramref name="settings"/>.</returns>
+	/// <exception cref="ArgumentException">Thrown if the given settings are invalid.</exception>
+	public static IEngineSettings From(IEngineSettings settings)
+	{
+		if (settings.LongFlagPrefix == settings.ShortFlagPrefix && (settings.MergeLongAndShortFlags is false))
+			Throw.New.ArgumentException(nameof(settings), $"The {nameof(LongFlagPrefix)} and {nameof(ShortFlagPrefix)} settings had the same value, but the {settings.MergeLongAndShortFlags} setting was false.");
+
+		if (settings.IncludeHelpCommand && string.IsNullOrWhiteSpace(settings.HelpCommandName))
+			Throw.New.ArgumentException(nameof(settings), $"{nameof(IncludeHelpCommand)} setting was set to true, but the {nameof(HelpCommandName)} setting ({settings.HelpCommandName}) was invalid.");
+
+		if (settings.IncludeHelpFlag && string.IsNullOrWhiteSpace(settings.LongHelpFlagName) && settings.ShortHelpFlagName is null)
+			Throw.New.ArgumentException(nameof(settings), $"The {nameof(IncludeHelpFlag)} settings was set set to true, but both the {nameof(LongHelpFlagName)} ({settings.LongHelpFlagName}) and {nameof(ShortHelpFlagName)} ({settings.ShortHelpFlagName}) settings had invalid values.");
+
+		return new EngineSettings()
+		{
+			AllowFlagShadowing = settings.AllowFlagShadowing,
+			LongFlagPrefix = settings.LongFlagPrefix,
+			ShortFlagPrefix = settings.ShortFlagPrefix,
+			MergeLongAndShortFlags = settings.MergeLongAndShortFlags,
+			IncludeHelpFlag = settings.IncludeHelpFlag,
+			LongHelpFlagName = settings.LongHelpFlagName,
+			ShortHelpFlagName = settings.ShortHelpFlagName,
+			IncludeHelpCommand = settings.IncludeHelpCommand,
+			HelpCommandName = settings.HelpCommandName,
+		};
+	}
+	#endregion
 }
