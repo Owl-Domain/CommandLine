@@ -18,6 +18,9 @@ public sealed class VirtualCommandInfo : IVirtualCommandInfo
 
 	/// <inheritdoc/>
 	public IReadOnlyList<IArgumentInfo> Arguments { get; }
+
+	/// <inheritdoc/>
+	public IDocumentationInfo? Documentation { get; }
 	#endregion
 
 	#region Constructors
@@ -26,13 +29,20 @@ public sealed class VirtualCommandInfo : IVirtualCommandInfo
 	/// <param name="group">The group that the command belongs to.</param>
 	/// <param name="flags">The flags that the command takes.</param>
 	/// <param name="arguments">The arguments that the command takes.</param>
-	public VirtualCommandInfo(string? name, ICommandGroupInfo group, IReadOnlyCollection<IFlagInfo> flags, IReadOnlyList<IArgumentInfo> arguments)
+	/// <param name="documentation">The documentation for the command.</param>
+	public VirtualCommandInfo(
+		string? name,
+		ICommandGroupInfo group,
+		IReadOnlyCollection<IFlagInfo> flags,
+		IReadOnlyList<IArgumentInfo> arguments,
+		IDocumentationInfo? documentation)
 	{
 		name?.ThrowIfEmptyOrWhitespace(nameof(name));
 
 		Group = group;
 		Flags = flags;
 		Arguments = arguments;
+		Documentation = documentation;
 	}
 	#endregion
 

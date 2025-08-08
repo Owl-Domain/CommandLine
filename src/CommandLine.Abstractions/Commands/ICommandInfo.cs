@@ -18,5 +18,8 @@ public interface ICommandInfo
 
 	/// <summary>The arguments that the command takes.</summary>
 	IReadOnlyList<IArgumentInfo> Arguments { get; }
+
+	/// <summary>The documentation for the command.</summary>
+	IDocumentationInfo? Documentation { get; }
 	#endregion
 }

@@ -25,6 +25,12 @@ public abstract class BaseFlagInfo<T> : IFlagInfo<T>
 
 	/// <inheritdoc/>
 	public IValueParser<T> Parser { get; }
+
+	/// <inheritdoc/>
+	public IDocumentationInfo? Documentation { get; }
+
+	/// <inheritdoc/>
+	public string? DefaultValueLabel { get; }
 	#endregion
 
 	#region Constructors
@@ -35,7 +41,17 @@ public abstract class BaseFlagInfo<T> : IFlagInfo<T>
 	/// <param name="isRequired">Whether the flag has to be set when executing the command.</param>
 	/// <param name="defaultValue">The default value for the flag.</param>
 	/// <param name="parser">The value parser selected for the flag.</param>
-	protected BaseFlagInfo(FlagKind kind, string? longName, char? shortName, bool isRequired, T? defaultValue, IValueParser<T> parser)
+	/// <param name="documentation">The documentation for the flag.</param>
+	/// <param name="defaultValueLabel">The label for the <paramref name="defaultValue"/>.</param>
+	protected BaseFlagInfo(
+		FlagKind kind,
+		string? longName,
+		char? shortName,
+		bool isRequired,
+		T? defaultValue,
+		IValueParser<T> parser,
+		IDocumentationInfo? documentation,
+		string? defaultValueLabel)
 	{
 		kind.ThrowIfNotDefined(nameof(kind));
 		longName?.ThrowIfEmptyOrWhitespace(nameof(longName));
@@ -52,6 +68,8 @@ public abstract class BaseFlagInfo<T> : IFlagInfo<T>
 		IsRequired = isRequired;
 		DefaultValue = defaultValue;
 		Parser = parser;
+		Documentation = documentation;
+		DefaultValueLabel = defaultValueLabel ?? (isRequired ? null : defaultValue?.ToString());
 	}
 	#endregion
 
