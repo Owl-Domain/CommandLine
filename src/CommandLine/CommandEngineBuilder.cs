@@ -8,6 +8,7 @@ namespace OwlDomain.CommandLine;
 public sealed class CommandEngineBuilder : ICommandEngineBuilder
 {
 	#region Fields
+	private readonly BuilderSettings _settings = new();
 	private readonly HashSet<Type> _classes = [];
 	private readonly List<IValueParserSelector> _selectors = [];
 	private INameExtractor? _nameExtractor;
@@ -58,10 +59,19 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 	}
 
 	/// <inheritdoc/>
+	public ICommandEngineBuilder Customise(Action<BuilderSettings> callback)
+	{
+		callback.Invoke(_settings);
+		return this;
+	}
+
+	/// <inheritdoc/>
 	public ICommandEngine Build()
 	{
 		if (_classes.Count is 0) Throw.New.InvalidOperationException("No classes were provided to extract the commands from.");
 		if (_classes.Count > 1) Throw.New.NotSupportedException("Extracting commands from multiple classes is not supported yet.");
+
+		IEngineSettings settings = CreateSettings();
 
 		WithSelector<PrimitiveValueParserSelector>();
 
@@ -87,7 +97,7 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 			childCommands.Add(command.Name, command);
 		}
 
-		return new CommandEngine(group, _commandParser, _commandValidator, _commandExecutor, _documentationPrinter);
+		return new CommandEngine(settings, group, _commandParser, _commandValidator, _commandExecutor, _documentationPrinter);
 	}
 	#endregion
 
@@ -252,6 +262,13 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 
 		Throw.New.NotSupportedException($"Couldn't select a value parser for the parameter ({parameter}).");
 		return default;
+	}
+	private IEngineSettings CreateSettings()
+	{
+		return new EngineSettings()
+		{
+
+		};
 	}
 	#endregion
 

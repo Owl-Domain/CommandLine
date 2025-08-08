@@ -35,6 +35,11 @@ public interface ICommandEngineBuilder
 	/// <remarks>The order in which the selectors are added is the order in which they'll be used.</remarks>
 	ICommandEngineBuilder WithSelector<T>() where T : IValueParserSelector, new();
 
+	/// <summary>Allows for customising the engine settings.</summary>
+	/// <param name="callback">The callback which can be used to customise the engine settings.</param>
+	/// <returns>The used builder instance.</returns>
+	ICommandEngineBuilder Customise(Action<BuilderSettings> callback);
+
 	/// <summary>Builds a new instance of the command engine.</summary>
 	/// <returns>The built command engine.</returns>
 	ICommandEngine Build();

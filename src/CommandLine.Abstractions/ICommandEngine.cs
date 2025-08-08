@@ -6,6 +6,9 @@ namespace OwlDomain.CommandLine;
 public interface ICommandEngine
 {
 	#region Properties
+	/// <summary>The settings for the engine.</summary>
+	IEngineSettings Settings { get; }
+
 	/// <summary>The root command group.</summary>
 	ICommandGroupInfo RootGroup { get; }
 
