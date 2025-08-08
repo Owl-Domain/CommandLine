@@ -32,6 +32,9 @@ public sealed class EngineSettings : IEngineSettings
 
 	/// <inheritdoc/>
 	public required string HelpCommandName { get; init; }
+
+	/// <inheritdoc/>
+	public required IReadOnlyCollection<string> FlagValueSeparators { get; init; }
 	#endregion
 
 	#region Functions
@@ -41,14 +44,22 @@ public sealed class EngineSettings : IEngineSettings
 	/// <exception cref="ArgumentException">Thrown if the given settings are invalid.</exception>
 	public static IEngineSettings From(IEngineSettings settings)
 	{
+		List<string> errors = [];
+
 		if (settings.LongFlagPrefix == settings.ShortFlagPrefix && (settings.MergeLongAndShortFlags is false))
-			Throw.New.ArgumentException(nameof(settings), $"The {nameof(LongFlagPrefix)} and {nameof(ShortFlagPrefix)} settings had the same value, but the {settings.MergeLongAndShortFlags} setting was false.");
+			errors.Add($"The {nameof(LongFlagPrefix)} and {nameof(ShortFlagPrefix)} settings had the same value, but the {settings.MergeLongAndShortFlags} setting was false.");
 
 		if (settings.IncludeHelpCommand && string.IsNullOrWhiteSpace(settings.HelpCommandName))
-			Throw.New.ArgumentException(nameof(settings), $"{nameof(IncludeHelpCommand)} setting was set to true, but the {nameof(HelpCommandName)} setting ({settings.HelpCommandName}) was invalid.");
+			errors.Add($"{nameof(IncludeHelpCommand)} setting was set to true, but the {nameof(HelpCommandName)} setting ({settings.HelpCommandName}) was invalid.");
 
 		if (settings.IncludeHelpFlag && string.IsNullOrWhiteSpace(settings.LongHelpFlagName) && settings.ShortHelpFlagName is null)
-			Throw.New.ArgumentException(nameof(settings), $"The {nameof(IncludeHelpFlag)} settings was set set to true, but both the {nameof(LongHelpFlagName)} ({settings.LongHelpFlagName}) and {nameof(ShortHelpFlagName)} ({settings.ShortHelpFlagName}) settings had invalid values.");
+			errors.Add($"The {nameof(IncludeHelpFlag)} settings was set set to true, but both the {nameof(LongHelpFlagName)} ({settings.LongHelpFlagName}) and {nameof(ShortHelpFlagName)} ({settings.ShortHelpFlagName}) settings had invalid values.");
+
+		if (settings.FlagValueSeparators.Count is 0)
+			errors.Add($"The {nameof(FlagValueSeparators)} must have at least one separator.");
+
+		if (errors.Count > 0)
+			Throw.New.ArgumentException(nameof(settings), string.Join(Environment.NewLine, errors));
 
 		return new EngineSettings()
 		{
@@ -61,6 +72,7 @@ public sealed class EngineSettings : IEngineSettings
 			ShortHelpFlagName = settings.ShortHelpFlagName,
 			IncludeHelpCommand = settings.IncludeHelpCommand,
 			HelpCommandName = settings.HelpCommandName,
+			FlagValueSeparators = [.. settings.FlagValueSeparators.OrderByDescending(s => s.Length)],
 		};
 	}
 	#endregion

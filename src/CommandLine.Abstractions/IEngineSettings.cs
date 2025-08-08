@@ -51,5 +51,9 @@ public interface IEngineSettings
 	/// <summary>The name of the virtual help command.</summary>
 	/// <remarks><see cref="IncludeHelpCommand"/> must be set to <see langword="true"/> for this setting to matter.</remarks>
 	string HelpCommandName { get; }
+
+	/// <summary>The separators that can be used to separator flag names from flag values.</summary>
+	/// <remarks>The white-space character <c> </c> has the special meaning of allowing any white-space to be used as a separator.</remarks>
+	IReadOnlyCollection<string> FlagValueSeparators { get; }
 	#endregion
 }

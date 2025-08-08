@@ -32,6 +32,11 @@ public sealed class BuilderSettings : IEngineSettings
 
 	/// <inheritdoc/>
 	public string HelpCommandName { get; set; } = "help";
+
+	/// <inheritdoc/>
+	public HashSet<string> FlagValueSeparators { get; } = [":", "=", " "];
+
+	IReadOnlyCollection<string> IEngineSettings.FlagValueSeparators => FlagValueSeparators;
 	#endregion
 
 	#region Methods
@@ -115,6 +120,20 @@ public sealed class BuilderSettings : IEngineSettings
 	public BuilderSettings WithoutHelpCommand()
 	{
 		IncludeHelpCommand = false;
+		return this;
+	}
+
+	/// <summary>Sets the <see cref="FlagValueSeparators"/> setting.</summary>
+	/// <param name="separators">The separators which can be used to separate the flag name from the flag value.</param>
+	/// <returns>The used builder instance.</returns>
+	/// <remarks>The white-space character <c> </c> has the special meaning of allowing any white-space characters to be used as a separator.</remarks>
+	public BuilderSettings WithFlagValueSeparators(params ReadOnlySpan<string> separators)
+	{
+		FlagValueSeparators.Clear();
+
+		foreach (string sep in separators)
+			FlagValueSeparators.Add(sep);
+
 		return this;
 	}
 	#endregion

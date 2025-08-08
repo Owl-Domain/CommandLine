@@ -422,34 +422,49 @@ public sealed class CommandParser : BaseCommandParser
 	}
 	private static bool TryParseFlagValueSeparator(SingleFlagContext context, out TextToken? separator)
 	{
-		separator = default;
-		TextPoint start = context.Parser.Point;
-
 		// Todo(Nightowl): Add flag value separator setting;
-		if (context.Parser.Current is '=' or ':')
+		if (context.Parser.MatchAny(context.Engine.Settings.FlagValueSeparators.Where(s => s is not " "), TextTokenKind.Symbol, out TextToken sep))
 		{
-			string text = context.Parser.Current.ToString();
-
-			context.Parser.Advance();
-			TextPoint end = context.Parser.Point;
 			context.Parser.SkipTrivia();
-
-			separator = new(TextTokenKind.Symbol, new(start, end), text);
+			separator = sep;
 			return true;
 		}
 
-		if (char.IsWhiteSpace(context.Parser.Current) || (context.Parser.IsGreedy && context.Parser.IsAtEnd))
+		bool allowsWhitespace = context.Engine.Settings.FlagValueSeparators.Contains(" ");
+
+		if (allowsWhitespace && (char.IsWhiteSpace(context.Parser.Current) || (context.Parser.IsGreedy && context.Parser.IsAtEnd)))
 		{
 			if (context.Flag.Kind is FlagKind.Toggle or FlagKind.Repeat)
+			{
+				separator = default;
 				return false;
+			}
 
 			context.Parser.SkipTrivia();
+
+			separator = null;
 			return true;
 		}
 
 		if (context.Flag.Kind is FlagKind.Regular)
-			context.Diagnostics.Add(DiagnosticSource.Parsing, new(start, start), $"Unknown flag value separator, use either '=' or ':' symbols.");
+		{
+			TextLocation location = new(context.Parser.Point, context.Parser.Point);
 
+			IReadOnlyList<string> seps = [.. context.Engine.Settings.FlagValueSeparators.Select(sep => sep is " " ? "whitespace" : $"'{sep}'")];
+
+			string error = "Unknown flag value separator, use ";
+
+			error += seps.Count switch
+			{
+				1 => $"the {seps[0]} symbol.",
+				2 => $"either the {seps[0]} or {seps[1]} symbols.",
+				_ => $"either the {string.Join(", ", seps.Take(seps.Count - 1))} or the {seps[seps.Count - 1]} symbols."
+			};
+
+			context.Diagnostics.Add(DiagnosticSource.Parsing, location, error);
+		}
+
+		separator = default;
 		return false;
 	}
 	#endregion
