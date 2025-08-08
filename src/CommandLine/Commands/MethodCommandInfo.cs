@@ -24,6 +24,9 @@ public sealed class MethodCommandInfo : IMethodCommandInfo
 
 	/// <inheritdoc/>
 	public IDocumentationInfo? Documentation { get; }
+
+	/// <inheritdoc/>
+	public bool HasResultValue => Method.ReturnType != typeof(void);
 	#endregion
 
 	#region Constructors

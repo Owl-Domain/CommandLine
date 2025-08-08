@@ -21,6 +21,9 @@ public sealed class VirtualCommandInfo : IVirtualCommandInfo
 
 	/// <inheritdoc/>
 	public IDocumentationInfo? Documentation { get; }
+
+	/// <inheritdoc/>
+	public bool HasResultValue { get; }
 	#endregion
 
 	#region Constructors
@@ -30,12 +33,14 @@ public sealed class VirtualCommandInfo : IVirtualCommandInfo
 	/// <param name="flags">The flags that the command takes.</param>
 	/// <param name="arguments">The arguments that the command takes.</param>
 	/// <param name="documentation">The documentation for the command.</param>
+	/// <param name="hasResultValue">Whether the command has a result value.</param>
 	public VirtualCommandInfo(
 		string? name,
 		ICommandGroupInfo group,
 		IReadOnlyCollection<IFlagInfo> flags,
 		IReadOnlyList<IArgumentInfo> arguments,
-		IDocumentationInfo? documentation)
+		IDocumentationInfo? documentation,
+		bool hasResultValue)
 	{
 		name?.ThrowIfEmptyOrWhitespace(nameof(name));
 
@@ -43,6 +48,7 @@ public sealed class VirtualCommandInfo : IVirtualCommandInfo
 		Flags = flags;
 		Arguments = arguments;
 		Documentation = documentation;
+		HasResultValue = hasResultValue;
 	}
 	#endregion
 

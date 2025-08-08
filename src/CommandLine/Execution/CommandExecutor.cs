@@ -10,7 +10,7 @@ public sealed class CommandExecutor : ICommandExecutor
 	public ICommandExecutorResult Execute(ICommandValidatorResult validatorResult)
 	{
 		if (validatorResult.Successful is false)
-			return new CommandExecutorResult(false, validatorResult, new DiagnosticBag(), default);
+			return new CommandExecutorResult(false, validatorResult, new DiagnosticBag(), default, default);
 
 		if (validatorResult.ParserResult.LeafCommand is not ICommandParseResult command)
 		{
@@ -23,6 +23,7 @@ public sealed class CommandExecutor : ICommandExecutor
 
 		Debug.Assert(command.Arguments.Count == command.CommandInfo.Arguments.Count);
 
+		object? commandResult = null;
 		if (command.CommandInfo is IMethodCommandInfo methodCommand)
 		{
 			object? container = SetupContainer(validatorResult.ParserResult, methodCommand);
@@ -31,7 +32,7 @@ public sealed class CommandExecutor : ICommandExecutor
 			foreach (IArgumentParseResult argument in command.Arguments)
 				parameters[argument.ArgumentInfo.Position] = argument.Value.Value;
 
-			_ = methodCommand.Method.Invoke(container, parameters);
+			commandResult = methodCommand.Method.Invoke(container, parameters);
 		}
 		else if (command.CommandInfo is IVirtualCommandInfo)
 			Throw.New.NotImplementedException($"Executing virtual commands has not been implemented yet.");
@@ -39,7 +40,7 @@ public sealed class CommandExecutor : ICommandExecutor
 			Throw.New.InvalidOperationException($"Unknown command type ({command.CommandInfo?.GetType()}).");
 
 		watch.Stop();
-		CommandExecutorResult result = new(diagnostics.Any() is false, validatorResult, diagnostics, watch.Elapsed);
+		CommandExecutorResult result = new(diagnostics.Any() is false, validatorResult, diagnostics, watch.Elapsed, commandResult);
 
 		return result;
 	}

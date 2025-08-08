@@ -114,9 +114,6 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 			if (method.IsSpecialName || method.DeclaringType == typeof(object))
 				continue;
 
-			if (method.ReturnType != typeof(void))
-				Throw.New.NotSupportedException("Command return values are not supported yet.");
-
 			string? name = _nameExtractor.GetCommandName(method);
 			if (name is null)
 				Throw.New.InvalidOperationException($"Couldn't extract a command name from the method ({method}).");
