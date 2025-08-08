@@ -58,57 +58,53 @@ public sealed class CommandExecutor : ICommandExecutor
 		Debug.Assert(container is not null);
 
 		foreach (IFlagParseResult flag in parserResult.Flags)
-		{
-			if (flag is IValueFlagParseResult valueFlag)
-			{
-				if (valueFlag.FlagInfo is IPropertyFlagInfo propertyFlag)
-				{
-					Type? declaringType = propertyFlag.Property.DeclaringType;
-					Debug.Assert(declaringType is not null);
-
-					if (containerType == declaringType || declaringType.IsAssignableFrom(containerType))
-						propertyFlag.Property.SetValue(container, valueFlag.Value.Value);
-				}
-			}
-			else if (flag is IChainFlagParseResult chainFlag)
-			{
-				foreach (IFlagInfo toggleFlag in chainFlag.FlagInfos)
-				{
-					if (toggleFlag is IPropertyFlagInfo propertyFlag)
-					{
-						Type? declaringType = propertyFlag.Property.DeclaringType;
-						Debug.Assert(declaringType is not null);
-
-						if (containerType == declaringType || declaringType.IsAssignableFrom(containerType))
-							propertyFlag.Property.SetValue(container, true);
-					}
-				}
-			}
-			else if (flag is IToggleFlagParseResult toggleFlag)
-			{
-				if (toggleFlag is IPropertyFlagInfo propertyFlag)
-				{
-					Type? declaringType = propertyFlag.Property.DeclaringType;
-					Debug.Assert(declaringType is not null);
-
-					if (containerType == declaringType || declaringType.IsAssignableFrom(containerType))
-						propertyFlag.Property.SetValue(container, true);
-				}
-			}
-			else if (flag is IRepeatFlagParseResult repeatFlag)
-			{
-				if (repeatFlag is IPropertyFlagInfo propertyFlag)
-				{
-					Type? declaringType = propertyFlag.Property.DeclaringType;
-					Debug.Assert(declaringType is not null);
-
-					if (containerType == declaringType || declaringType.IsAssignableFrom(containerType))
-						propertyFlag.Property.SetValue(container, Convert.ChangeType(repeatFlag.Repetition, propertyFlag.ValueType));
-				}
-			}
-		}
+			TrySetContainerProperty(container, flag);
 
 		return container;
+	}
+	private static void TrySetContainerProperty(object container, IFlagParseResult flag)
+	{
+		if (flag is IValueFlagParseResult valueFlag)
+		{
+			if (valueFlag.FlagInfo is IPropertyFlagInfo propertyFlag)
+				SetContainerProperty(container, propertyFlag, valueFlag.Value.Value);
+		}
+		else if (flag is IChainFlagParseResult chainFlag)
+		{
+			foreach (IFlagInfo toggleFlag in chainFlag.FlagInfos)
+			{
+				if (toggleFlag is IPropertyFlagInfo propertyFlag)
+					SetContainerProperty(container, propertyFlag, true);
+			}
+		}
+		else if (flag is IToggleFlagParseResult toggleFlag)
+		{
+			if (toggleFlag is IPropertyFlagInfo propertyFlag)
+				SetContainerProperty(container, propertyFlag, true);
+		}
+		else if (flag is IRepeatFlagParseResult repeatFlag)
+		{
+			if (repeatFlag is IPropertyFlagInfo propertyFlag)
+			{
+				object? value = Convert.ChangeType(repeatFlag.Repetition, propertyFlag.ValueType);
+				SetContainerProperty(container, propertyFlag, value);
+			}
+		}
+	}
+	private static void SetContainerProperty(object container, IPropertyFlagInfo propertyFlag, object? value)
+	{
+		SetContainerProperty(container, propertyFlag.Property, value);
+	}
+	private static void SetContainerProperty(object container, PropertyInfo property, object? value)
+	{
+		Type? containerType = container.GetType();
+		Type? declaringType = property.DeclaringType;
+		Debug.Assert(declaringType is not null);
+
+		if (containerType != declaringType && (declaringType.IsAssignableFrom(containerType) is false))
+			Throw.New.InvalidOperationException($"Couldn't set the property ({property}) on the given container type ({containerType}).");
+
+		property.SetValue(container, value);
 	}
 	#endregion
 }
