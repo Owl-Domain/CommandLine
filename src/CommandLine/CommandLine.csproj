@@ -21,6 +21,7 @@
 	<!-- Package references -->
 	<ItemGroup Label="packages">
 	  <PackageReference Include="OwlDomain.Common" Version="1.5.1" />
+	  <PackageReference Include="OwlDomain.Documentation" Version="1.0.4" />
 	</ItemGroup>
 
 	<!-- NuGet package -->

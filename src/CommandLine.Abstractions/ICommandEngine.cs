@@ -17,6 +17,9 @@ public interface ICommandEngine
 
 	/// <summary>The executor to use for executing the validated commands.</summary>
 	ICommandExecutor Executor { get; }
+
+	/// <summary>The documentation printer for the engine.</summary>
+	IDocumentationPrinter DocumentationPrinter { get; }
 	#endregion
 
 	#region Methods

@@ -26,6 +26,12 @@ public interface IFlagInfo
 
 	/// <summary>The value parser selected for the flag.</summary>
 	IValueParser Parser { get; }
+
+	/// <summary>The documentation for the flag.</summary>
+	IDocumentationInfo? Documentation { get; }
+
+	/// <summary>The label for the <see cref="DefaultValue"/>.</summary>
+	string? DefaultValueLabel { get; }
 	#endregion
 }
 

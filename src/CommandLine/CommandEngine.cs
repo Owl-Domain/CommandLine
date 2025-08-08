@@ -7,11 +7,13 @@ namespace OwlDomain.CommandLine;
 /// <param name="parser">The parser to use for parsing the commands.</param>
 /// <param name="validator">The validator to use for validating the parsed commands.</param>
 /// <param name="executor">The executor to use for executing the validated commands.</param>
+/// <param name="documentationPrinter">The documentation printer for the engine.</param>
 public sealed class CommandEngine(
 	ICommandGroupInfo rootGroup,
 	ICommandParser parser,
 	ICommandValidator validator,
-	ICommandExecutor executor)
+	ICommandExecutor executor,
+	IDocumentationPrinter documentationPrinter)
 	: ICommandEngine
 {
 	#region Properties
@@ -26,6 +28,9 @@ public sealed class CommandEngine(
 
 	/// <inheritdoc/>
 	public ICommandExecutor Executor { get; } = executor;
+
+	/// <inheritdoc/>
+	public IDocumentationPrinter DocumentationPrinter { get; } = documentationPrinter;
 	#endregion
 
 	#region Functions

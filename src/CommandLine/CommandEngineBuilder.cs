@@ -14,6 +14,8 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 	private ICommandParser? _commandParser;
 	private ICommandValidator? _commandValidator;
 	private ICommandExecutor? _commandExecutor;
+	private IDocumentationProvider? _documentationProvider;
+	private IDocumentationPrinter? _documentationPrinter;
 	#endregion
 
 	#region Methods
@@ -67,14 +69,17 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 		_commandParser ??= new CommandParser();
 		_commandValidator ??= new CommandValidator();
 		_commandExecutor ??= new CommandExecutor();
+		_documentationProvider ??= new DocumentationProvider();
+		_documentationPrinter ??= new DocumentationPrinter();
 
 		Dictionary<string, ICommandGroupInfo> childGroups = [];
 		Dictionary<string, ICommandInfo> childCommands = [];
 
 		Type classType = _classes.Single();
 		IReadOnlyCollection<IFlagInfo> classFlags = GetFlags(classType);
+		IDocumentationInfo? documentation = _documentationProvider.GetInfo(classType);
 
-		CommandGroupInfo group = new(null, null, classFlags, childGroups, childCommands, null);
+		CommandGroupInfo group = new(null, null, classFlags, childGroups, childCommands, null, documentation);
 
 		foreach (IMethodCommandInfo command in GetCommands(classType, group, classFlags))
 		{
@@ -82,7 +87,7 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 			childCommands.Add(command.Name, command);
 		}
 
-		return new CommandEngine(group, _commandParser, _commandValidator, _commandExecutor);
+		return new CommandEngine(group, _commandParser, _commandValidator, _commandExecutor, _documentationPrinter);
 	}
 	#endregion
 
@@ -90,6 +95,7 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 	private IReadOnlyCollection<IMethodCommandInfo> GetCommands(Type classType, ICommandGroupInfo group, IReadOnlyCollection<IFlagInfo> classFlags)
 	{
 		Debug.Assert(_nameExtractor is not null);
+		Debug.Assert(_documentationProvider is not null);
 
 		List<IMethodCommandInfo> commands = [];
 
@@ -107,8 +113,9 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 
 			IReadOnlyCollection<IFlagInfo> flags = method.IsStatic ? [] : classFlags;
 			IReadOnlyList<IArgumentInfo> arguments = GetArguments(method);
+			IDocumentationInfo? documentation = _documentationProvider.GetInfo(method);
 
-			MethodCommandInfo command = new(method, name, group, flags, arguments);
+			MethodCommandInfo command = new(method, name, group, flags, arguments, documentation);
 			commands.Add(command);
 		}
 
@@ -117,6 +124,7 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 	private IReadOnlyCollection<IFlagInfo> GetFlags(Type type)
 	{
 		Debug.Assert(_nameExtractor is not null);
+		Debug.Assert(_documentationProvider is not null);
 
 		List<IFlagInfo> flags = [];
 
@@ -138,8 +146,9 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 			char? shortName = _nameExtractor.GetShortFlagName(property);
 			IValueParser parser = SelectValueParser(property);
 			FlagKind kind = GetFlagKind(property.PropertyType, property.Name, longName, shortName);
+			IDocumentationInfo? documentation = _documentationProvider.GetInfo(property);
 
-			IPropertyFlagInfo flag = CreatePropertyFlag(property, kind, longName, shortName, isRequired, defaultValue, parser);
+			IPropertyFlagInfo flag = CreatePropertyFlag(property, kind, longName, shortName, isRequired, defaultValue, parser, documentation, null);
 
 			flags.Add(flag);
 		}
@@ -149,6 +158,7 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 	private IReadOnlyList<IArgumentInfo> GetArguments(MethodInfo method)
 	{
 		Debug.Assert(_nameExtractor is not null);
+		Debug.Assert(_documentationProvider is not null);
 
 		List<IArgumentInfo> arguments = [];
 
@@ -162,8 +172,9 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 			bool isRequired = parameter.HasDefaultValue is false;
 			object? defaultValue = parameter.HasDefaultValue ? parameter.RawDefaultValue : null;
 			IValueParser parser = SelectValueParser(parameter);
+			IDocumentationInfo? documentation = _documentationProvider.GetInfo(parameter);
 
-			IArgumentInfo argument = CreateParameterArgument(parameter, name, position, isRequired, defaultValue, parser);
+			IArgumentInfo argument = CreateParameterArgument(parameter, name, position, isRequired, defaultValue, parser, documentation, null);
 			arguments.Add(argument);
 		}
 
@@ -245,29 +256,55 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 	#endregion
 
 	#region Generic type helpers
-	private static IPropertyFlagInfo CreatePropertyFlag(PropertyInfo property, FlagKind kind, string? longName, char? shortName, bool isRequired, object? defaultValue, IValueParser parser)
+	private static IPropertyFlagInfo CreatePropertyFlag(
+		PropertyInfo property,
+		FlagKind kind,
+		string? longName,
+		char? shortName,
+		bool isRequired,
+		object? defaultValue,
+		IValueParser parser,
+		IDocumentationInfo? documentation,
+		string? defaultValueLabel)
 	{
 		Type type = typeof(PropertyFlagInfo<>).MakeGenericType(property.PropertyType);
 
-		object? untyped = Activator.CreateInstance(type, [property, kind, longName, shortName, isRequired, defaultValue, parser]);
+		object? untyped = Activator.CreateInstance(type, [property, kind, longName, shortName, isRequired, defaultValue, parser, documentation, defaultValueLabel]);
 		Debug.Assert(untyped is not null);
 
 		return (IPropertyFlagInfo)untyped;
 	}
-	private static IParameterFlagInfo CreateParameterFlag(ParameterInfo parameter, FlagKind kind, string? longName, char? shortName, bool isRequired, object? defaultValue, IValueParser parser)
+	private static IParameterFlagInfo CreateParameterFlag(
+		ParameterInfo parameter,
+		FlagKind kind,
+		string? longName,
+		char? shortName,
+		bool isRequired,
+		object? defaultValue,
+		IValueParser parser,
+		IDocumentationInfo? documentation,
+		string? defaultValueLabel)
 	{
 		Type type = typeof(ParameterFlagInfo<>).MakeGenericType(parameter.ParameterType);
 
-		object? untyped = Activator.CreateInstance(type, [parameter, kind, longName, shortName, isRequired, defaultValue, parser]);
+		object? untyped = Activator.CreateInstance(type, [parameter, kind, longName, shortName, isRequired, defaultValue, parser, documentation, defaultValueLabel]);
 		Debug.Assert(untyped is not null);
 
 		return (IParameterFlagInfo)untyped;
 	}
-	private static IParameterArgumentInfo CreateParameterArgument(ParameterInfo parameter, string name, int position, bool isRequired, object? defaultValue, IValueParser parser)
+	private static IParameterArgumentInfo CreateParameterArgument(
+		ParameterInfo parameter,
+		string name,
+		int position,
+		bool isRequired,
+		object? defaultValue,
+		IValueParser parser,
+		IDocumentationInfo? documentation,
+		string? defaultValueLabel)
 	{
 		Type type = typeof(ParameterArgumentInfo<>).MakeGenericType(parameter.ParameterType);
 
-		object? untyped = Activator.CreateInstance(type, [parameter, name, position, isRequired, defaultValue, parser]);
+		object? untyped = Activator.CreateInstance(type, [parameter, name, position, isRequired, defaultValue, parser, documentation, defaultValueLabel]);
 		Debug.Assert(untyped is not null);
 
 		return (IParameterArgumentInfo)untyped;

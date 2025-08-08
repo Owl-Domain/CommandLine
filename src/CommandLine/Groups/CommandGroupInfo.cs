@@ -24,6 +24,9 @@ public sealed class CommandGroupInfo : ICommandGroupInfo
 
 	/// <inheritdoc/>
 	public ICommandInfo? ImplicitCommand { get; }
+
+	/// <inheritdoc/>
+	public IDocumentationInfo? Documentation { get; }
 	#endregion
 
 	#region Constructors
@@ -34,13 +37,15 @@ public sealed class CommandGroupInfo : ICommandGroupInfo
 	/// <param name="groups">The child command groups in the group.</param>
 	/// <param name="commands">The child commands in the group.</param>
 	/// <param name="implicitCommand">The implicit command for the group.</param>
+	/// <param name="documentation">The documentation for the command group.</param>
 	public CommandGroupInfo(
 		string? name,
 		ICommandGroupInfo? parent,
 		IReadOnlyCollection<IFlagInfo> flags,
 		IReadOnlyDictionary<string, ICommandGroupInfo> groups,
 		IReadOnlyDictionary<string, ICommandInfo> commands,
-		ICommandInfo? implicitCommand)
+		ICommandInfo? implicitCommand,
+		IDocumentationInfo? documentation)
 	{
 		name?.ThrowIfEmptyOrWhitespace(nameof(name));
 
@@ -50,6 +55,7 @@ public sealed class CommandGroupInfo : ICommandGroupInfo
 		Groups = groups;
 		Commands = commands;
 		ImplicitCommand = implicitCommand;
+		Documentation = documentation;
 	}
 	#endregion
 

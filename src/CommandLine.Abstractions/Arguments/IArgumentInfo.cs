@@ -23,6 +23,12 @@ public interface IArgumentInfo
 
 	/// <summary>The value parser selected for the argument.</summary>
 	IValueParser Parser { get; }
+
+	/// <summary>The documentation for the argument.</summary>
+	IDocumentationInfo? Documentation { get; }
+
+	/// <summary>The label for the <see cref="DefaultValue"/>.</summary>
+	string? DefaultValueLabel { get; }
 	#endregion
 }
 

@@ -25,6 +25,12 @@ public sealed class ParameterArgumentInfo<T> : IParameterArgumentInfo<T>
 
 	/// <inheritdoc/>
 	public IValueParser<T> Parser { get; }
+
+	/// <inheritdoc/>
+	public IDocumentationInfo? Documentation { get; }
+
+	/// <inheritdoc/>
+	public string? DefaultValueLabel { get; }
 	#endregion
 
 	#region Constructors
@@ -35,7 +41,17 @@ public sealed class ParameterArgumentInfo<T> : IParameterArgumentInfo<T>
 	/// <param name="isRequired">Whether the argument has to be set when executing the command.</param>
 	/// <param name="defaultValue">The default value for the argument.</param>
 	/// <param name="parser">The value parser selected for the argument.</param>
-	public ParameterArgumentInfo(ParameterInfo parameter, string name, int position, bool isRequired, T? defaultValue, IValueParser<T> parser)
+	/// <param name="documentation">The documentation for the argument.</param>
+	/// <param name="defaultValueLabel">The label for the <paramref name="defaultValue"/>.</param>
+	public ParameterArgumentInfo(
+		ParameterInfo parameter,
+		string name,
+		int position,
+		bool isRequired,
+		T? defaultValue,
+		IValueParser<T> parser,
+		IDocumentationInfo? documentation,
+		string? defaultValueLabel)
 	{
 		name.ThrowIfEmptyOrWhitespace(nameof(name));
 		position.ThrowIfLessThan(0, nameof(position));
@@ -49,6 +65,8 @@ public sealed class ParameterArgumentInfo<T> : IParameterArgumentInfo<T>
 		IsRequired = isRequired;
 		DefaultValue = defaultValue;
 		Parser = parser;
+		Documentation = documentation;
+		DefaultValueLabel = defaultValueLabel ?? (isRequired ? null : defaultValue?.ToString());
 	}
 	#endregion
 

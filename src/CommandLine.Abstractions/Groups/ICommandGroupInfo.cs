@@ -25,5 +25,8 @@ public interface ICommandGroupInfo
 
 	/// <summary>The implicit command for the group.</summary>
 	ICommandInfo? ImplicitCommand { get; }
+
+	/// <summary>The documentation for the command group.</summary>
+	IDocumentationInfo? Documentation { get; }
 	#endregion
 }
