@@ -33,7 +33,7 @@ public sealed class TextParser : ITextParser
 	{
 		get
 		{
-			if (IsLazy is false)
+			if (IsGreedy)
 				return Text;
 
 			ReadOnlySpan<char> span = Text;
@@ -140,7 +140,7 @@ public sealed class TextParser : ITextParser
 	{
 		SkipWhitespace();
 
-		if (IsLazy is false && IsLastFragment is false && IsAtEnd)
+		if (IsLastFragment is false && IsGreedy && IsAtEnd)
 			NextFragment();
 	}
 

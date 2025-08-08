@@ -438,7 +438,7 @@ public sealed class CommandParser : BaseCommandParser
 			return true;
 		}
 
-		if (char.IsWhiteSpace(context.Parser.Current) || ((context.Parser.IsLazy is false) && context.Parser.IsAtEnd))
+		if (char.IsWhiteSpace(context.Parser.Current) || (context.Parser.IsGreedy && context.Parser.IsAtEnd))
 		{
 			if (context.Flag.Kind is FlagKind.Toggle or FlagKind.Repeat)
 				return false;
