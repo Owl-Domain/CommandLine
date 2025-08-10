@@ -11,7 +11,8 @@ public interface ICommandInfo
 	string? Name { get; }
 
 	/// <summary>The group that the command belongs to.</summary>
-	ICommandGroupInfo Group { get; }
+	/// <remarks>This might be <see langword="null"/> for virtual commands.</remarks>
+	ICommandGroupInfo? Group { get; }
 
 	/// <summary>The flags that the command takes.</summary>
 	IReadOnlyCollection<IFlagInfo> Flags { get; }

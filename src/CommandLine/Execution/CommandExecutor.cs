@@ -21,7 +21,7 @@ public sealed class CommandExecutor : ICommandExecutor
 		IReadOnlyDictionary<IFlagInfo, object?> flags = GetFlags(validatorResult.ParserResult);
 		IReadOnlyDictionary<IArgumentInfo, object?> arguments = GetArguments(validatorResult.ParserResult);
 
-		ICommandGroupInfo? groupTarget = GetTargetGroup(validatorResult.ParserResult.CommandOrGroup);
+		ICommandGroupInfo? groupTarget = GetTargetGroup(validatorResult.ParserResult.CommandOrGroup) ?? validatorResult.Engine.RootGroup;
 		ICommandInfo? commandTarget = GetTargetCommand(validatorResult.ParserResult.CommandOrGroup);
 
 		DiagnosticBag diagnostics = [];
@@ -93,12 +93,12 @@ public sealed class CommandExecutor : ICommandExecutor
 	{
 		while (result is not null)
 		{
-			if (result is ICommandParseResult)
-				return null;
+			if (result is ICommandParseResult command)
+				return command.CommandInfo.Group;
 
 			if (result is IGroupParseResult group)
 			{
-				if (group.CommandOrGroup is null)
+				if (group.CommandOrGroup is null or ICommandParseResult)
 					return group.GroupInfo;
 
 				result = group.CommandOrGroup;

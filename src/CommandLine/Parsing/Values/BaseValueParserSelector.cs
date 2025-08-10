@@ -7,6 +7,22 @@ public abstract class BaseValueParserSelector : IValueParserSelector
 {
 	#region Methods
 	/// <inheritdoc/>
+	public bool TrySelect(Type type, [NotNullWhen(true)] out IValueParser? parser)
+	{
+		parser = TrySelect(type);
+
+		if (parser is not null)
+		{
+			if (type.IsAssignableFrom(parser.ValueType) is false)
+				Throw.New.InvalidOperationException($"The selected parser ({parser.GetType()}) does not handle values of the required type ({type}).");
+
+			return true;
+		}
+
+		return false;
+	}
+
+	/// <inheritdoc/>
 	public bool TrySelect(ParameterInfo parameter, [NotNullWhen(true)] out IValueParser? parser)
 	{
 		parser = TrySelect(parameter);

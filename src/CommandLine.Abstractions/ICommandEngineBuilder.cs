@@ -40,6 +40,19 @@ public interface ICommandEngineBuilder
 	/// <returns>The used builder instance.</returns>
 	ICommandEngineBuilder Customise(Action<BuilderSettings> callback);
 
+	/// <summary>Adds the given virtual <paramref name="command"/> to the engine.</summary>
+	/// <param name="command">The virtual command to add.</param>
+	/// <param name="predicate">The predicate used to decide which groups the virtual <paramref name="command"/> should be added to.</param>
+	/// <returns>The used builder instance.</returns>
+	ICommandEngineBuilder WithVirtualCommand(IVirtualCommandInfo command, Predicate<ICommandGroupInfo> predicate);
+
+	/// <summary>Adds the given virtual <paramref name="flag"/> to the engine.</summary>
+	/// <param name="flag">The virtual flag to add.</param>
+	/// <param name="groupPredicate">The predicate used to decide which groups the virtual <paramref name="flag"/> should be added to.</param>
+	/// <param name="commandPredicate">The predicate should to decide which commands the virtual <paramref name="flag"/> should be added to.</param>
+	/// <returns>The used builder instance.</returns>
+	ICommandEngineBuilder WirthVirtualFlag(IVirtualFlagInfo flag, Predicate<ICommandGroupInfo> groupPredicate, Predicate<ICommandInfo> commandPredicate);
+
 	/// <summary>Builds a new instance of the command engine.</summary>
 	/// <returns>The built command engine.</returns>
 	ICommandEngine Build();
