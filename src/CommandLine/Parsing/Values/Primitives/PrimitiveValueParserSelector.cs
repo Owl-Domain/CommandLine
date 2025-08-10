@@ -42,7 +42,11 @@ public sealed class PrimitiveValueParserSelector : BaseValueParserSelector
 		if (type == typeof(bool))
 			return new BooleanValueParser();
 
-		if (TryCreateGenericParser(type, typeof(IBinaryInteger<>), typeof(IntegerValueParser<>), out IValueParser? parser))
+
+		if (TryCreateGenericParser(type, typeof(IFloatingPoint<>), typeof(DecimalValueParser<>), out IValueParser? parser))
+			return parser;
+
+		if (TryCreateGenericParser(type, typeof(IBinaryInteger<>), typeof(IntegerValueParser<>), out parser))
 			return parser;
 
 		if (TryCreateGenericParser(type, typeof(IParsable<>), typeof(ParsableValueParser<>), out parser))
