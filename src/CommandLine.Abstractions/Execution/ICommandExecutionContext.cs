@@ -19,11 +19,9 @@ public interface ICommandExecutionContext
 	ICommandEngine Engine { get; }
 
 	/// <summary>The targetted group.</summary>
-	/// <remarks>If this is <see langword="null"/> then <see cref="CommandTarget"/> will not be <see langword="null"/>.</remarks>
-	ICommandGroupInfo? GroupTarget { get; }
+	ICommandGroupInfo GroupTarget { get; }
 
 	/// <summary>The targetted command.</summary>
-	/// <remarks>If this is <see langword="null"/> then <see cref="GroupTarget"/> will not be <see langword="null"/>.</remarks>
 	ICommandInfo? CommandTarget { get; }
 
 	/// <summary>The arguments that will be passed to the target upon execution.</summary>

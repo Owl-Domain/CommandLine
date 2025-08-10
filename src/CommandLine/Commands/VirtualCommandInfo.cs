@@ -10,7 +10,7 @@ namespace OwlDomain.CommandLine.Commands;
 /// <param name="documentation">The documentation for the command.</param>
 /// <param name="hasResultValue">Whether the command has a result value.</param>
 public sealed class VirtualCommandInfo(
-	string? name,
+	string name,
 	ICommandGroupInfo? group,
 	IReadOnlyCollection<IFlagInfo> flags,
 	IReadOnlyList<IArgumentInfo> arguments,

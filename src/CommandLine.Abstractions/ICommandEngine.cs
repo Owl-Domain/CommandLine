@@ -28,6 +28,9 @@ public interface ICommandEngine
 
 	/// <summary>The documentation printer for the engine.</summary>
 	IDocumentationPrinter DocumentationPrinter { get; }
+
+	/// <summary>The known virtual commands that have been added to the engine.</summary>
+	IVirtualCommands VirtualCommands { get; }
 	#endregion
 
 	#region Methods

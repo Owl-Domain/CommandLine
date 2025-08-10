@@ -1,4 +1,5 @@
 using OwlDomain.CommandLine.Parsing.Values.Primitives;
+using OwlDomain.Documentation.Document.Nodes;
 
 namespace OwlDomain.CommandLine;
 
@@ -7,6 +8,10 @@ namespace OwlDomain.CommandLine;
 /// </summary>
 public sealed class CommandEngineBuilder : ICommandEngineBuilder
 {
+	#region Nested types
+	private readonly record struct VirtualCommand(IVirtualCommandInfo Command, Predicate<ICommandGroupInfo> Predicate);
+	#endregion
+
 	#region Fields
 	private readonly BuilderSettings _settings = new();
 	private readonly HashSet<Type> _classes = [];
@@ -17,6 +22,7 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 	private ICommandExecutor? _commandExecutor;
 	private IDocumentationProvider? _documentationProvider;
 	private IDocumentationPrinter? _documentationPrinter;
+	private readonly List<VirtualCommand> _virtualCommands = [];
 	#endregion
 
 	#region Methods
@@ -66,6 +72,14 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 	}
 
 	/// <inheritdoc/>
+	public ICommandEngineBuilder WithVirtualCommand(IVirtualCommandInfo command, Predicate<ICommandGroupInfo> predicate)
+	{
+		_virtualCommands.Add(new(command, predicate));
+
+		return this;
+	}
+
+	/// <inheritdoc/>
 	public ICommandEngine Build()
 	{
 		if (_classes.Count is 0) Throw.New.InvalidOperationException("No classes were provided to extract the commands from.");
@@ -82,6 +96,24 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 		_documentationProvider ??= new DocumentationProvider();
 		_documentationPrinter ??= new DocumentationPrinter();
 
+		VirtualCommands virtualCommands = new()
+		{
+			Help = TryCreateHelpCommand(settings),
+		};
+
+		if (virtualCommands.Help is not null)
+		{
+			WithVirtualCommand(virtualCommands.Help, group => true);
+			_commandExecutor.OnExecute += context =>
+			{
+				if (context.CommandTarget == virtualCommands.Help)
+				{
+					_documentationPrinter.Print(context.Engine, context.GroupTarget);
+					context.Handle(null);
+				}
+			};
+		}
+
 		Dictionary<string, ICommandGroupInfo> childGroups = [];
 		Dictionary<string, ICommandInfo> childCommands = [];
 
@@ -91,13 +123,21 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 
 		CommandGroupInfo group = new(null, null, classFlags, childGroups, childCommands, null, documentation);
 
+		foreach (VirtualCommand virtualCommand in _virtualCommands)
+		{
+			Debug.Assert(virtualCommand.Command.Name is not null);
+
+			if (virtualCommand.Predicate.Invoke(group))
+				childCommands.Add(virtualCommand.Command.Name, virtualCommand.Command);
+		}
+
 		foreach (IMethodCommandInfo command in GetCommands(classType, group, classFlags))
 		{
 			Debug.Assert(command.Name is not null);
 			childCommands.Add(command.Name, command);
 		}
 
-		return new CommandEngine(settings, group, _commandParser, _commandValidator, _commandExecutor, _documentationPrinter);
+		return new CommandEngine(settings, group, _commandParser, _commandValidator, _commandExecutor, _documentationPrinter, virtualCommands);
 	}
 	#endregion
 
@@ -186,6 +226,19 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 		}
 
 		return arguments;
+	}
+	#endregion
+
+	#region Virtual command helpers
+	private static IVirtualCommandInfo? TryCreateHelpCommand(IEngineSettings settings)
+	{
+		if (settings.IncludeHelpCommand is false)
+			return null;
+
+		TextDocumentationNode summary = new("Shows the help information about the available commands.");
+		DocumentationInfo documentation = new(summary, null);
+
+		return new VirtualCommandInfo(settings.HelpCommandName, null, [], [], documentation, false);
 	}
 	#endregion
 
