@@ -45,3 +45,27 @@ public interface ICommandEngineBuilder
 	ICommandEngine Build();
 	#endregion
 }
+
+/// <summary>
+/// 	Contains various extension methods related to the <see cref="ICommandEngineBuilder"/>.
+/// </summary>
+public static class ICommandEngineBuilderExtensions
+{
+	#region Methods
+	/// <summary>Builds a new instance of the command engine.</summary>
+	/// <param name="builder">The command engine builder to use.</param>
+	/// <param name="buildDuration">The amount of time it took to build the engine. This does not include the setup time.</param>
+	/// <returns>The built command engine.</returns>
+	public static ICommandEngine Build(this ICommandEngineBuilder builder, out TimeSpan buildDuration)
+	{
+		Stopwatch watch = Stopwatch.StartNew();
+
+		ICommandEngine engine = builder.Build();
+
+		watch.Stop();
+		buildDuration = watch.Elapsed;
+
+		return engine;
+	}
+	#endregion
+}
