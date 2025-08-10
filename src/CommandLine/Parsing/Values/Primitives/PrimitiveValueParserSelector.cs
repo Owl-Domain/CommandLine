@@ -5,9 +5,36 @@ namespace OwlDomain.CommandLine.Parsing.Values.Primitives;
 /// </summary>
 public sealed class PrimitiveValueParserSelector : BaseValueParserSelector
 {
+	#region Fields
+	private readonly Dictionary<Type, WeakReference<IValueParser>> _cache = [];
+	#endregion
+
 	#region Methods
 	/// <inheritdoc/>
 	protected override IValueParser? TrySelect(Type type)
+	{
+		IValueParser? parser;
+
+		if (_cache.TryGetValue(type, out WeakReference<IValueParser>? weakRef))
+		{
+			if (weakRef.TryGetTarget(out parser))
+				return parser;
+
+			parser = CreateParser(type);
+
+			if (parser is not null)
+				weakRef.SetTarget(parser);
+
+			return parser;
+		}
+
+		parser = CreateParser(type);
+		if (parser is not null)
+			_cache.Add(type, new(parser));
+
+		return parser;
+	}
+	private static IValueParser? CreateParser(Type type)
 	{
 		if (type == typeof(string))
 			return new StringValueParser();
@@ -15,40 +42,30 @@ public sealed class PrimitiveValueParserSelector : BaseValueParserSelector
 		if (type == typeof(bool))
 			return new BooleanValueParser();
 
-		if (TryGetIntegerParser(type, out IValueParser? integerParser))
-			return integerParser;
+		if (TryCreateGenericParser(type, typeof(IBinaryInteger<>), typeof(IntegerValueParser<>), out IValueParser? parser))
+			return parser;
 
-		if (TryGetGenericParser(type, out IValueParser? genericParser))
-			return genericParser;
+		if (TryCreateGenericParser(type, typeof(IParsable<>), typeof(ParsableValueParser<>), out parser))
+			return parser;
 
 		return null;
 	}
 	#endregion
 
 	#region Helpers
-	private static bool TryGetIntegerParser(Type type, [NotNullWhen(true)] out IValueParser? parser)
+	private static bool TryCreateGenericParser(Type valueType, Type baseType, Type concreteType, [NotNullWhen(true)] out IValueParser? parser)
 	{
-		Type integerType = typeof(IBinaryInteger<>).MakeGenericType(type);
-		if (type.IsAssignableTo(integerType))
+		if (valueType.GetInterfaces().Any(type => type.IsGenericType && type.GetGenericTypeDefinition() == baseType) is false)
 		{
-			Type parserType = typeof(IntegerValueParser<>).MakeGenericType(type);
-
-			object? instance = Activator.CreateInstance(parserType);
-			Debug.Assert(instance is not null);
-
-			parser = (IValueParser)instance;
-			return true;
+			parser = default;
+			return false;
 		}
 
-		parser = default;
-		return false;
-	}
-	private static bool TryGetGenericParser(Type type, [NotNullWhen(true)] out IValueParser? parser)
-	{
-		Type parsableType = typeof(IParsable<>).MakeGenericType(type);
-		if (type.IsAssignableTo(parsableType))
+		Type filledBaseType = baseType.MakeGenericType(valueType);
+
+		if (valueType.IsAssignableTo(filledBaseType))
 		{
-			Type parserType = typeof(ParsableValueParser<>).MakeGenericType(type);
+			Type parserType = concreteType.MakeGenericType(valueType);
 
 			object? instance = Activator.CreateInstance(parserType);
 			Debug.Assert(instance is not null);
