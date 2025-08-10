@@ -5,12 +5,49 @@ namespace OwlDomain.CommandLine.Execution;
 /// </summary>
 public sealed class CommandExecutor : ICommandExecutor
 {
+	#region Events
+	/// <inheritdoc/>
+	public event CommandExecutionDelegate? OnExecute;
+	#endregion
+
 	#region Methods
 	/// <inheritdoc/>
-	public ICommandExecutorResult Execute(ICommandValidatorResult validatorResult)
+	public ICommandExecutorResult Execute(ICommandValidatorResult validatorResult, CommandExecutionDelegate? callback = null)
 	{
 		if (validatorResult.Successful is false)
 			return new CommandExecutorResult(false, validatorResult, new DiagnosticBag(), default, default);
+
+		Stopwatch watch = Stopwatch.StartNew();
+		IReadOnlyDictionary<IFlagInfo, object?> flags = GetFlags(validatorResult.ParserResult);
+		IReadOnlyDictionary<IArgumentInfo, object?> arguments = GetArguments(validatorResult.ParserResult);
+
+		ICommandGroupInfo? groupTarget = GetTargetGroup(validatorResult.ParserResult.CommandOrGroup);
+		ICommandInfo? commandTarget = GetTargetCommand(validatorResult.ParserResult.CommandOrGroup);
+
+		DiagnosticBag diagnostics = [];
+
+		if (callback is not null || OnExecute is null)
+		{
+			CommandExecutionContext context = new(diagnostics, validatorResult.Engine, groupTarget, commandTarget, arguments, flags);
+
+			object? result = callback?.Invoke(context);
+			if (OnExecute is not null)
+			{
+				foreach (Delegate del in OnExecute.GetInvocationList())
+				{
+					if (context.Handled)
+						break;
+
+					result = del.DynamicInvoke(context);
+				}
+			}
+
+			if (context.Handled)
+			{
+				watch.Stop();
+				return new CommandExecutorResult(diagnostics.Any() is false, validatorResult, diagnostics, watch.Elapsed, result);
+			}
+		}
 
 		if (validatorResult.ParserResult.LeafCommand is not ICommandParseResult command)
 		{
@@ -18,19 +55,13 @@ public sealed class CommandExecutor : ICommandExecutor
 			return default; // Note(Nightowl): Never happens, needed for analysis to know the 'command' variable is always assigned later on;
 		}
 
-		Stopwatch watch = Stopwatch.StartNew();
-		DiagnosticBag diagnostics = [];
+		object? commandResult = default;
 
 		Debug.Assert(command.Arguments.Count == command.CommandInfo.Arguments.Count);
-
-		object? commandResult = null;
 		if (command.CommandInfo is IMethodCommandInfo methodCommand)
 		{
-			object? container = SetupContainer(validatorResult.ParserResult, methodCommand);
-			object?[] parameters = new object?[methodCommand.Method.GetParameters().Length];
-
-			foreach (IArgumentParseResult argument in command.Arguments)
-				parameters[argument.ArgumentInfo.Position] = argument.Value.Value;
+			object? container = SetupContainer(methodCommand.Method, flags);
+			object?[] parameters = SetupArguments(methodCommand.Method, arguments);
 
 			commandResult = methodCommand.Method.Invoke(container, parameters);
 		}
@@ -40,72 +71,115 @@ public sealed class CommandExecutor : ICommandExecutor
 			Throw.New.InvalidOperationException($"Unknown command type ({command.CommandInfo?.GetType()}).");
 
 		watch.Stop();
-		CommandExecutorResult result = new(diagnostics.Any() is false, validatorResult, diagnostics, watch.Elapsed, commandResult);
-
-		return result;
+		return new CommandExecutorResult(diagnostics.Any() is false, validatorResult, diagnostics, watch.Elapsed, commandResult);
 	}
 	#endregion
 
 	#region Helpers
-	private static object? SetupContainer(ICommandParserResult parserResult, IMethodCommandInfo command)
+	private static ICommandInfo? GetTargetCommand(IParseResult? result)
 	{
-		if (command.Method.IsStatic is true)
+		while (result is not null)
+		{
+			if (result is ICommandParseResult command)
+				return command.CommandInfo;
+
+			if (result is IGroupParseResult group)
+				result = group.CommandOrGroup;
+		}
+
+		return null;
+	}
+	private static ICommandGroupInfo? GetTargetGroup(IParseResult? result)
+	{
+		while (result is not null)
+		{
+			if (result is ICommandParseResult)
+				return null;
+
+			if (result is IGroupParseResult group)
+			{
+				if (group.CommandOrGroup is null)
+					return group.GroupInfo;
+
+				result = group.CommandOrGroup;
+			}
+		}
+
+		return null;
+	}
+	private static IReadOnlyDictionary<IFlagInfo, object?> GetFlags(ICommandParserResult result)
+	{
+		Dictionary<IFlagInfo, object?> flags = [];
+
+		foreach (IFlagParseResult flag in result.Flags)
+		{
+			if (flag is IValueFlagParseResult valueFlag)
+				flags.Add(valueFlag.FlagInfo, valueFlag.Value.Value);
+			else if (flag is IToggleFlagParseResult toggleFlag)
+				flags.Add(toggleFlag.FlagInfo, true);
+			else if (flag is IChainFlagParseResult chainFlag)
+			{
+				foreach (IFlagInfo chainedFlag in chainFlag.FlagInfos)
+					flags.Add(chainedFlag, true);
+			}
+			else if (flag is IRepeatFlagParseResult repeatFlag)
+			{
+				object? value = Convert.ChangeType(repeatFlag.Repetition, repeatFlag.FlagInfo.ValueType);
+				flags.Add(repeatFlag.FlagInfo, value);
+			}
+			else
+				Throw.New.NotSupportedException($"Unknown flag parse result type ({flag.GetType()}).");
+		}
+
+		return flags;
+	}
+	private static IReadOnlyDictionary<IArgumentInfo, object?> GetArguments(ICommandParserResult result)
+	{
+		Dictionary<IArgumentInfo, object?> arguments = [];
+
+		foreach (IArgumentParseResult argument in result.Arguments)
+			arguments.Add(argument.ArgumentInfo, argument.Value.Value);
+
+		return arguments;
+	}
+	private static object? SetupContainer(MethodInfo method, IReadOnlyDictionary<IFlagInfo, object?> flags)
+	{
+		if (method.IsStatic is true)
 			return null;
 
-		Type? containerType = command.Method.ReflectedType;
+		Type? containerType = method.ReflectedType;
 		Debug.Assert(containerType is not null);
 
 		object? container = Activator.CreateInstance(containerType);
 		Debug.Assert(container is not null);
 
-		foreach (IFlagParseResult flag in parserResult.Flags)
-			TrySetContainerProperty(container, flag);
+		foreach (KeyValuePair<IFlagInfo, object?> pair in flags)
+		{
+			if (pair.Key is IPropertyFlagInfo propertyFlag)
+			{
+				Type? declaringType = propertyFlag.Property.DeclaringType;
+				Debug.Assert(declaringType is not null);
+
+				if (containerType != declaringType && (declaringType.IsAssignableFrom(containerType) is false))
+					Throw.New.InvalidOperationException($"Couldn't set the property ({propertyFlag.Property}) on the given container type ({containerType}).");
+
+				propertyFlag.Property.SetValue(container, pair.Value);
+			}
+		}
 
 		return container;
 	}
-	private static void TrySetContainerProperty(object container, IFlagParseResult flag)
+	private static object?[] SetupArguments(MethodInfo method, IReadOnlyDictionary<IArgumentInfo, object?> arguments)
 	{
-		if (flag is IValueFlagParseResult valueFlag)
-		{
-			if (valueFlag.FlagInfo is IPropertyFlagInfo propertyFlag)
-				SetContainerProperty(container, propertyFlag, valueFlag.Value.Value);
-		}
-		else if (flag is IChainFlagParseResult chainFlag)
-		{
-			foreach (IFlagInfo toggleFlag in chainFlag.FlagInfos)
-			{
-				if (toggleFlag is IPropertyFlagInfo propertyFlag)
-					SetContainerProperty(container, propertyFlag, true);
-			}
-		}
-		else if (flag is IToggleFlagParseResult toggleFlag)
-		{
-			if (toggleFlag is IPropertyFlagInfo propertyFlag)
-				SetContainerProperty(container, propertyFlag, true);
-		}
-		else if (flag is IRepeatFlagParseResult repeatFlag)
-		{
-			if (repeatFlag is IPropertyFlagInfo propertyFlag)
-			{
-				object? value = Convert.ChangeType(repeatFlag.Repetition, propertyFlag.ValueType);
-				SetContainerProperty(container, propertyFlag, value);
-			}
-		}
-	}
-	private static void SetContainerProperty(object container, IPropertyFlagInfo propertyFlag, object? value)
-	{
-		SetContainerProperty(container, propertyFlag.Property, value);
-	}
-	private static void SetContainerProperty(object container, PropertyInfo property, object? value)
-	{
-		Type? containerType = container.GetType();
-		Type? declaringType = property.DeclaringType;
-		Debug.Assert(declaringType is not null);
+		object?[] args = new object?[method.GetParameters().Length];
 
-		if (containerType != declaringType && (declaringType.IsAssignableFrom(containerType) is false))
-			Throw.New.InvalidOperationException($"Couldn't set the property ({property}) on the given container type ({containerType}).");
+		foreach (KeyValuePair<IArgumentInfo, object?> pair in arguments)
+		{
+			if (pair.Key is IParameterArgumentInfo parameterArgument)
+				args[parameterArgument.Parameter.Position] = pair.Value;
+		}
 
-		property.SetValue(container, value);
+		return args;
 	}
 	#endregion
 }

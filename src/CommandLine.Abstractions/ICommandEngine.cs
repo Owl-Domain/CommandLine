@@ -1,5 +1,10 @@
 namespace OwlDomain.CommandLine;
 
+/// <summary>Represents a delegate for command execution.</summary>
+/// <param name="context">The context for the executing command.</param>
+/// <returns>The result value returned by the command.</returns>
+public delegate object? CommandExecutionDelegate(ICommandExecutionContext context);
+
 /// <summary>
 /// 	Represents the command line engine.
 /// </summary>
@@ -52,26 +57,29 @@ public interface ICommandEngine
 
 	/// <summary>Executes the given <paramref name="validatorResult"/>.</summary>
 	/// <param name="validatorResult">The validation result to execute.</param>
+	/// <param name="callback">An optional callback which can be used to hook into the execution process.</param>
 	/// <returns>The execution result.</returns>
 	/// <exception cref="ArgumentException">Thrown if the given <paramref name="validatorResult"/> cannot be executed.</exception>
-	ICommandExecutorResult Execute(ICommandValidatorResult validatorResult);
+	ICommandExecutorResult Execute(ICommandValidatorResult validatorResult, CommandExecutionDelegate? callback = null);
 
 	/// <summary>Parses, validates and executes the given command <paramref name="fragments"/>.</summary>
 	/// <param name="fragments">The command fragments to process.</param>
+	/// <param name="callback">An optional callback which can be used to hook into the execution process.</param>
 	/// <returns>The result of the run operation.</returns>
 	/// <remarks>
 	/// 	This overload is intended to be used when you have the tokenised command fragments,
 	/// 	for example when you have access to the <see cref="Environment.GetCommandLineArgs"/>.
 	/// </remarks>
-	ICommandRunResult Run(string[] fragments);
+	ICommandRunResult Run(string[] fragments, CommandExecutionDelegate? callback = null);
 
 	/// <summary>Parses, validates and executes the given <paramref name="command"/> text.</summary>
 	/// <param name="command">The command to process.</param>
+	/// <param name="callback">An optional callback which can be used to hook into the execution process.</param>
 	/// <returns>The result of the run operation.</returns>
 	/// <remarks>
 	/// 	This overload is intended to be used in REPL-like circumstances
 	/// 	where you only have access to the full command.
 	/// </remarks>
-	ICommandRunResult Run(string command);
+	ICommandRunResult Run(string command, CommandExecutionDelegate? callback = null);
 	#endregion
 }
