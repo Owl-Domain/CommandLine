@@ -11,7 +11,7 @@ namespace OwlDomain.CommandLine.Commands;
 /// <param name="hasResultValue">Whether the command has a result value.</param>
 public sealed class VirtualCommandInfo(
 	string? name,
-	ICommandGroupInfo group,
+	ICommandGroupInfo? group,
 	IReadOnlyCollection<IFlagInfo> flags,
 	IReadOnlyList<IArgumentInfo> arguments,
 	IDocumentationInfo? documentation,

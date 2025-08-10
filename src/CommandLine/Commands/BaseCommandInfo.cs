@@ -11,7 +11,7 @@ public abstract class BaseCommandInfo : ICommandInfo
 	public string? Name { get; }
 
 	/// <inheritdoc/>
-	public ICommandGroupInfo Group { get; }
+	public ICommandGroupInfo? Group { get; }
 
 	/// <inheritdoc/>
 	public IReadOnlyCollection<IFlagInfo> Flags { get; }
@@ -35,7 +35,7 @@ public abstract class BaseCommandInfo : ICommandInfo
 	/// <param name="documentation">The documentation for the command.</param>
 	protected BaseCommandInfo(
 		string? name,
-		ICommandGroupInfo group,
+		ICommandGroupInfo? group,
 		IReadOnlyCollection<IFlagInfo> flags,
 		IReadOnlyList<IArgumentInfo> arguments,
 		IDocumentationInfo? documentation)
