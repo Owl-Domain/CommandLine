@@ -119,8 +119,23 @@ public sealed class CommandParser : BaseCommandParser
 			context.Parser.Restore(fragmentIndex, offset);
 		}
 
+		FlagContext flagContext = new(context, group.SharedFlags);
+		List<IFlagParseResult> groupFlags = [];
+
+		if (group.SharedFlags.Count > 0)
+			TryParseFlags(flagContext, groupFlags);
+
 		if (group.ImplicitCommand is not null)
-			return ParseCommand(context, group.ImplicitCommand, null);
+		{
+			ICommandParseResult command = ParseCommand(context, group.ImplicitCommand, null);
+			if (groupFlags.Count is 0)
+				return command;
+
+			return new GroupParseResult(group, null, groupFlags, command);
+		}
+
+		if (groupFlags.Count > 0)
+			return new GroupParseResult(group, null, groupFlags, null);
 
 		TextLocation location = new(start, context.Parser.Point);
 
