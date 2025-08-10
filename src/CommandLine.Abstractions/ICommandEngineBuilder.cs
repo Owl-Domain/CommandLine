@@ -35,8 +35,37 @@ public interface ICommandEngineBuilder
 	/// <remarks>The order in which the selectors are added is the order in which they'll be used.</remarks>
 	ICommandEngineBuilder WithSelector<T>() where T : IValueParserSelector, new();
 
+	/// <summary>Allows for customising the engine settings.</summary>
+	/// <param name="callback">The callback which can be used to customise the engine settings.</param>
+	/// <returns>The used builder instance.</returns>
+	ICommandEngineBuilder Customise(Action<BuilderSettings> callback);
+
 	/// <summary>Builds a new instance of the command engine.</summary>
 	/// <returns>The built command engine.</returns>
 	ICommandEngine Build();
+	#endregion
+}
+
+/// <summary>
+/// 	Contains various extension methods related to the <see cref="ICommandEngineBuilder"/>.
+/// </summary>
+public static class ICommandEngineBuilderExtensions
+{
+	#region Methods
+	/// <summary>Builds a new instance of the command engine.</summary>
+	/// <param name="builder">The command engine builder to use.</param>
+	/// <param name="buildDuration">The amount of time it took to build the engine. This does not include the setup time.</param>
+	/// <returns>The built command engine.</returns>
+	public static ICommandEngine Build(this ICommandEngineBuilder builder, out TimeSpan buildDuration)
+	{
+		Stopwatch watch = Stopwatch.StartNew();
+
+		ICommandEngine engine = builder.Build();
+
+		watch.Stop();
+		buildDuration = watch.Elapsed;
+
+		return engine;
+	}
 	#endregion
 }

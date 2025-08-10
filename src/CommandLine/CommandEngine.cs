@@ -3,12 +3,14 @@ namespace OwlDomain.CommandLine;
 /// <summary>
 /// 	Represents the command line engine.
 /// </summary>
+/// <param name="settings">The settings for the engine.</param>
 /// <param name="rootGroup">The root command group.</param>
 /// <param name="parser">The parser to use for parsing the commands.</param>
 /// <param name="validator">The validator to use for validating the parsed commands.</param>
 /// <param name="executor">The executor to use for executing the validated commands.</param>
 /// <param name="documentationPrinter">The documentation printer for the engine.</param>
 public sealed class CommandEngine(
+	IEngineSettings settings,
 	ICommandGroupInfo rootGroup,
 	ICommandParser parser,
 	ICommandValidator validator,
@@ -17,6 +19,9 @@ public sealed class CommandEngine(
 	: ICommandEngine
 {
 	#region Properties
+	/// <inheritdoc/>
+	public IEngineSettings Settings { get; } = settings;
+
 	/// <inheritdoc/>
 	public ICommandGroupInfo RootGroup { get; } = rootGroup;
 
@@ -50,30 +55,33 @@ public sealed class CommandEngine(
 	public ICommandValidatorResult Validate(ICommandParserResult parserResult) => Validator.Validate(parserResult);
 
 	/// <inheritdoc/>
-	public ICommandExecutorResult Execute(ICommandValidatorResult validatorResult) => Executor.Execute(validatorResult);
+	public ICommandExecutorResult Execute(ICommandValidatorResult validatorResult, CommandExecutionDelegate? callback = null)
+	{
+		return Executor.Execute(validatorResult, callback);
+	}
 
 	/// <inheritdoc/>
-	public ICommandRunResult Run(string[] fragments)
+	public ICommandRunResult Run(string[] fragments, CommandExecutionDelegate? callback = null)
 	{
 		Stopwatch watch = Stopwatch.StartNew();
 		ICommandParserResult parserResult = Parser.Parse(this, fragments);
 
-		return Run(watch, parserResult);
+		return Run(watch, parserResult, callback);
 	}
 
 	/// <inheritdoc/>
-	public ICommandRunResult Run(string command)
+	public ICommandRunResult Run(string command, CommandExecutionDelegate? callback = null)
 	{
 		Stopwatch watch = Stopwatch.StartNew();
 		ICommandParserResult parserResult = Parser.Parse(this, command);
 
-		return Run(watch, parserResult);
+		return Run(watch, parserResult, callback);
 	}
 
-	private ICommandRunResult Run(Stopwatch watch, ICommandParserResult parserResult)
+	private ICommandRunResult Run(Stopwatch watch, ICommandParserResult parserResult, CommandExecutionDelegate? callback = null)
 	{
 		ICommandValidatorResult validatorResult = Validator.Validate(parserResult);
-		ICommandExecutorResult executorResult = Executor.Execute(validatorResult);
+		ICommandExecutorResult executorResult = Executor.Execute(validatorResult, callback);
 
 		DiagnosticBag diagnostics =
 		[

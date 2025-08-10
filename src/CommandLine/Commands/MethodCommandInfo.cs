@@ -3,60 +3,33 @@ namespace OwlDomain.CommandLine.Commands;
 /// <summary>
 /// 	Represents information about a command that is linked to a method.
 /// </summary>
-[DebuggerDisplay($"{{{nameof(DebuggerDisplay)}(), nq}}")]
-public sealed class MethodCommandInfo : IMethodCommandInfo
+/// <param name="method">The method that the command is linked to.</param>
+/// <param name="name">The name associated with the command.</param>
+/// <param name="group">The group that the command belongs to.</param>
+/// <param name="flags">The flags that the command takes.</param>
+/// <param name="arguments">The arguments that the command takes.</param>
+/// <param name="documentation">The documentation for the command.</param>
+public sealed class MethodCommandInfo(
+	MethodInfo method,
+	string? name,
+	ICommandGroupInfo group,
+	IReadOnlyCollection<IFlagInfo> flags,
+	IReadOnlyList<IArgumentInfo> arguments,
+	IDocumentationInfo? documentation)
+	: BaseCommandInfo(name, group, flags, arguments, documentation), IMethodCommandInfo
 {
 	#region Properties
 	/// <inheritdoc/>
-	public MethodInfo Method { get; }
+	public MethodInfo Method { get; } = method;
 
 	/// <inheritdoc/>
-	public string? Name { get; }
-
-	/// <inheritdoc/>
-	public ICommandGroupInfo Group { get; }
-
-	/// <inheritdoc/>
-	public IReadOnlyCollection<IFlagInfo> Flags { get; }
-
-	/// <inheritdoc/>
-	public IReadOnlyList<IArgumentInfo> Arguments { get; }
-
-	/// <inheritdoc/>
-	public IDocumentationInfo? Documentation { get; }
-	#endregion
-
-	#region Constructors
-	/// <summary>Creates a new instance of the <see cref="MethodCommandInfo"/>.</summary>
-	/// <param name="method">The method that the command is linked to.</param>
-	/// <param name="name">The name associated with the command.</param>
-	/// <param name="group">The group that the command belongs to.</param>
-	/// <param name="flags">The flags that the command takes.</param>
-	/// <param name="arguments">The arguments that the command takes.</param>
-	/// <param name="documentation">The documentation for the command.</param>
-	public MethodCommandInfo(
-		MethodInfo method,
-		string? name,
-		ICommandGroupInfo group,
-		IReadOnlyCollection<IFlagInfo> flags,
-		IReadOnlyList<IArgumentInfo> arguments,
-		IDocumentationInfo? documentation)
-	{
-		name?.ThrowIfEmptyOrWhitespace(nameof(name));
-
-		Method = method;
-		Name = name;
-		Group = group;
-		Flags = flags;
-		Arguments = arguments;
-		Documentation = documentation;
-	}
+	public override bool HasResultValue => Method.ReturnType != typeof(void);
 	#endregion
 
 	#region Methods
 	/// <inheritdoc/>
 	public TAttribute? GetAttribute<TAttribute>()
-				where TAttribute : Attribute
+		where TAttribute : Attribute
 	{
 		return Method.GetCustomAttribute<TAttribute>();
 	}
@@ -81,10 +54,5 @@ public sealed class MethodCommandInfo : IMethodCommandInfo
 	{
 		return Method.TryGetCustomAttributes(out attributes);
 	}
-	#endregion
-
-	#region Helpers
-	[ExcludeFromCodeCoverage]
-	private string DebuggerDisplay() => $"Command {{ Name = ({Name}) }}";
 	#endregion
 }

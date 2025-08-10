@@ -9,6 +9,9 @@ public interface IValueParseResult : IParseResult
 	/// <summary>The context for the value that was parsed.</summary>
 	IValueParseContext Context { get; }
 
+	/// <summary>Whether the value parsing operation was successful.</summary>
+	bool Successful { get; }
+
 	/// <summary>The error that caused the parsing to fail.</summary>
 	string? Error { get; }
 

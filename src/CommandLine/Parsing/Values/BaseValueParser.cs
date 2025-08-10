@@ -14,7 +14,12 @@ public abstract class BaseValueParser<T> : IValueParser<T>
 		string? error;
 		TextPoint start = parser.Point;
 
-		if (context is IFlagValueParseContext flag)
+		if (IsValueMissing(parser))
+		{
+			value = default;
+			error = string.Empty;
+		}
+		else if (context is IFlagValueParseContext flag)
 			value = TryParse(flag, parser, out error);
 		else if (context is IArgumentValueParseContext argument)
 			value = TryParse(argument, parser, out error);
@@ -67,6 +72,18 @@ public abstract class BaseValueParser<T> : IValueParser<T>
 	protected virtual T? TryParse(IArgumentValueParseContext context, ITextParser parser, out string? error)
 	{
 		return TryParse((IValueParseContext)context, parser, out error);
+	}
+	#endregion
+
+	#region Helpers
+	private static bool IsValueMissing(ITextParser parser)
+	{
+		if (parser.IsLazy)
+			return parser.IsAtEnd;
+
+		Debug.Assert(parser.IsGreedy);
+
+		return parser.IsAtEnd && parser.CurrentFragment.Length > 0;
 	}
 	#endregion
 }
