@@ -10,6 +10,7 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 {
 	#region Nested types
 	private readonly record struct VirtualCommand(IVirtualCommandInfo Command, Predicate<ICommandGroupInfo> Predicate);
+	private readonly record struct VirtualFlag(IVirtualFlagInfo Flag, Predicate<ICommandGroupInfo> GroupPredicate, Predicate<ICommandInfo> CommandPredicate);
 	#endregion
 
 	#region Fields
@@ -23,6 +24,7 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 	private IDocumentationProvider? _documentationProvider;
 	private IDocumentationPrinter? _documentationPrinter;
 	private readonly List<VirtualCommand> _virtualCommands = [];
+	private readonly List<VirtualFlag> _virtualFlags = [];
 	#endregion
 
 	#region Methods
@@ -75,7 +77,13 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 	public ICommandEngineBuilder WithVirtualCommand(IVirtualCommandInfo command, Predicate<ICommandGroupInfo> predicate)
 	{
 		_virtualCommands.Add(new(command, predicate));
+		return this;
+	}
 
+	/// <inheritdoc/>
+	public ICommandEngineBuilder WirthVirtualFlag(IVirtualFlagInfo flag, Predicate<ICommandGroupInfo> groupPredicate, Predicate<ICommandInfo> commandPredicate)
+	{
+		_virtualFlags.Add(new(flag, groupPredicate, commandPredicate));
 		return this;
 	}
 
@@ -96,23 +104,7 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 		_documentationProvider ??= new DocumentationProvider();
 		_documentationPrinter ??= new DocumentationPrinter();
 
-		VirtualCommands virtualCommands = new()
-		{
-			Help = TryCreateHelpCommand(settings),
-		};
-
-		if (virtualCommands.Help is not null)
-		{
-			WithVirtualCommand(virtualCommands.Help, group => true);
-			_commandExecutor.OnExecute += context =>
-			{
-				if (context.CommandTarget == virtualCommands.Help)
-				{
-					_documentationPrinter.Print(context.Engine, context.GroupTarget);
-					context.Handle(null);
-				}
-			};
-		}
+		SetupVirtual(settings, out IVirtualFlags virtualFlags, out IVirtualCommands virtualCommands);
 
 		Dictionary<string, ICommandGroupInfo> childGroups = [];
 		Dictionary<string, ICommandInfo> childCommands = [];
@@ -121,7 +113,8 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 		IReadOnlyCollection<IFlagInfo> classFlags = GetFlags(classType);
 		IDocumentationInfo? documentation = _documentationProvider.GetInfo(classType);
 
-		CommandGroupInfo group = new(null, null, classFlags, childGroups, childCommands, null, documentation);
+		List<IFlagInfo> groupFlags = [.. classFlags];
+		CommandGroupInfo group = new(null, null, groupFlags, childGroups, childCommands, null, documentation);
 
 		foreach (VirtualCommand virtualCommand in _virtualCommands)
 		{
@@ -131,13 +124,27 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 				childCommands.Add(virtualCommand.Command.Name, virtualCommand.Command);
 		}
 
+		foreach (VirtualFlag virtualFlag in _virtualFlags)
+		{
+			if (virtualFlag.GroupPredicate.Invoke(group))
+				groupFlags.Add(virtualFlag.Flag);
+		}
+
 		foreach (IMethodCommandInfo command in GetCommands(classType, group, classFlags))
 		{
 			Debug.Assert(command.Name is not null);
 			childCommands.Add(command.Name, command);
 		}
 
-		return new CommandEngine(settings, group, _commandParser, _commandValidator, _commandExecutor, _documentationPrinter, virtualCommands);
+		return new CommandEngine(
+			settings,
+			group,
+			_commandParser,
+			_commandValidator,
+			_commandExecutor,
+			_documentationPrinter,
+			virtualCommands,
+			virtualFlags);
 	}
 	#endregion
 
@@ -158,17 +165,24 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 			if (name is null)
 				Throw.New.InvalidOperationException($"Couldn't extract a command name from the method ({method}).");
 
-			IReadOnlyCollection<IFlagInfo> flags = method.IsStatic ? [] : classFlags;
+			List<IFlagInfo> commandFlags = method.IsStatic ? [] : [.. classFlags];
 			IReadOnlyList<IArgumentInfo> arguments = GetArguments(method);
 			IDocumentationInfo? documentation = _documentationProvider.GetInfo(method);
 
-			MethodCommandInfo command = new(method, name, group, flags, arguments, documentation);
+			MethodCommandInfo command = new(method, name, group, commandFlags, arguments, documentation);
+
+			foreach (VirtualFlag virtualFlag in _virtualFlags)
+			{
+				if (virtualFlag.CommandPredicate.Invoke(command))
+					commandFlags.Add(virtualFlag.Flag);
+			}
+
 			commands.Add(command);
 		}
 
 		return commands;
 	}
-	private IReadOnlyCollection<IFlagInfo> GetFlags(Type type)
+	private List<IFlagInfo> GetFlags(Type type)
 	{
 		Debug.Assert(_nameExtractor is not null);
 		Debug.Assert(_documentationProvider is not null);
@@ -230,6 +244,56 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 	#endregion
 
 	#region Virtual command helpers
+	private void SetupVirtual(IEngineSettings settings, out IVirtualFlags flags, out IVirtualCommands commands)
+	{
+		Debug.Assert(_commandExecutor is not null);
+
+		commands = SetupVirtualCommands(settings);
+		flags = SetupVirtualFlags(settings);
+
+		if (commands.Help is not null)
+			WithVirtualCommand(commands.Help, group => true);
+
+		if (flags.Help is not null)
+			WirthVirtualFlag(flags.Help, group => true, cmd => true);
+
+		if (commands.Help is not null || flags.Help is not null)
+			_commandExecutor.OnExecute += HelpExecutionHandler;
+	}
+	private IVirtualFlags SetupVirtualFlags(IEngineSettings settings)
+	{
+		return new VirtualFlags()
+		{
+			Help = TryCreateHelpFlag(settings)
+		};
+	}
+	private static IVirtualCommands SetupVirtualCommands(IEngineSettings settings)
+	{
+		return new VirtualCommands()
+		{
+			Help = TryCreateHelpCommand(settings),
+		};
+	}
+	private IVirtualFlagInfo? TryCreateHelpFlag(IEngineSettings settings)
+	{
+		if (settings.IncludeHelpFlag is false)
+			return null;
+
+		TextDocumentationNode summary = new("Shows the help information about the available commands.");
+		DocumentationInfo documentation = new(summary, null);
+
+		IValueParser<bool> parser = SelectValueParser<bool>();
+
+		return new VirtualFlagInfo<bool>(
+			FlagKind.Toggle,
+			settings.LongHelpFlagName,
+			settings.ShortHelpFlagName,
+			false,
+			false,
+			parser,
+			documentation,
+			null);
+	}
 	private static IVirtualCommandInfo? TryCreateHelpCommand(IEngineSettings settings)
 	{
 		if (settings.IncludeHelpCommand is false)
@@ -239,6 +303,29 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 		DocumentationInfo documentation = new(summary, null);
 
 		return new VirtualCommandInfo(settings.HelpCommandName, null, [], [], documentation, false);
+	}
+	private static void HelpExecutionHandler(ICommandExecutionContext context)
+	{
+		if (context.CommandTarget == context.Engine.VirtualCommands.Help)
+		{
+			context.Engine.DocumentationPrinter.Print(context.Engine, context.GroupTarget);
+			context.Handle(null);
+
+			return;
+		}
+
+		IFlagInfo? helpFlag = context.Engine.VirtualFlags.Help;
+		if (helpFlag is not null && context.Flags.ContainsKey(helpFlag))
+		{
+			if (context.CommandTarget is not null)
+				context.Engine.DocumentationPrinter.Print(context.Engine, context.CommandTarget);
+			else
+				context.Engine.DocumentationPrinter.Print(context.Engine, context.GroupTarget);
+
+			context.Handle(null);
+
+			return;
+		}
 	}
 	#endregion
 
@@ -290,6 +377,23 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 		if (type == typeof(long)) return true;
 
 		return false;
+	}
+	private IValueParser<T> SelectValueParser<T>()
+	{
+		IValueParser parser = SelectValueParser(typeof(T));
+
+		return (IValueParser<T>)parser;
+	}
+	private IValueParser SelectValueParser(Type type)
+	{
+		foreach (IValueParserSelector selector in _selectors)
+		{
+			if (selector.TrySelect(type, out IValueParser? parser))
+				return parser;
+		}
+
+		Throw.New.NotSupportedException($"Couldn't select a value parser for the type ({type}).");
+		return default;
 	}
 	private IValueParser SelectValueParser(PropertyInfo property)
 	{

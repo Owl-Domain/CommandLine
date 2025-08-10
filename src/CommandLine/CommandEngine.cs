@@ -1,3 +1,4 @@
+
 namespace OwlDomain.CommandLine;
 
 /// <summary>
@@ -10,6 +11,7 @@ namespace OwlDomain.CommandLine;
 /// <param name="executor">The executor to use for executing the validated commands.</param>
 /// <param name="documentationPrinter">The documentation printer for the engine.</param>
 /// <param name="virtualCommands">The known virtual commands that have been added to the engine.</param>
+/// <param name="virtualFlags">The known virtual flags that have been added to the engine.</param>
 public sealed class CommandEngine(
 	IEngineSettings settings,
 	ICommandGroupInfo rootGroup,
@@ -17,7 +19,8 @@ public sealed class CommandEngine(
 	ICommandValidator validator,
 	ICommandExecutor executor,
 	IDocumentationPrinter documentationPrinter,
-	IVirtualCommands virtualCommands)
+	IVirtualCommands virtualCommands,
+	IVirtualFlags virtualFlags)
 	: ICommandEngine
 {
 	#region Properties
@@ -41,6 +44,9 @@ public sealed class CommandEngine(
 
 	/// <inheritdoc/>
 	public IVirtualCommands VirtualCommands { get; } = virtualCommands;
+
+	/// <inheritdoc/>
+	public IVirtualFlags VirtualFlags { get; } = virtualFlags;
 	#endregion
 
 	#region Functions
