@@ -10,3 +10,8 @@ global using System.Runtime.InteropServices;
 global using System.Runtime.Versioning;
 global using System.Threading;
 global using System.Threading.Tasks;
+
+
+#if NET7_0_OR_GREATER
+global using System.Numerics;
+#endif
