@@ -262,7 +262,7 @@ public sealed class CommandParserTests
 
 	[DynamicData(nameof(VariousCommandTests), DynamicDataSourceType.Method)]
 	[TestMethod]
-	public void Parse_VariousTests_Successful(string[] fragments, bool isLazy)
+	public void Parse_VariousTests_Successful(string[] fragments, TextTokenKind[] expectedTokens, bool isLazy)
 	{
 		// Arrange
 		const string groupName = "group";
@@ -328,13 +328,13 @@ public sealed class CommandParserTests
 		ICommandParserResult result = isLazy ? sut.Parse(engine, fragments[0]) : sut.Parse(engine, fragments);
 
 		// Assert
-		CheckFailedResult(result, isLazy, fragments);
+		CheckFailedResult(result, isLazy, fragments, expectedTokens);
 	}
 	#endregion
 
 	#region Helpers
 	[ExcludeFromCodeCoverage]
-	private static void CheckFailedResult(ICommandParserResult result, bool isLazy, string[] fragments)
+	private static void CheckFailedResult(ICommandParserResult result, bool isLazy, string[] fragments, TextTokenKind[] expectedTokens)
 	{
 		if (result.Successful is false)
 		{
@@ -346,43 +346,54 @@ public sealed class CommandParserTests
 
 			Assert.That.Fail(message + "\n");
 		}
+
+		TextToken[] tokens = [.. result.EnumerateTokens()];
+		TextTokenKind[] resultTokens = [.. tokens.Select(t => t.Kind)];
+		if (resultTokens.Length != expectedTokens.Length || (resultTokens.SequenceEqual(expectedTokens) is false))
+		{
+			string message = isLazy ? $"Lazy parsing failed for the command: {fragments[0]}" : $"Greedy parsing failed for the command: {string.Join("|", fragments)}";
+			message += $"\n\nExpected tokens:\n{string.Join(' ', expectedTokens)}";
+			message += $"\n\nResult tokens:\n{string.Join(' ', resultTokens)}";
+
+			Assert.That.Fail(message + "\n");
+		}
 	}
 
 	[ExcludeFromCodeCoverage]
 	private static IEnumerable<object?[]> VariousCommandTests()
 	{
-		string[] flags =
+		(string, TextTokenKind[])[] flags =
 		[
-			"",
+			("", []),
 
-			"-f=test",
-			"-f=|test",
-			"-f:test",
-			"-f:|test",
-			"-f | test",
+			("-f=test", [TextTokenKind.Symbol, TextTokenKind.FlagName, TextTokenKind.Symbol, TextTokenKind.Value]),
+			("-f=|test", [TextTokenKind.Symbol, TextTokenKind.FlagName, TextTokenKind.Symbol, TextTokenKind.Value]),
+			("-f:test", [TextTokenKind.Symbol, TextTokenKind.FlagName, TextTokenKind.Symbol, TextTokenKind.Value]),
+			("-f:|test", [TextTokenKind.Symbol, TextTokenKind.FlagName, TextTokenKind.Symbol, TextTokenKind.Value]),
+			("-f | test", [TextTokenKind.Symbol, TextTokenKind.FlagName, TextTokenKind.Value]),
 
-			"--flag=test",
-			"--flag=|test",
-			"--flag:test",
-			"--flag:|test",
-			"--flag | test",
+			("--flag=test", [TextTokenKind.Symbol, TextTokenKind.FlagName, TextTokenKind.Symbol, TextTokenKind.Value]),
+			("--flag=|test", [TextTokenKind.Symbol, TextTokenKind.FlagName, TextTokenKind.Symbol, TextTokenKind.Value]),
+			("--flag:test", [TextTokenKind.Symbol, TextTokenKind.FlagName, TextTokenKind.Symbol, TextTokenKind.Value]),
+			("--flag:|test", [TextTokenKind.Symbol, TextTokenKind.FlagName, TextTokenKind.Symbol, TextTokenKind.Value]),
+			("--flag | test", [TextTokenKind.Symbol, TextTokenKind.FlagName, TextTokenKind.Value]),
 
 
-			"-t",
-			"-t=true",
-			"-t=|true",
-			"-t:true",
-			"-t:|true",
+			("-t", [TextTokenKind.Symbol, TextTokenKind.FlagName]),
+			("-t=true", [TextTokenKind.Symbol, TextTokenKind.FlagName, TextTokenKind.Symbol, TextTokenKind.Value]),
+			("-t=|true", [TextTokenKind.Symbol, TextTokenKind.FlagName, TextTokenKind.Symbol, TextTokenKind.Value]),
+			("-t:true", [TextTokenKind.Symbol, TextTokenKind.FlagName, TextTokenKind.Symbol, TextTokenKind.Value]),
+			("-t:|true", [TextTokenKind.Symbol, TextTokenKind.FlagName, TextTokenKind.Symbol, TextTokenKind.Value]),
 
-			"-t=true",
-			"--toggle=|true",
-			"--toggle:true",
-			"--toggle:|true",
+			("-t=true", [TextTokenKind.Symbol, TextTokenKind.FlagName, TextTokenKind.Symbol, TextTokenKind.Value]),
+			("--toggle=|true", [TextTokenKind.Symbol, TextTokenKind.FlagName, TextTokenKind.Symbol, TextTokenKind.Value]),
+			("--toggle:true", [TextTokenKind.Symbol, TextTokenKind.FlagName, TextTokenKind.Symbol, TextTokenKind.Value]),
+			("--toggle:|true", [TextTokenKind.Symbol, TextTokenKind.FlagName, TextTokenKind.Symbol, TextTokenKind.Value]),
 
-			"-tr",
-			"-rr",
-			"--toggle",
-			"--repeat",
+			("-tr", [TextTokenKind.Symbol, TextTokenKind.FlagName]),
+			("-rr", [TextTokenKind.Symbol, TextTokenKind.FlagName]),
+			("--toggle", [TextTokenKind.Symbol, TextTokenKind.FlagName]),
+			("--repeat", [TextTokenKind.Symbol, TextTokenKind.FlagName]),
 		];
 
 		string[] arguments = ["", "argument"];
@@ -391,18 +402,36 @@ public sealed class CommandParserTests
 
 		foreach (string group in groups)
 			foreach (string command in commands)
-				foreach (string flag in flags)
+				foreach ((string flag, TextTokenKind[] tokens) pair in flags)
 					foreach (string argument in arguments)
 					{
 						string cmd = group;
 						cmd += cmd.Length is 0 || command.Length is 0 ? command : $" | {command}";
-						cmd += cmd.Length is 0 || flag.Length is 0 ? flag : $" | {flag}";
+						cmd += cmd.Length is 0 || pair.flag.Length is 0 ? pair.flag : $" | {pair.flag}";
 						cmd += cmd.Length is 0 || argument.Length is 0 ? argument : $" | {argument}";
 
-						yield return [new string[] { cmd.Replace(" | ", " ").Replace("|", "") }, true];
+						List<TextTokenKind> tokenList = [];
+						if (group is not "") tokenList.Add(TextTokenKind.GroupName);
+						if (command is not "") tokenList.Add(TextTokenKind.CommandName);
+						tokenList.AddRange(pair.tokens);
+						if (argument is not "") tokenList.Add(TextTokenKind.Value);
 
-						string[] fragments = cmd.Split("|", StringSplitOptions.TrimEntries);
-						yield return [fragments, false];
+						TextTokenKind[] allTokens = [.. tokenList];
+
+						yield return
+						[
+							new string[] { cmd.Replace(" | ", " ").Replace("|", "") },
+							allTokens,
+							true
+						];
+
+						string[] fragments = cmd.Split("|", StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+						yield return
+						[
+							fragments,
+							allTokens,
+							false
+						];
 					}
 	}
 

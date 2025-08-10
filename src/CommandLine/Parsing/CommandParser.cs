@@ -164,7 +164,7 @@ public sealed class CommandParser : BaseCommandParser
 		ArgumentValueParseContext argumentContext = new(context.Engine, argument);
 		IValueParseResult value = argument.Parser.Parse(argumentContext, context.Parser);
 
-		if (value.Error is null)
+		if (value.Successful)
 		{
 			context.Parser.SkipTrivia();
 
@@ -172,6 +172,7 @@ public sealed class CommandParser : BaseCommandParser
 			return true;
 		}
 
+		Debug.Assert(value.Error is not null);
 		result = default;
 
 		if (argument.IsRequired)
