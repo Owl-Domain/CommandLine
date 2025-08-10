@@ -30,7 +30,7 @@ public sealed class CommandExecutor : ICommandExecutor
 		{
 			CommandExecutionContext context = new(diagnostics, validatorResult.Engine, groupTarget, commandTarget, arguments, flags);
 
-			object? result = callback?.Invoke(context);
+			callback?.Invoke(context);
 			if (OnExecute is not null)
 			{
 				foreach (Delegate del in OnExecute.GetInvocationList())
@@ -38,14 +38,14 @@ public sealed class CommandExecutor : ICommandExecutor
 					if (context.Handled)
 						break;
 
-					result = del.DynamicInvoke(context);
+					del.DynamicInvoke(context);
 				}
 			}
 
 			if (context.Handled)
 			{
 				watch.Stop();
-				return new CommandExecutorResult(diagnostics.Any() is false, validatorResult, diagnostics, watch.Elapsed, result);
+				return new CommandExecutorResult(diagnostics.Any() is false, validatorResult, diagnostics, watch.Elapsed, context.ResultValue);
 			}
 		}
 

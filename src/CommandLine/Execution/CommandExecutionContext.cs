@@ -7,7 +7,10 @@ public sealed class CommandExecutionContext : ICommandExecutionContext
 {
 	#region Properties
 	/// <inheritdoc/>
-	public bool Handled { get; set; }
+	public bool Handled { get; private set; }
+
+	/// <inheritdoc/>
+	public object? ResultValue { get; private set; }
 
 	/// <inheritdoc/>
 	public DiagnosticBag Diagnostics { get; }
@@ -82,5 +85,17 @@ public sealed class CommandExecutionContext : ICommandExecutionContext
 		IReadOnlyDictionary<IArgumentInfo, object?> arguments,
 		IReadOnlyDictionary<IFlagInfo, object?> flags)
 		: this(diagnostics, engine, null, target, arguments, flags) { }
+	#endregion
+
+	#region Methods
+	/// <inheritdoc/>
+	public void Handle(object? resultValue)
+	{
+		if (Handled)
+			Throw.New.InvalidOperationException("This command execution operation has already been handled.");
+
+		Handled = true;
+		ResultValue = resultValue;
+	}
 	#endregion
 }

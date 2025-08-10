@@ -3,7 +3,7 @@ namespace OwlDomain.CommandLine;
 /// <summary>Represents a delegate for command execution.</summary>
 /// <param name="context">The context for the executing command.</param>
 /// <returns>The result value returned by the command.</returns>
-public delegate object? CommandExecutionDelegate(ICommandExecutionContext context);
+public delegate void CommandExecutionDelegate(ICommandExecutionContext context);
 
 /// <summary>
 /// 	Represents the command line engine.

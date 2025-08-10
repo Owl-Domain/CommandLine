@@ -7,8 +7,10 @@ public interface ICommandExecutionContext
 {
 	#region Properties
 	/// <summary>Whether the execution has been handled.</summary>
-	/// <remarks>Settings this to <see langword="true"/> will short-circuit the execution of the command.</remarks>
-	bool Handled { get; set; }
+	bool Handled { get; }
+
+	/// <summary>The result of executing the command.</summary>
+	object? ResultValue { get; }
 
 	/// <summary>A collection of the diagnostics reported during the execution.</summary>
 	DiagnosticBag Diagnostics { get; }
@@ -29,5 +31,12 @@ public interface ICommandExecutionContext
 
 	/// <summary>The flags that will be passed to the target upon execution.</summary>
 	IReadOnlyDictionary<IFlagInfo, object?> Flags { get; }
+	#endregion
+
+	#region Methods
+	/// <summary>Marks the execution operation as being handled.</summary>
+	/// <param name="resultValue">The result of executing the command.</param>
+	/// <exception cref="InvalidOperationException">Thrown if the execution has already been handled.</exception>
+	void Handle(object? resultValue);
 	#endregion
 }
