@@ -11,7 +11,7 @@ public sealed class PrimitiveValueParserSelector : BaseValueParserSelector
 
 	#region Methods
 	/// <inheritdoc/>
-	protected override IValueParser? TrySelect(Type type)
+	protected override IValueParser? TrySelect(IRootValueParserSelector rootSelector, Type type)
 	{
 		IValueParser? parser;
 
@@ -20,7 +20,7 @@ public sealed class PrimitiveValueParserSelector : BaseValueParserSelector
 			if (weakRef.TryGetTarget(out parser))
 				return parser;
 
-			parser = CreateParser(type);
+			parser = CreateParser(rootSelector, type);
 
 			if (parser is not null)
 				weakRef.SetTarget(parser);
@@ -28,13 +28,13 @@ public sealed class PrimitiveValueParserSelector : BaseValueParserSelector
 			return parser;
 		}
 
-		parser = CreateParser(type);
+		parser = CreateParser(rootSelector, type);
 		if (parser is not null)
 			_cache.Add(type, new(parser));
 
 		return parser;
 	}
-	private static IValueParser? CreateParser(Type type)
+	private static IValueParser? CreateParser(IRootValueParserSelector rootSelector, Type type)
 	{
 		if (type == typeof(string))
 			return new StringValueParser();

@@ -19,6 +19,7 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 	private readonly List<IValueParserSelector> _selectors = [];
 	private INameExtractor? _nameExtractor;
 	private ICommandParser? _commandParser;
+	private IRootValueParserSelector? _valueParserSelector;
 	private ICommandValidator? _commandValidator;
 	private ICommandExecutor? _commandExecutor;
 	private IDocumentationProvider? _documentationProvider;
@@ -99,6 +100,7 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 
 		_nameExtractor ??= NameExtractor.Instance;
 		_commandParser ??= new CommandParser();
+		_valueParserSelector = new RootValueParserSelector(_selectors);
 		_commandValidator ??= new CommandValidator();
 		_commandExecutor ??= new CommandExecutor();
 		_documentationProvider ??= new DocumentationProvider();
@@ -140,6 +142,7 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 			settings,
 			group,
 			_commandParser,
+			_valueParserSelector,
 			_commandValidator,
 			_commandExecutor,
 			_documentationPrinter,
@@ -386,33 +389,30 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 	}
 	private IValueParser SelectValueParser(Type type)
 	{
-		foreach (IValueParserSelector selector in _selectors)
-		{
-			if (selector.TrySelect(type, out IValueParser? parser))
-				return parser;
-		}
+		Debug.Assert(_valueParserSelector is not null);
+
+		if (_valueParserSelector.TrySelect(type, out IValueParser? parser))
+			return parser;
 
 		Throw.New.NotSupportedException($"Couldn't select a value parser for the type ({type}).");
 		return default;
 	}
 	private IValueParser SelectValueParser(PropertyInfo property)
 	{
-		foreach (IValueParserSelector selector in _selectors)
-		{
-			if (selector.TrySelect(property, out IValueParser? parser))
-				return parser;
-		}
+		Debug.Assert(_valueParserSelector is not null);
+
+		if (_valueParserSelector.TrySelect(property, out IValueParser? parser))
+			return parser;
 
 		Throw.New.NotSupportedException($"Couldn't select a value parser for the property ({property}).");
 		return default;
 	}
 	private IValueParser SelectValueParser(ParameterInfo parameter)
 	{
-		foreach (IValueParserSelector selector in _selectors)
-		{
-			if (selector.TrySelect(parameter, out IValueParser? parser))
-				return parser;
-		}
+		Debug.Assert(_valueParserSelector is not null);
+
+		if (_valueParserSelector.TrySelect(parameter, out IValueParser? parser))
+			return parser;
 
 		Throw.New.NotSupportedException($"Couldn't select a value parser for the parameter ({parameter}).");
 		return default;

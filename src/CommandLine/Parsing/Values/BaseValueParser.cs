@@ -1,7 +1,7 @@
 namespace OwlDomain.CommandLine.Parsing.Values;
 
 /// <summary>
-/// 	Represents the base implementation for a
+/// 	Represents the base implementation for a value parser.
 /// </summary>
 /// <typeparam name="T">The type of the value that will be parsed.</typeparam>
 public abstract class BaseValueParser<T> : IValueParser<T>
