@@ -35,6 +35,15 @@ public sealed class EngineSettings : IEngineSettings
 
 	/// <inheritdoc/>
 	public required IReadOnlyCollection<string> FlagValueSeparators { get; init; }
+
+	/// <inheritdoc/>
+	public required string ListPrefix { get; init; }
+
+	/// <inheritdoc/>
+	public required string ListSuffix { get; init; }
+
+	/// <inheritdoc/>
+	public required string ListValueSeparator { get; init; }
 	#endregion
 
 	#region Functions
@@ -73,6 +82,9 @@ public sealed class EngineSettings : IEngineSettings
 			IncludeHelpCommand = settings.IncludeHelpCommand,
 			HelpCommandName = settings.HelpCommandName,
 			FlagValueSeparators = [.. settings.FlagValueSeparators.OrderByDescending(s => s.Length)],
+			ListPrefix = settings.ListPrefix,
+			ListSuffix = settings.ListSuffix,
+			ListValueSeparator = settings.ListValueSeparator
 		};
 	}
 	#endregion

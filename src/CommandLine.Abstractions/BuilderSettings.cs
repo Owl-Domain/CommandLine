@@ -35,8 +35,16 @@ public sealed class BuilderSettings : IEngineSettings
 
 	/// <inheritdoc/>
 	public HashSet<string> FlagValueSeparators { get; } = [":", "=", " "];
-
 	IReadOnlyCollection<string> IEngineSettings.FlagValueSeparators => FlagValueSeparators;
+
+	/// <inheritdoc/>
+	public string ListPrefix { get; set; } = "[";
+
+	/// <inheritdoc/>
+	public string ListSuffix { get; set; } = "]";
+
+	/// <inheritdoc/>
+	public string ListValueSeparator { get; set; } = ",";
 	#endregion
 
 	#region Methods
@@ -134,6 +142,26 @@ public sealed class BuilderSettings : IEngineSettings
 		foreach (string sep in separators)
 			FlagValueSeparators.Add(sep);
 
+		return this;
+	}
+
+	/// <summary>Sets the <see cref="ListPrefix"/> and <see cref="ListSuffix"/> settings.</summary>
+	/// <param name="prefix">The prefix used to start a list.</param>
+	/// <param name="suffix">The suffix used to end a list.</param>
+	/// <returns>The used builder instance.</returns>
+	public BuilderSettings WithListSymbols(string prefix, string suffix)
+	{
+		ListPrefix = prefix;
+		ListSuffix = suffix;
+		return this;
+	}
+
+	/// <summary>Sets the <see cref="ListValueSeparator"/> setting.</summary>
+	/// <param name="separator">The separator that will be used to separate list values.</param>
+	/// <returns>The used builder instance.</returns>
+	public BuilderSettings WithListSeparator(string separator)
+	{
+		ListValueSeparator = separator;
 		return this;
 	}
 	#endregion

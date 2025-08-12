@@ -55,5 +55,14 @@ public interface IEngineSettings
 	/// <summary>The separators that can be used to separator flag names from flag values.</summary>
 	/// <remarks>The white-space character <c> </c> has the special meaning of allowing any white-space to be used as a separator.</remarks>
 	IReadOnlyCollection<string> FlagValueSeparators { get; }
+
+	/// <summary>The prefix used to start a list value.</summary>
+	string ListPrefix { get; }
+
+	/// <summary>The suffix used to end a list value.</summary>
+	string ListSuffix { get; }
+
+	/// <summary>The separator used to separate the values in the list.</summary>
+	string ListValueSeparator { get; }
 	#endregion
 }
