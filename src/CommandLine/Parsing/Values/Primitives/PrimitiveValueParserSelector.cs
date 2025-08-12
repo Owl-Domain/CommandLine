@@ -1,3 +1,5 @@
+using OwlDomain.CommandLine.Parsing.Values.Collections;
+
 namespace OwlDomain.CommandLine.Parsing.Values.Primitives;
 
 /// <summary>
@@ -42,7 +44,6 @@ public sealed class PrimitiveValueParserSelector : BaseValueParserSelector
 		if (type == typeof(bool))
 			return new BooleanValueParser();
 
-
 		if (TryCreateGenericParser(type, typeof(IFloatingPoint<>), typeof(DecimalValueParser<>), out IValueParser? parser))
 			return parser;
 
@@ -52,7 +53,41 @@ public sealed class PrimitiveValueParserSelector : BaseValueParserSelector
 		if (TryCreateGenericParser(type, typeof(IParsable<>), typeof(ParsableValueParser<>), out parser))
 			return parser;
 
+		if (TryCreateCollectionParser(rootSelector, type, out parser))
+			return parser;
+
 		return null;
+	}
+	#endregion
+
+	#region Collection methods
+	private static bool TryCreateCollectionParser(IRootValueParserSelector rootSelector, Type type, [NotNullWhen(true)] out IValueParser? parser)
+	{
+		if (TryCreateArrayCollectionParser(rootSelector, type, out parser))
+			return true;
+
+		return false;
+	}
+	private static bool TryCreateArrayCollectionParser(IRootValueParserSelector rootSelector, Type type, [NotNullWhen(true)] out IValueParser? parser)
+	{
+		parser = default;
+
+		if (type.IsSZArray is false)
+			return false;
+
+		Type? elementType = type.GetElementType();
+		Debug.Assert(elementType is not null);
+
+		if (rootSelector.TrySelect(elementType, out IValueParser? valueParser) is false)
+			return false;
+
+		Type parserType = typeof(ArrayCollectionValueParser<>).MakeGenericType(elementType);
+
+		object? untypedParser = Activator.CreateInstance(parserType, [valueParser]);
+		Debug.Assert(untypedParser is not null);
+
+		parser = (IValueParser)untypedParser;
+		return true;
 	}
 	#endregion
 

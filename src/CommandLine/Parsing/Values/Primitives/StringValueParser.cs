@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text;
 
 namespace OwlDomain.CommandLine.Parsing.Values.Primitives;
@@ -23,7 +24,7 @@ public sealed class StringValueParser : BaseValueParser<string>
 		if (parser.Match('\''))
 			return TryParseSingleQuote(parser, out error);
 
-		string value = parser.AdvanceUntilBreak();
+		string value = parser.AdvanceWhile(Filter);
 
 		error = value.Length is 0 ? string.Empty : null;
 		return value;
@@ -113,6 +114,24 @@ public sealed class StringValueParser : BaseValueParser<string>
 		}
 
 		return true;
+	}
+	private static bool Filter(char ch)
+	{
+		if (ch is '.' or '@' or '/')
+			return true;
+
+		if (char.IsLetterOrDigit(ch))
+			return true;
+
+		UnicodeCategory category = char.GetUnicodeCategory(ch);
+
+		return category switch
+		{
+			UnicodeCategory.ConnectorPunctuation => true,
+			UnicodeCategory.CurrencySymbol => true,
+
+			_ => false,
+		};
 	}
 	#endregion
 }
