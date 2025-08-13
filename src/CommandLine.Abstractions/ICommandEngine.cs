@@ -20,6 +20,9 @@ public interface ICommandEngine
 	/// <summary>The parser to use for parsing the commands.</summary>
 	ICommandParser Parser { get; }
 
+	/// <summary>The root selector for value parsers.</summary>
+	IRootValueParserSelector ValueParserSelector { get; }
+
 	/// <summary>The validator to use for validating the parsed commands.</summary>
 	ICommandValidator Validator { get; }
 

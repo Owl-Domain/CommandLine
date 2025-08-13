@@ -1,4 +1,3 @@
-
 namespace OwlDomain.CommandLine;
 
 /// <summary>
@@ -7,6 +6,7 @@ namespace OwlDomain.CommandLine;
 /// <param name="settings">The settings for the engine.</param>
 /// <param name="rootGroup">The root command group.</param>
 /// <param name="parser">The parser to use for parsing the commands.</param>
+/// <param name="valueParserSelector">The root selector for value parsers.</param>
 /// <param name="validator">The validator to use for validating the parsed commands.</param>
 /// <param name="executor">The executor to use for executing the validated commands.</param>
 /// <param name="documentationPrinter">The documentation printer for the engine.</param>
@@ -16,6 +16,7 @@ public sealed class CommandEngine(
 	IEngineSettings settings,
 	ICommandGroupInfo rootGroup,
 	ICommandParser parser,
+	IRootValueParserSelector valueParserSelector,
 	ICommandValidator validator,
 	ICommandExecutor executor,
 	IDocumentationPrinter documentationPrinter,
@@ -32,6 +33,9 @@ public sealed class CommandEngine(
 
 	/// <inheritdoc/>
 	public ICommandParser Parser { get; } = parser;
+
+	/// <inheritdoc/>
+	public IRootValueParserSelector ValueParserSelector { get; } = valueParserSelector;
 
 	/// <inheritdoc/>
 	public ICommandValidator Validator { get; } = validator;

@@ -5,7 +5,7 @@ namespace OwlDomain.CommandLine.Parsing.Values;
 /// </summary>
 /// <typeparam name="T">The type of the parsed value.</typeparam>
 [DebuggerDisplay($"{{{nameof(DebuggerDisplay)}(), nq}}")]
-public sealed class ValueParseResult<T> : IValueParseResult<T>
+public class ValueParseResult<T> : IValueParseResult<T>
 {
 	#region Properties
 	/// <inheritdoc/>
@@ -52,7 +52,7 @@ public sealed class ValueParseResult<T> : IValueParseResult<T>
 
 	#region Methods
 	/// <inheritdoc/>
-	public IEnumerable<TextToken> EnumerateTokens()
+	public virtual IEnumerable<TextToken> EnumerateTokens()
 	{
 		if (Error is not null)
 			return [];

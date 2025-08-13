@@ -1,3 +1,4 @@
+using OwlDomain.CommandLine.Parsing.Values.Collections;
 using OwlDomain.CommandLine.Parsing.Values.Primitives;
 
 namespace OwlDomain.CommandLine.Tests.Parsing;
@@ -330,6 +331,38 @@ public sealed class CommandParserTests
 		// Assert
 		CheckFailedResult(result, isLazy, fragments, expectedTokens);
 	}
+
+
+	[DynamicData(nameof(ArrayCollectionValueTests), DynamicDataSourceType.Method)]
+	[TestMethod]
+	public void Parse_ArrayCollectionTests_Successful(string[] fragments, TextTokenKind[] expectedTokens, bool isLazy)
+	{
+		// Arrange
+		IValueParser<string> stringParser = new StringValueParser();
+		ArrayCollectionValueParser<string> arrayParser = new(stringParser);
+
+		IArgumentInfo argument = Substitute.For<IArgumentInfo>();
+		ICommandInfo command = Substitute.For<ICommandInfo>();
+		ICommandGroupInfo rootGroup = Substitute.For<ICommandGroupInfo>();
+		ICommandEngine engine = Substitute.For<ICommandEngine>();
+
+		argument.IsRequired.Returns(true);
+		argument.Parser.Returns(arrayParser);
+
+		command.Arguments.Returns([argument]);
+		rootGroup.ImplicitCommand.Returns(command);
+
+		engine.Settings.Returns(SetupSettings());
+		engine.RootGroup.Returns(rootGroup);
+
+		CommandParser sut = new();
+
+		// Act
+		ICommandParserResult result = isLazy ? sut.Parse(engine, fragments[0]) : sut.Parse(engine, fragments);
+
+		// Assert
+		CheckFailedResult(result, isLazy, fragments, expectedTokens);
+	}
 	#endregion
 
 	#region Helpers
@@ -356,6 +389,56 @@ public sealed class CommandParserTests
 			message += $"\n\nResult tokens:\n{string.Join(' ', resultTokens)}";
 
 			Assert.That.Fail(message + "\n");
+		}
+	}
+
+	[ExcludeFromCodeCoverage]
+	private static IEnumerable<object?[]> ArrayCollectionValueTests()
+	{
+		(string, TextTokenKind[])[] arguments = [
+			("[|]", [TextTokenKind.Symbol, TextTokenKind.Symbol]),
+
+			("[ | a | ]", [TextTokenKind.Symbol, TextTokenKind.Value, TextTokenKind.Symbol]),
+			("[ | \"a\" | ]", [TextTokenKind.Symbol, TextTokenKind.Value, TextTokenKind.Symbol]),
+			("[ | a | , | b]", [TextTokenKind.Symbol, TextTokenKind.Value, TextTokenKind.Symbol, TextTokenKind.Value, TextTokenKind.Symbol]),
+			("[ | \"a\" | , | \"b\" | ]", [TextTokenKind.Symbol, TextTokenKind.Value, TextTokenKind.Symbol, TextTokenKind.Value, TextTokenKind.Symbol]),
+			("[ | \"a a\" | , | \"b b\" | ]", [TextTokenKind.Symbol, TextTokenKind.Value, TextTokenKind.Symbol, TextTokenKind.Value, TextTokenKind.Symbol]),
+
+			("a", [TextTokenKind.Value]),
+			("a | , | b", [TextTokenKind.Value, TextTokenKind.Symbol, TextTokenKind.Value]),
+		];
+
+		foreach ((string argument, TextTokenKind[] tokens) pair in arguments)
+		{
+			string cmd = pair.argument;
+
+			List<TextTokenKind> tokenList = [];
+			tokenList.AddRange(pair.tokens);
+
+			TextTokenKind[] allTokens = [.. tokenList];
+
+			yield return
+			[
+				new string[] { cmd.Replace(" | ", "").Replace("|", "") },
+				allTokens,
+				true
+			];
+
+			yield return
+			[
+				new string[] { cmd.Replace(" | ", " ").Replace("|", " ") },
+				allTokens,
+				true
+			];
+
+			string[] fragments = cmd.Split("|", StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+
+			yield return
+			[
+				fragments,
+				allTokens,
+				false
+			];
 		}
 	}
 

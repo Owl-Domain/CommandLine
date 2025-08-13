@@ -1,30 +1,27 @@
 namespace OwlDomain.CommandLine.Parsing.Values;
 
 /// <summary>
-/// 	Represents a selector for value parsers.
+/// 	Represents the root selector for value parsers.
 /// </summary>
-public interface IValueParserSelector
+public interface IRootValueParserSelector
 {
 	#region Methods
 	/// <summary>Tries to select a value parser for the given <paramref name="type"/>.</summary>
-	/// <param name="rootSelector">The selector which can be used to select the parser for nested values.</param>
 	/// <param name="type">The type to select the value parser for.</param>
 	/// <param name="parser">The value parser selected for the given <paramref name="type"/>.</param>
 	/// <returns><see langword="true"/> if the value <paramref name="parser"/> could be selected, <see langword="false"/> otherwise.</returns>
-	bool TrySelect(IRootValueParserSelector rootSelector, Type type, [NotNullWhen(true)] out IValueParser? parser);
+	bool TrySelect(Type type, [NotNullWhen(true)] out IValueParser? parser);
 
 	/// <summary>Tries to select a value parser for the given <paramref name="parameter"/>.</summary>
-	/// <param name="rootSelector">The selector which can be used to select the parser for nested values.</param>
 	/// <param name="parameter">The parameter to select the value parser for.</param>
 	/// <param name="parser">The value parser selected for the given <paramref name="parameter"/>.</param>
 	/// <returns><see langword="true"/> if the value <paramref name="parser"/> could be selected, <see langword="false"/> otherwise.</returns>
-	bool TrySelect(IRootValueParserSelector rootSelector, ParameterInfo parameter, [NotNullWhen(true)] out IValueParser? parser);
+	bool TrySelect(ParameterInfo parameter, [NotNullWhen(true)] out IValueParser? parser);
 
 	/// <summary>Tries to select a value parser for the given <paramref name="property"/>.</summary>
-	/// <param name="rootSelector">The selector which can be used to select the parser for nested values.</param>
 	/// <param name="property">The property to select the value parser for.</param>
 	/// <param name="parser">The value parser selected for the given <paramref name="property"/>.</param>
 	/// <returns><see langword="true"/> if the value <paramref name="parser"/> could be selected, <see langword="false"/> otherwise.</returns>
-	bool TrySelect(IRootValueParserSelector rootSelector, PropertyInfo property, [NotNullWhen(true)] out IValueParser? parser);
+	bool TrySelect(PropertyInfo property, [NotNullWhen(true)] out IValueParser? parser);
 	#endregion
 }
