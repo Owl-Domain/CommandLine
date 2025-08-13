@@ -66,6 +66,9 @@ public sealed class PrimitiveValueParserSelector : BaseValueParserSelector
 		if (TryCreateArrayCollectionParser(rootSelector, type, out parser))
 			return true;
 
+		if (TryCreateMemoryCollectionParser(rootSelector, type, out parser))
+			return true;
+
 		if (TryCreateGeneralCollectionValueParser(rootSelector, type, out parser))
 			return true;
 
@@ -90,6 +93,38 @@ public sealed class PrimitiveValueParserSelector : BaseValueParserSelector
 		Debug.Assert(untypedParser is not null);
 
 		parser = (IValueParser)untypedParser;
+		return true;
+	}
+	private static bool TryCreateMemoryCollectionParser(IRootValueParserSelector rootValueParser, Type type, [NotNullWhen(true)] out IValueParser? parser)
+	{
+		parser = default;
+
+		if (type.IsConstructedGenericType is false)
+			return false;
+
+		Type typeDef = type.GetGenericTypeDefinition();
+		Type parserType, elementType;
+
+		if (typeDef == typeof(Memory<>))
+		{
+			elementType = type.GetGenericArguments()[0];
+			parserType = typeof(MemoryCollectionValueParser.Mutable<>).MakeGenericType(elementType);
+		}
+		else if (typeDef == typeof(ReadOnlyMemory<>))
+		{
+			elementType = type.GetGenericArguments()[0];
+			parserType = typeof(MemoryCollectionValueParser.ReadOnly<>).MakeGenericType(elementType);
+		}
+		else
+			return false;
+
+		if (rootValueParser.TrySelect(elementType, out IValueParser? valueParser) is false)
+			return false;
+
+		object? untyped = Activator.CreateInstance(parserType, [valueParser]);
+		Debug.Assert(untyped is not null);
+
+		parser = (IValueParser)untyped;
 		return true;
 	}
 	private static bool TryCreateGeneralCollectionValueParser(IRootValueParserSelector rootSelector, Type type, [NotNullWhen(true)] out IValueParser? parser)
