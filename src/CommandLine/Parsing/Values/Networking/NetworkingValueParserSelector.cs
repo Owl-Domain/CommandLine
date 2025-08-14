@@ -17,6 +17,9 @@ public sealed class NetworkingValueParserSelector : BaseValueParserSelector
 		if (type == typeof(IPEndPoint))
 			return new IPEndPointValueParser();
 
+		if (type == typeof(DnsEndPoint))
+			return new DnsEndPointValueParser();
+
 		return null;
 	}
 	#endregion
