@@ -21,7 +21,7 @@ public interface ICommandEngineBuilder
 	/// <summary>Includes the commands from the given type <typeparamref name="T"/>.</summary>
 	/// <typeparam name="T">The type to include the commands from.</typeparam>
 	/// <returns>The used builder instance.</returns>
-	ICommandEngineBuilder From<T>() where T : class, new();
+	ICommandEngineBuilder From<T>() where T : class;
 
 	/// <summary>Includes the given <paramref name="selector"/>.</summary>
 	/// <param name="selector">The value parse selector to use for selecting the value parsers.</param>

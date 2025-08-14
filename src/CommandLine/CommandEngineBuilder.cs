@@ -36,7 +36,7 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 		if (@class.IsClass is false)
 			Throw.New.ArgumentException(nameof(@class), "The given type was not a class.");
 
-		if (@class.GetConstructor([]) is not null)
+		if (@class.GetConstructor(Type.EmptyTypes) is not null)
 			Throw.New.ArgumentException(nameof(@class), "The given class did not have a parameterless constructor.");
 
 		_classes.Add(@class);
@@ -45,7 +45,7 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 	}
 
 	/// <inheritdoc/>
-	public ICommandEngineBuilder From<T>() where T : class, new()
+	public ICommandEngineBuilder From<T>() where T : class
 	{
 		_classes.Add(typeof(T));
 
