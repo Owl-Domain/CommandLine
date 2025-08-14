@@ -51,9 +51,6 @@ public abstract class BaseArgumentInfo<T> : IArgumentInfo<T>
 		name.ThrowIfEmptyOrWhitespace(nameof(name));
 		position.ThrowIfLessThan(0, nameof(position));
 
-		if (isRequired && defaultValue is not null)
-			Throw.New.ArgumentException(nameof(defaultValue), "Default values are not allowed for required arguments.");
-
 		Name = name;
 		Position = position;
 		IsRequired = isRequired;

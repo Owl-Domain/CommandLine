@@ -59,9 +59,6 @@ public abstract class BaseFlagInfo<T> : IFlagInfo<T>
 		if (longName is null && shortName is null)
 			Throw.New.ArgumentException(nameof(longName), "Either the long name or the short name of the flag must be specified at a minimum.");
 
-		if (isRequired && defaultValue is not null)
-			Throw.New.ArgumentException(nameof(defaultValue), "Default values are not allowed for required flags.");
-
 		Kind = kind;
 		LongName = longName;
 		ShortName = shortName;
