@@ -1,4 +1,3 @@
-using System.Runtime.Serialization;
 using System.Text;
 using OwlDomain.Documentation.Document.Nodes;
 
@@ -38,13 +37,13 @@ public sealed class DocumentationPrinter : IDocumentationPrinter
 			foreach (IFlagInfo flag in group.SharedFlags)
 			{
 				if (flag.ShortName is not null)
-					Console.Write($"-{flag.ShortName}");
+					Console.Write($"{engine.Settings.ShortFlagPrefix}{flag.ShortName}");
 
 				if (flag.LongName is not null)
 				{
 					if (flag.ShortName is not null)
 						Console.Write(' ');
-					Console.Write($"--{flag.LongName}");
+					Console.Write($"{engine.Settings.LongFlagPrefix}{flag.LongName}");
 				}
 
 				Console.WriteLine($" \t {GetBasicSummary(flag.Documentation)}");
@@ -74,13 +73,13 @@ public sealed class DocumentationPrinter : IDocumentationPrinter
 			foreach (IFlagInfo flag in command.Flags)
 			{
 				if (flag.ShortName is not null)
-					Console.Write($"-{flag.ShortName}");
+					Console.Write($"{engine.Settings.ShortFlagPrefix}{flag.ShortName}");
 
 				if (flag.LongName is not null)
 				{
 					if (flag.ShortName is not null)
 						Console.Write(' ');
-					Console.Write($"--{flag.LongName}");
+					Console.Write($"{engine.Settings.LongFlagPrefix}{flag.LongName}");
 				}
 
 				Console.WriteLine($" \t {GetBasicSummary(flag.Documentation)}");
