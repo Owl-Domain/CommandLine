@@ -78,14 +78,15 @@ public sealed class CommandParser : BaseCommandParser
 
 		Stopwatch watch = Stopwatch.StartNew();
 		Context context = new(engine, parser, cancellationToken);
-		IParseResult? result = ParseGroup(context, engine.RootGroup);
+
+		IParseResult? result = ParseGroup(context, engine.RootGroup, false);
 
 		CheckForLeftOverInput(context);
 
 		watch.Stop();
 		return new CommandParserResult(context.Diagnostics.Any() is false, false, context.Engine, this, context.Diagnostics, result, context.ExtraTokens, watch.Elapsed);
 	}
-	private static IParseResult ParseGroup(Context context, ICommandGroupInfo group)
+	private static IParseResult ParseGroup(Context context, ICommandGroupInfo group, bool flagArgumentSeparatorReached)
 	{
 		context.CancellationToken.ThrowIfCancellationRequested();
 
@@ -100,7 +101,16 @@ public sealed class CommandParser : BaseCommandParser
 		TextPoint start = context.Parser.Point;
 		TextToken? foundName = null;
 
-		if (groupCommandError is not null)
+		if (flagArgumentSeparatorReached is false)
+		{
+			if (IsFlagArgumentSeparator(context.Engine, context.Parser, out TextToken token))
+			{
+				context.ExtraTokens.Add(token);
+				flagArgumentSeparatorReached = true;
+			}
+		}
+
+		if (flagArgumentSeparatorReached is false && groupCommandError is not null)
 		{
 			int fragmentIndex = context.Parser.CurrentFragment.Index, offset = context.Parser.Offset;
 
@@ -110,9 +120,10 @@ public sealed class CommandParser : BaseCommandParser
 				if (group.Groups.TryGetValue(name, out ICommandGroupInfo? childGroup))
 				{
 					List<IFlagParseResult> flags = [];
-					TryParseFlags(new(context, group.SharedFlags), flags);
 
-					IParseResult subResult = ParseGroup(context, childGroup);
+					TryParseFlags(new(context, group.SharedFlags), flags, ref flagArgumentSeparatorReached);
+
+					IParseResult subResult = ParseGroup(context, childGroup, flagArgumentSeparatorReached);
 					GroupParseResult groupResult = new(childGroup, nameToken, flags, subResult);
 
 					return groupResult;
@@ -120,7 +131,7 @@ public sealed class CommandParser : BaseCommandParser
 
 				if (group.Commands.TryGetValue(name, out ICommandInfo? command))
 				{
-					ICommandParseResult subCommand = ParseCommand(context, command, nameToken);
+					ICommandParseResult subCommand = ParseCommand(context, command, nameToken, ref flagArgumentSeparatorReached);
 					return subCommand;
 				}
 			}
@@ -132,11 +143,11 @@ public sealed class CommandParser : BaseCommandParser
 		List<IFlagParseResult> groupFlags = [];
 
 		if (group.SharedFlags.Count > 0)
-			TryParseFlags(flagContext, groupFlags);
+			TryParseFlags(flagContext, groupFlags, ref flagArgumentSeparatorReached);
 
 		if (group.ImplicitCommand is not null)
 		{
-			ICommandParseResult command = ParseCommand(context, group.ImplicitCommand, null);
+			ICommandParseResult command = ParseCommand(context, group.ImplicitCommand, null, ref flagArgumentSeparatorReached);
 			if (groupFlags.Count is 0)
 				return command;
 
@@ -158,7 +169,7 @@ public sealed class CommandParser : BaseCommandParser
 
 		return new GroupParseResult(group, null, [], null);
 	}
-	private static ICommandParseResult ParseCommand(Context context, ICommandInfo command, TextToken? nameToken)
+	private static ICommandParseResult ParseCommand(Context context, ICommandInfo command, TextToken? nameToken, ref bool flagArgumentSeparatorReached)
 	{
 		context.CancellationToken.ThrowIfCancellationRequested();
 
@@ -169,11 +180,11 @@ public sealed class CommandParser : BaseCommandParser
 		List<IArgumentParseResult> arguments = [];
 
 		if (command.Arguments.Count is 0)
-			TryParseFlags(new(context, command.Flags), flags);
+			TryParseFlags(new(context, command.Flags), flags, ref flagArgumentSeparatorReached);
 
 		foreach (IArgumentInfo argumentInfo in command.Arguments)
 		{
-			TryParseFlags(new(context, command.Flags), flags);
+			TryParseFlags(new(context, command.Flags), flags, ref flagArgumentSeparatorReached);
 
 			if (TryParseArgument(context, argumentInfo, out IArgumentParseResult? result) is false)
 				break;
@@ -218,10 +229,21 @@ public sealed class CommandParser : BaseCommandParser
 	#endregion
 
 	#region Flag methods
-	private static void TryParseFlags(FlagContext context, List<IFlagParseResult> container)
+	private static void TryParseFlags(FlagContext context, List<IFlagParseResult> container, ref bool flagArgumentSeparatorReached)
 	{
+		if (flagArgumentSeparatorReached)
+			return;
+
 		do
 		{
+			if (IsFlagArgumentSeparator(context.Engine, context.Parser, out TextToken separator))
+			{
+				flagArgumentSeparatorReached = true;
+				context.ExtraTokens.Add(separator);
+
+				return;
+			}
+
 			context.CancellationToken.ThrowIfCancellationRequested();
 
 			int fragmentIndex = context.Parser.CurrentFragment.Index, offset = context.Parser.Offset;
@@ -512,6 +534,26 @@ public sealed class CommandParser : BaseCommandParser
 	#endregion
 
 	#region Helpers
+	private static bool IsFlagArgumentSeparator(ICommandEngine engine, ITextParser parser, out TextToken token)
+	{
+		string separator = engine.Settings.FlagArgumentSeparator;
+
+		if (parser.TextUntilBreak.Equals(separator, StringComparison.OrdinalIgnoreCase))
+		{
+			TextPoint start = parser.Point;
+
+			parser.Advance(separator.Length);
+			TextPoint end = parser.Point;
+
+			parser.SkipTrivia();
+
+			token = new(TextTokenKind.Symbol, new(start, end), separator);
+			return true;
+		}
+
+		token = default;
+		return false;
+	}
 	private static bool AllTheSame(string name)
 	{
 		Debug.Assert(name.Length > 0);
