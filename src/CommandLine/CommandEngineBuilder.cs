@@ -17,6 +17,7 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 	private readonly BuilderSettings _settings = new();
 	private readonly HashSet<Type> _classes = [];
 	private readonly List<IValueParserSelector> _selectors = [];
+	private readonly List<ICommandInjector> _injectors = [];
 	private INameExtractor? _nameExtractor;
 	private ICommandParser? _commandParser;
 	private IRootValueParserSelector? _valueParserSelector;
@@ -68,6 +69,22 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 	}
 
 	/// <inheritdoc/>
+	public ICommandEngineBuilder WithInjector(ICommandInjector injector)
+	{
+		if (_injectors.Contains(injector) is false)
+			_injectors.Add(injector);
+
+		return this;
+	}
+
+	/// <inheritdoc/>
+	public ICommandEngineBuilder WithInjector<T>() where T : ICommandInjector, new()
+	{
+		T injector = new();
+		return WithInjector(injector);
+	}
+
+	/// <inheritdoc/>
 	public ICommandEngineBuilder Customise(Action<BuilderSettings> callback)
 	{
 		callback.Invoke(_settings);
@@ -97,6 +114,7 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 		IEngineSettings settings = EngineSettings.From(_settings);
 
 		WithSelector<PrimitiveValueParserSelector>();
+		WithInjector<EngineCommandInjector>();
 
 		_nameExtractor ??= NameExtractor.Instance;
 		_commandParser ??= new CommandParser();
@@ -112,7 +130,7 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 		Dictionary<string, ICommandInfo> childCommands = [];
 
 		Type classType = _classes.Single();
-		IReadOnlyCollection<IFlagInfo> classFlags = GetFlags(classType);
+		IReadOnlyCollection<IFlagInfo> classFlags = GetFlags(classType, out IReadOnlyCollection<InjectedPropertyInfo> injectedClassProperties);
 		IDocumentationInfo? documentation = _documentationProvider.GetInfo(classType);
 
 		List<IFlagInfo> groupFlags = [.. classFlags];
@@ -132,7 +150,7 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 				groupFlags.Add(virtualFlag.Flag);
 		}
 
-		foreach (IMethodCommandInfo command in GetCommands(classType, group, classFlags))
+		foreach (IMethodCommandInfo command in GetCommands(classType, group, classFlags, injectedClassProperties))
 		{
 			Debug.Assert(command.Name is not null);
 			childCommands.Add(command.Name, command);
@@ -152,7 +170,11 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 	#endregion
 
 	#region Build helpers
-	private IReadOnlyCollection<IMethodCommandInfo> GetCommands(Type classType, ICommandGroupInfo group, IReadOnlyCollection<IFlagInfo> classFlags)
+	private IReadOnlyCollection<IMethodCommandInfo> GetCommands(
+		Type classType,
+		ICommandGroupInfo group,
+		IReadOnlyCollection<IFlagInfo> classFlags,
+		IReadOnlyCollection<InjectedPropertyInfo> injectedClassProperties)
 	{
 		Debug.Assert(_nameExtractor is not null);
 		Debug.Assert(_documentationProvider is not null);
@@ -169,10 +191,10 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 				Throw.New.InvalidOperationException($"Couldn't extract a command name from the method ({method}).");
 
 			List<IFlagInfo> commandFlags = method.IsStatic ? [] : [.. classFlags];
-			IReadOnlyList<IArgumentInfo> arguments = GetArguments(method);
+			IReadOnlyList<IArgumentInfo> arguments = GetArguments(method, out IReadOnlyCollection<InjectedParameterInfo> injectedParameters);
 			IDocumentationInfo? documentation = _documentationProvider.GetInfo(method);
 
-			MethodCommandInfo command = new(method, name, group, commandFlags, arguments, documentation);
+			MethodCommandInfo command = new(method, name, group, commandFlags, arguments, documentation, injectedParameters, injectedClassProperties);
 
 			foreach (VirtualFlag virtualFlag in _virtualFlags)
 			{
@@ -185,12 +207,14 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 
 		return commands;
 	}
-	private List<IFlagInfo> GetFlags(Type type)
+	private List<IFlagInfo> GetFlags(Type type, out IReadOnlyCollection<InjectedPropertyInfo> injectedProperties)
 	{
 		Debug.Assert(_nameExtractor is not null);
 		Debug.Assert(_documentationProvider is not null);
 
 		List<IFlagInfo> flags = [];
+		List<InjectedPropertyInfo> injected = [];
+		injectedProperties = injected;
 
 		object? instance = Activator.CreateInstance(type);
 		Debug.Assert(instance is not null);
@@ -198,6 +222,12 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 		PropertyInfo[] properties = type.GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.FlattenHierarchy);
 		foreach (PropertyInfo property in properties)
 		{
+			if (TryGetInjected(property, out InjectedPropertyInfo injectedProperty))
+			{
+				injected.Add(injectedProperty);
+				continue;
+			}
+
 #if NET7_0_OR_GREATER
 			bool isRequired = property.GetCustomAttribute<RequiredMemberAttribute>() is not null;
 #else
@@ -219,15 +249,23 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 
 		return flags;
 	}
-	private IReadOnlyList<IArgumentInfo> GetArguments(MethodInfo method)
+	private IReadOnlyList<IArgumentInfo> GetArguments(MethodInfo method, out IReadOnlyCollection<InjectedParameterInfo> injectedParameters)
 	{
 		Debug.Assert(_nameExtractor is not null);
 		Debug.Assert(_documentationProvider is not null);
 
 		List<IArgumentInfo> arguments = [];
+		List<InjectedParameterInfo> injected = [];
+		injectedParameters = injected;
 
 		foreach (ParameterInfo parameter in method.GetParameters())
 		{
+			if (TryGetInjected(parameter, out InjectedParameterInfo injectedParameter))
+			{
+				injected.Add(injectedParameter);
+				continue;
+			}
+
 			Debug.Assert(parameter.Name is not null);
 
 			string name = _nameExtractor.GetArgumentName(parameter.Name);
@@ -416,6 +454,34 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 
 		Throw.New.NotSupportedException($"Couldn't select a value parser for the parameter ({parameter}).");
 		return default;
+	}
+	private bool TryGetInjected(ParameterInfo parameter, out InjectedParameterInfo injected)
+	{
+		foreach (ICommandInjector injector in _injectors)
+		{
+			if (injector.CanInject(parameter))
+			{
+				injected = new(parameter, injector);
+				return true;
+			}
+		}
+
+		injected = default;
+		return false;
+	}
+	private bool TryGetInjected(PropertyInfo property, out InjectedPropertyInfo injected)
+	{
+		foreach (ICommandInjector injector in _injectors)
+		{
+			if (injector.CanInject(property))
+			{
+				injected = new(property, injector);
+				return true;
+			}
+		}
+
+		injected = default;
+		return false;
 	}
 	#endregion
 

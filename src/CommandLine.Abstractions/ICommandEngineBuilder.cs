@@ -35,6 +35,18 @@ public interface ICommandEngineBuilder
 	/// <remarks>The order in which the selectors are added is the order in which they'll be used.</remarks>
 	ICommandEngineBuilder WithSelector<T>() where T : IValueParserSelector, new();
 
+	/// <summary>Includes the given command <paramref name="injector"/> for injecting command values.</summary>
+	/// <param name="injector">The injector to include.</param>
+	/// <returns>The used builder instance.</returns>
+	/// <remarks>Multiple injectors can be provided.</remarks>
+	ICommandEngineBuilder WithInjector(ICommandInjector injector);
+
+	/// <summary>Creates and includes an instance of the command injector of the given <typeparamref name="T"/>.</summary>
+	/// <typeparam name="T">The type of the command injector to create and include.</typeparam>
+	/// <returns>The used builder instance.</returns>
+	/// <remarks>Multiple injectors can be provided.</remarks>
+	ICommandEngineBuilder WithInjector<T>() where T : ICommandInjector, new();
+
 	/// <summary>Allows for customising the engine settings.</summary>
 	/// <param name="callback">The callback which can be used to customise the engine settings.</param>
 	/// <returns>The used builder instance.</returns>
