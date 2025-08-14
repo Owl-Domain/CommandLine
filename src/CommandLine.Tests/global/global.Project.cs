@@ -7,6 +7,7 @@ global using OwlDomain.CommandLine.Diagnostics;
 global using OwlDomain.CommandLine.Discovery;
 global using OwlDomain.CommandLine.Parsing.Tree;
 global using OwlDomain.CommandLine.Parsing.Values;
+global using OwlDomain.CommandLine.Parsing.Values.Networking;
 global using OwlDomain.CommandLine.Validation;
 global using OwlDomain.CommandLine.Execution;
 
