@@ -10,6 +10,7 @@ global using OwlDomain.CommandLine.Parsing.Values;
 global using OwlDomain.CommandLine.Parsing.Values.Networking;
 global using OwlDomain.CommandLine.Validation;
 global using OwlDomain.CommandLine.Execution;
+global using OwlDomain.CommandLine.SpecialTypes;
 
 
 global using DiagnosticSource = OwlDomain.CommandLine.Diagnostics.DiagnosticSource;
