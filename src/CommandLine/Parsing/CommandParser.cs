@@ -110,6 +110,12 @@ public sealed class CommandParser : BaseCommandParser
 			}
 		}
 
+		FlagContext flagContext = new(context, group.SharedFlags);
+		List<IFlagParseResult> groupFlags = [];
+
+		if (group.SharedFlags.Count > 0)
+			TryParseFlags(flagContext, groupFlags, ref flagArgumentSeparatorReached);
+
 		if (flagArgumentSeparatorReached is false && groupCommandError is not null)
 		{
 			RestorePoint restorePoint = context.Parser.GetRestorePoint();
@@ -138,9 +144,6 @@ public sealed class CommandParser : BaseCommandParser
 
 			context.Parser.Restore(restorePoint);
 		}
-
-		FlagContext flagContext = new(context, group.SharedFlags);
-		List<IFlagParseResult> groupFlags = [];
 
 		if (group.SharedFlags.Count > 0)
 			TryParseFlags(flagContext, groupFlags, ref flagArgumentSeparatorReached);
@@ -262,6 +265,9 @@ public sealed class CommandParser : BaseCommandParser
 	{
 		context.CancellationToken.ThrowIfCancellationRequested();
 
+		if (context.Engine.Settings.MergeLongAndShortFlags)
+			return TryParseMergedFlag(context, out result);
+
 		string longPrefix = context.Engine.Settings.LongFlagPrefix;
 		string shortPrefix = context.Engine.Settings.ShortFlagPrefix;
 
@@ -285,6 +291,38 @@ public sealed class CommandParser : BaseCommandParser
 		result = default;
 		return false;
 	}
+	private static bool TryParseMergedFlag(FlagContext context, [NotNullWhen(true)] out IFlagParseResult? result)
+	{
+		context.CancellationToken.ThrowIfCancellationRequested();
+		string prefix = context.Engine.Settings.LongFlagPrefix;
+
+		result = default;
+
+		if (context.Parser.Match(prefix, TextTokenKind.Symbol, out TextToken prefixToken) is false)
+			return false;
+
+		if (TryParseFlagName(context.Engine, context.Parser, out TextToken nameToken, out string? name) is false)
+		{
+			context.Diagnostics.Add(DiagnosticSource.Parsing, new(context.Parser.Point, context.Parser.Point), "Couldn't parse the flag name.");
+			return false;
+		}
+
+		IFlagInfo? flag = context.AvailableFlags.SingleOrDefault(f => f.LongName == name || f.ShortName == name[0]);
+		if (flag is null)
+		{
+			context.Diagnostics.Add(DiagnosticSource.Parsing, nameToken.Location, $"Couldn't find the {prefix}{name} flag.");
+			return false;
+		}
+
+		FlagPrefixContext prefixContext = new(context, prefixToken);
+		NamedFlagContext namedContext = new(prefixContext, nameToken, name);
+
+		if (TryParseFlagValue(new(namedContext, flag), out result))
+			return true;
+
+		context.Diagnostics.Add(DiagnosticSource.Parsing, nameToken.Location, $"Couldn't parse the value for the {prefix}{name} flag.");
+		return false;
+	}
 	private static bool TryParseLongFlag(FlagPrefixContext context, [NotNullWhen(true)] out IFlagParseResult? result)
 	{
 		context.CancellationToken.ThrowIfCancellationRequested();
@@ -299,7 +337,6 @@ public sealed class CommandParser : BaseCommandParser
 		}
 
 		IFlagInfo? flag = context.AvailableFlags.SingleOrDefault(f => f.LongName == name);
-
 		if (flag is null)
 		{
 			context.Diagnostics.Add(DiagnosticSource.Parsing, nameToken.Location, $"Couldn't find the {longPrefix}{name} flag.");
