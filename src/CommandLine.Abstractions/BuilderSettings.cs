@@ -45,6 +45,9 @@ public sealed class BuilderSettings : IEngineSettings
 
 	/// <inheritdoc/>
 	public string ListValueSeparator { get; set; } = ",";
+
+	/// <inheritdoc/>
+	public TimeSpan ExecutionTimeout { get; set; } = TimeSpan.Zero;
 	#endregion
 
 	#region Methods
@@ -162,6 +165,18 @@ public sealed class BuilderSettings : IEngineSettings
 	public BuilderSettings WithListSeparator(string separator)
 	{
 		ListValueSeparator = separator;
+		return this;
+	}
+
+	/// <summary>Sets the <see cref="ExecutionTimeout"/> setting.</summary>
+	/// <param name="duration">The amount of time that command execution is allowed to take.</param>
+	/// <returns>The used builder instance.</returns>
+	/// <remarks>Once the actual command is being executed, this value is merely a suggestion that the command itself needs to respect.</remarks>
+	public BuilderSettings WithExecutionTimeout(TimeSpan duration)
+	{
+		duration.ThrowIfLessThan(TimeSpan.Zero, nameof(duration));
+
+		ExecutionTimeout = duration;
 		return this;
 	}
 	#endregion

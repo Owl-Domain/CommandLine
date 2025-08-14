@@ -107,7 +107,14 @@ public sealed class CommandEngine(
 
 		watch.Stop();
 
-		return new CommandRunResult(executorResult.Successful, parserResult, validatorResult, executorResult, diagnostics, watch.Elapsed);
+		return new CommandRunResult(
+			executorResult.Successful,
+			executorResult.WasCancelled,
+			parserResult,
+			validatorResult,
+			executorResult,
+			diagnostics,
+			watch.Elapsed);
 	}
 	#endregion
 }

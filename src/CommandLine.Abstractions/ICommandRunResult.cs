@@ -9,6 +9,9 @@ public interface ICommandRunResult
 	/// <summary>Whether the command was processed successfully.</summary>
 	bool Successful { get; }
 
+	/// <summary>Whether the operation was cancelled.</summary>
+	bool WasCancelled { get; }
+
 	/// <summary>The result from parsing the command.</summary>
 	ICommandParserResult ParserResult { get; }
 

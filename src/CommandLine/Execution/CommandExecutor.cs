@@ -15,22 +15,50 @@ public sealed class CommandExecutor : ICommandExecutor
 	public ICommandExecutorResult Execute(ICommandValidatorResult validatorResult, CommandExecutionDelegate? callback = null)
 	{
 		if (validatorResult.Successful is false)
-			return new CommandExecutorResult(false, validatorResult, new DiagnosticBag(), default, default);
+			return new CommandExecutorResult(false, false, validatorResult, new DiagnosticBag(), default, default);
 
 		Stopwatch watch = Stopwatch.StartNew();
+		CancellationTokenSource cancellationTokenSource = new();
+		DiagnosticBag diagnostics = [];
+
+		TimeSpan timeout = validatorResult.Engine.Settings.ExecutionTimeout;
+
+		try
+		{
+			if (timeout > TimeSpan.Zero)
+				cancellationTokenSource.CancelAfter(timeout);
+
+			return Execute(validatorResult, callback, diagnostics, watch, cancellationTokenSource);
+		}
+		catch (OperationCanceledException)
+		{
+			watch.Stop();
+
+			return new CommandExecutorResult(false, true, validatorResult, diagnostics, watch.Elapsed, default);
+		}
+	}
+	private ICommandExecutorResult Execute(
+		ICommandValidatorResult validatorResult,
+		CommandExecutionDelegate? callback,
+		DiagnosticBag diagnostics,
+		Stopwatch watch,
+		CancellationTokenSource cancellationTokenSource)
+	{
+		cancellationTokenSource.Token.ThrowIfCancellationRequested();
+
 		IReadOnlyDictionary<IFlagInfo, object?> flags = GetFlags(validatorResult.ParserResult);
 		IReadOnlyDictionary<IArgumentInfo, object?> arguments = GetArguments(validatorResult.ParserResult);
 
 		ICommandGroupInfo? groupTarget = GetTargetGroup(validatorResult.ParserResult.CommandOrGroup) ?? validatorResult.Engine.RootGroup;
 		ICommandInfo? commandTarget = GetTargetCommand(validatorResult.ParserResult.CommandOrGroup);
 
-		DiagnosticBag diagnostics = [];
-
-		CommandExecutionContext context = new(diagnostics, validatorResult.Engine, groupTarget, commandTarget, arguments, flags, validatorResult);
+		CommandExecutionContext context = new(diagnostics, validatorResult.Engine, groupTarget, commandTarget, arguments, flags, validatorResult, cancellationTokenSource);
 
 		if (callback is not null || OnExecute is null)
 		{
 			callback?.Invoke(context);
+			cancellationTokenSource.Token.ThrowIfCancellationRequested();
+
 			if (OnExecute is not null)
 			{
 				foreach (Delegate del in OnExecute.GetInvocationList())
@@ -39,13 +67,14 @@ public sealed class CommandExecutor : ICommandExecutor
 						break;
 
 					del.DynamicInvoke(context);
+					cancellationTokenSource.Token.ThrowIfCancellationRequested();
 				}
 			}
 
 			if (context.Handled)
 			{
 				watch.Stop();
-				return new CommandExecutorResult(diagnostics.Any() is false, validatorResult, diagnostics, watch.Elapsed, context.ResultValue);
+				return new CommandExecutorResult(diagnostics.Any() is false, false, validatorResult, diagnostics, watch.Elapsed, context.ResultValue);
 			}
 		}
 
@@ -61,9 +90,19 @@ public sealed class CommandExecutor : ICommandExecutor
 		if (command.CommandInfo is IMethodCommandInfo methodCommand)
 		{
 			object? container = SetupContainer(context, methodCommand.Method, flags, methodCommand.InjectedProperties);
-			object?[] parameters = SetupArguments(context, methodCommand.Method, arguments, methodCommand.InjectedParameters);
+			cancellationTokenSource.Token.ThrowIfCancellationRequested();
 
-			commandResult = methodCommand.Method.Invoke(container, parameters);
+			object?[] parameters = SetupArguments(context, methodCommand.Method, arguments, methodCommand.InjectedParameters);
+			cancellationTokenSource.Token.ThrowIfCancellationRequested();
+
+			try
+			{
+				commandResult = methodCommand.Method.Invoke(container, parameters);
+			}
+			catch (TargetInvocationException ex) when (ex.InnerException is OperationCanceledException)
+			{
+				throw ex.InnerException;
+			}
 		}
 		else if (command.CommandInfo is IVirtualCommandInfo)
 			Throw.New.NotImplementedException($"Executing virtual commands has not been implemented yet.");
@@ -71,7 +110,7 @@ public sealed class CommandExecutor : ICommandExecutor
 			Throw.New.InvalidOperationException($"Unknown command type ({command.CommandInfo?.GetType()}).");
 
 		watch.Stop();
-		return new CommandExecutorResult(diagnostics.Any() is false, validatorResult, diagnostics, watch.Elapsed, commandResult);
+		return new CommandExecutorResult(diagnostics.Any() is false, false, validatorResult, diagnostics, watch.Elapsed, commandResult);
 	}
 	#endregion
 

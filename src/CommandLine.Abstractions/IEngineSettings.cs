@@ -64,5 +64,9 @@ public interface IEngineSettings
 
 	/// <summary>The separator used to separate the values in the list.</summary>
 	string ListValueSeparator { get; }
+
+	/// <summary>The maximum amount of time a command can take to execute, use <see cref="TimeSpan.Zero"/> for an infinite amount of time.</summary>
+	/// <remarks>Once the actual command is being executed, this value is merely a suggestion that the command itself needs to respect.</remarks>
+	TimeSpan ExecutionTimeout { get; }
 	#endregion
 }

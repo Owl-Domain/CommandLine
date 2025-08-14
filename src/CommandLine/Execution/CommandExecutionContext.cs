@@ -10,6 +10,7 @@ namespace OwlDomain.CommandLine.Execution;
 /// <param name="arguments">The arguments that will be passed to the target upon execution.</param>
 /// <param name="flags">The flags that will be passed to the target upon execution.</param>
 /// <param name="validatorResult">The result of validating the command that will be executed.</param>
+/// <param name="cancellationTokenSource">>The source of the cancellation token for the current operation.</param>
 public sealed class CommandExecutionContext(
 	DiagnosticBag diagnostics,
 	ICommandEngine engine,
@@ -17,7 +18,8 @@ public sealed class CommandExecutionContext(
 	ICommandInfo? commandTarget,
 	IReadOnlyDictionary<IArgumentInfo, object?> arguments,
 	IReadOnlyDictionary<IFlagInfo, object?> flags,
-	ICommandValidatorResult validatorResult)
+	ICommandValidatorResult validatorResult,
+	CancellationTokenSource cancellationTokenSource)
 	: ICommandExecutionContext
 {
 	#region Properties
@@ -47,6 +49,9 @@ public sealed class CommandExecutionContext(
 
 	/// <inheritdoc/>
 	public ICommandValidatorResult ValidatorResult { get; } = validatorResult;
+
+	/// <inheritdoc/>
+	public CancellationTokenSource CancellationTokenSource { get; } = cancellationTokenSource;
 	#endregion
 
 	#region Methods

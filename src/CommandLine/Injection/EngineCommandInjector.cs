@@ -29,6 +29,8 @@ public sealed class EngineCommandInjector : BaseCommandInjector
 			type == typeof(ICommandInfo) ||
 			type == typeof(ICommandGroupInfo) ||
 
+			type == typeof(CancellationTokenSource) ||
+			type == typeof(CancellationToken) ||
 			type == typeof(DiagnosticBag);
 
 		return canInject;
@@ -66,6 +68,8 @@ public sealed class EngineCommandInjector : BaseCommandInjector
 		}
 		if (type == typeof(ICommandGroupInfo)) return context.GroupTarget;
 
+		if (type == typeof(CancellationTokenSource)) return context.CancellationTokenSource;
+		if (type == typeof(CancellationToken)) return context.CancellationTokenSource.Token;
 		if (type == typeof(DiagnosticBag)) return context.Diagnostics;
 
 		return default;

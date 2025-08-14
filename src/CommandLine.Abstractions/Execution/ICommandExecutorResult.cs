@@ -9,6 +9,9 @@ public interface ICommandExecutorResult : IStageResult
 	/// <summary>The validation result that was executed.</summary>
 	ICommandValidatorResult ValidatorResult { get; }
 
+	/// <summary>Whether the execution of the command was cancelled.</summary>
+	bool WasCancelled { get; }
+
 	/// <summary>The (optional) result returned by the command.</summary>
 	object? Result { get; }
 	#endregion

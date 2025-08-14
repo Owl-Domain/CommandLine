@@ -44,6 +44,9 @@ public sealed class EngineSettings : IEngineSettings
 
 	/// <inheritdoc/>
 	public required string ListValueSeparator { get; init; }
+
+	/// <inheritdoc/>
+	public required TimeSpan ExecutionTimeout { get; init; }
 	#endregion
 
 	#region Functions
@@ -62,10 +65,13 @@ public sealed class EngineSettings : IEngineSettings
 			errors.Add($"{nameof(IncludeHelpCommand)} setting was set to true, but the {nameof(HelpCommandName)} setting ({settings.HelpCommandName}) was invalid.");
 
 		if (settings.IncludeHelpFlag && string.IsNullOrWhiteSpace(settings.LongHelpFlagName) && settings.ShortHelpFlagName is null)
-			errors.Add($"The {nameof(IncludeHelpFlag)} settings was set set to true, but both the {nameof(LongHelpFlagName)} ({settings.LongHelpFlagName}) and {nameof(ShortHelpFlagName)} ({settings.ShortHelpFlagName}) settings had invalid values.");
+			errors.Add($"The {nameof(IncludeHelpFlag)} setting was set set to true, but both the {nameof(LongHelpFlagName)} ({settings.LongHelpFlagName}) and {nameof(ShortHelpFlagName)} ({settings.ShortHelpFlagName}) settings had invalid values.");
 
 		if (settings.FlagValueSeparators.Count is 0)
-			errors.Add($"The {nameof(FlagValueSeparators)} must have at least one separator.");
+			errors.Add($"The {nameof(FlagValueSeparators)} setting must have at least one separator.");
+
+		if (settings.ExecutionTimeout < TimeSpan.Zero)
+			errors.Add($"The {nameof(ExecutionTimeout)} setting must not be negative.");
 
 		if (errors.Count > 0)
 			Throw.New.ArgumentException(nameof(settings), string.Join(Environment.NewLine, errors));
@@ -84,7 +90,8 @@ public sealed class EngineSettings : IEngineSettings
 			FlagValueSeparators = [.. settings.FlagValueSeparators.OrderByDescending(s => s.Length)],
 			ListPrefix = settings.ListPrefix,
 			ListSuffix = settings.ListSuffix,
-			ListValueSeparator = settings.ListValueSeparator
+			ListValueSeparator = settings.ListValueSeparator,
+			ExecutionTimeout = settings.ExecutionTimeout,
 		};
 	}
 	#endregion

@@ -4,6 +4,7 @@ namespace OwlDomain.CommandLine;
 /// 	Represents the end-to-end result of running a command.
 /// </summary>
 /// <param name="successful">Whether the command was processed successfully.</param>
+/// <param name="wasCancelled">Whether the operation was cancelled.</param>
 /// <param name="parserResult">The result from parsing the command.</param>
 /// <param name="validatorResult">The result from validating the command.</param>
 /// <param name="executorResult">The result from executing the command</param>
@@ -12,6 +13,7 @@ namespace OwlDomain.CommandLine;
 [DebuggerDisplay($"{{{nameof(DebuggerDisplay)}(), nq}}")]
 public sealed class CommandRunResult(
 	bool successful,
+	bool wasCancelled,
 	ICommandParserResult parserResult,
 	ICommandValidatorResult validatorResult,
 	ICommandExecutorResult executorResult,
@@ -37,6 +39,9 @@ public sealed class CommandRunResult(
 
 	/// <inheritdoc/>
 	public TimeSpan Duration { get; } = duration;
+
+	/// <inheritdoc/>
+	public bool WasCancelled { get; } = wasCancelled;
 	#endregion
 
 	#region Helpers

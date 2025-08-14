@@ -32,6 +32,9 @@ public interface ICommandExecutionContext
 
 	/// <summary>The result of validating the command that will be executed.</summary>
 	ICommandValidatorResult ValidatorResult { get; }
+
+	/// <summary>The source of the cancellation token for the current operation.</summary>
+	CancellationTokenSource CancellationTokenSource { get; }
 	#endregion
 
 	#region Methods
