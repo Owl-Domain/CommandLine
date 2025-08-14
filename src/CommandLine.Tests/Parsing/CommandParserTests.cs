@@ -479,7 +479,7 @@ public sealed class CommandParserTests
 			("--repeat", [TextTokenKind.Symbol, TextTokenKind.FlagName]),
 		];
 
-		string[] arguments = ["", "argument"];
+		string[] arguments = ["", "argument", "--argument"];
 		string[] commands = ["", "command"];
 		string[] groups = ["", "group"];
 
@@ -491,12 +491,21 @@ public sealed class CommandParserTests
 						string cmd = group;
 						cmd += cmd.Length is 0 || command.Length is 0 ? command : $" | {command}";
 						cmd += cmd.Length is 0 || pair.flag.Length is 0 ? pair.flag : $" | {pair.flag}";
+
+						if (argument.StartsWith("--"))
+						{
+							if (cmd.Length is 0)
+								cmd += "--";
+							else
+								cmd += " | --";
+						}
 						cmd += cmd.Length is 0 || argument.Length is 0 ? argument : $" | {argument}";
 
 						List<TextTokenKind> tokenList = [];
 						if (group is not "") tokenList.Add(TextTokenKind.GroupName);
 						if (command is not "") tokenList.Add(TextTokenKind.CommandName);
 						tokenList.AddRange(pair.tokens);
+						if (argument.StartsWith("--")) tokenList.Add(TextTokenKind.Symbol);
 						if (argument is not "") tokenList.Add(TextTokenKind.Value);
 
 						TextTokenKind[] allTokens = [.. tokenList];

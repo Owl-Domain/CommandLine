@@ -7,6 +7,7 @@ public sealed class TextParser : ITextParser
 {
 	#region Fields
 	private int _currentFragmentIndex;
+	private readonly HashSet<char> _breakCharacters = [];
 	#endregion
 
 	#region Properties
@@ -40,7 +41,9 @@ public sealed class TextParser : ITextParser
 
 			for (int i = 0; i < span.Length; i++)
 			{
-				if (char.IsWhiteSpace(span[i]))
+				char current = span[i];
+
+				if (char.IsWhiteSpace(current) || _breakCharacters.Contains(current))
 					return span[..i];
 			}
 
@@ -66,6 +69,9 @@ public sealed class TextParser : ITextParser
 		get => IsLazy is false;
 		set => IsLazy = value is false;
 	}
+
+	/// <inheritdoc/>
+	public IReadOnlyCollection<char> BreakCharacters => _breakCharacters;
 	#endregion
 
 	#region Constructors
@@ -123,16 +129,17 @@ public sealed class TextParser : ITextParser
 	}
 
 	/// <inheritdoc/>
-	public void Restore(int fragmentIndex, int offset)
+	public RestorePoint GetRestorePoint() => new(CurrentFragment, Offset);
+
+	/// <inheritdoc/>
+	public void Restore(RestorePoint point)
 	{
-		fragmentIndex.ThrowIfNotBetween(0, Fragments.Count, RangeCheckMode.InclusiveExclusive, nameof(fragmentIndex));
+		if (Fragments.Contains(point.Fragment) is false)
+			Throw.New.ArgumentException(nameof(point), $"The fragment in the given point was not a part of the current text parser.");
 
-		TextFragment fragment = Fragments[fragmentIndex];
-		offset.ThrowIfNotBetween(0, fragment.Length, RangeCheckMode.Inclusive, nameof(offset));
-
-		_currentFragmentIndex = fragmentIndex;
-		CurrentFragment = fragment;
-		Offset = offset;
+		_currentFragmentIndex = point.Fragment.Index;
+		CurrentFragment = point.Fragment;
+		Offset = point.Offset;
 	}
 
 	/// <inheritdoc/>
@@ -160,6 +167,22 @@ public sealed class TextParser : ITextParser
 		ReadOnlySpan<char> text = CurrentFragment.Text;
 
 		return index < text.Length ? text[index] : '\0';
+	}
+
+	/// <inheritdoc/>
+	public void SetBreakCharacters(params scoped ReadOnlySpan<char> characters)
+	{
+		_breakCharacters.Clear();
+
+		foreach (char ch in characters)
+			_breakCharacters.Add(ch);
+	}
+
+	/// <inheritdoc/>
+	public void AddBreakCharacters(params scoped ReadOnlySpan<char> characters)
+	{
+		foreach (char ch in characters)
+			_breakCharacters.Add(ch);
 	}
 	#endregion
 }

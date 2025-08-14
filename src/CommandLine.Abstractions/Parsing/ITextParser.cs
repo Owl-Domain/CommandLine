@@ -46,16 +46,21 @@ public interface ITextParser
 	/// <summary>Whether the current fragment should be greedy or lazy parsed.</summary>
 	/// <remarks>Only specialised parsers should ever modify this value.</remarks>
 	bool IsGreedy { get; set; }
+
+	/// <summary>The extra characters that are counted as break points.</summary>
+	/// <remarks>Whitespace will always be considered as a break character regardless of these characters.</remarks>
+	IReadOnlyCollection<char> BreakCharacters { get; }
 	#endregion
 
 	#region Methods
-	/// <summary>Moves the parser back to the fragment at the given <paramref name="fragmentIndex"/>.</summary>
-	/// <param name="fragmentIndex">The index of the fragment to return to.</param>
-	/// <param name="offset">The offset inside of the fragment to return to.</param>
-	/// <exception cref="ArgumentOutOfRangeException">
-	/// 	Thrown if either the given <paramref name="fragmentIndex"/> or the given <paramref name="offset"/> are out of their valid ranges.
-	/// </exception>
-	void Restore(int fragmentIndex, int offset);
+	/// <summary>Gets a restore point for the current position of the parser.</summary>
+	/// <returns>The restore point for the current position of the parser.</returns>
+	RestorePoint GetRestorePoint();
+
+	/// <summary>Moves the text parser back to the given restore <paramref name="point"/>.</summary>
+	/// <param name="point">The point to restore the parser to.</param>
+	/// <exception cref="ArgumentException">Thrown if the given restore <paramref name="point"/> is not valid for this text parser.</exception>
+	void Restore(RestorePoint point);
 
 	/// <summary>Selects the next fragment for parsing.</summary>
 	/// <exception cref="InvalidOperationException">Thrown if the current fragment is the last one.</exception>
@@ -81,6 +86,16 @@ public interface ITextParser
 	/// </returns>
 	/// <exception cref="ArgumentOutOfRangeException">Thrown if the given <paramref name="offset"/> is negative.</exception>
 	char Peek(int offset);
+
+	/// <summary>Sets the given <paramref name="characters"/> to be the only break characters.</summary>
+	/// <param name="characters">The characters to consider as the only break point characters.</param>
+	/// <remarks>Whitespace will always be considered as a break character regardless of these characters.</remarks>
+	void SetBreakCharacters(params ReadOnlySpan<char> characters);
+
+	/// <summary>Adds the given <paramref name="characters"/> to be additional break characters.</summary>
+	/// <param name="characters">The extra characters to also consider as break point characters.</param>
+	/// <remarks>Whitespace will always be considered as a break character regardless of these characters.</remarks>
+	void AddBreakCharacters(params ReadOnlySpan<char> characters);
 	#endregion
 }
 

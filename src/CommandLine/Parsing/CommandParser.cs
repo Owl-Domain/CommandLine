@@ -84,7 +84,7 @@ public sealed class CommandParser : BaseCommandParser
 		CheckForLeftOverInput(context);
 
 		watch.Stop();
-		return new CommandParserResult(context.Diagnostics.Any() is false, false, context.Engine, this, context.Diagnostics, result, context.ExtraTokens, watch.Elapsed);
+		return new CommandParserResult(context.Diagnostics.Count is 0, false, context.Engine, this, context.Diagnostics, result, context.ExtraTokens, watch.Elapsed);
 	}
 	private static IParseResult ParseGroup(Context context, ICommandGroupInfo group, bool flagArgumentSeparatorReached)
 	{
@@ -112,7 +112,7 @@ public sealed class CommandParser : BaseCommandParser
 
 		if (flagArgumentSeparatorReached is false && groupCommandError is not null)
 		{
-			int fragmentIndex = context.Parser.CurrentFragment.Index, offset = context.Parser.Offset;
+			RestorePoint restorePoint = context.Parser.GetRestorePoint();
 
 			if (TryParseName(context.Parser, out TextToken nameToken, out string? name))
 			{
@@ -136,7 +136,7 @@ public sealed class CommandParser : BaseCommandParser
 				}
 			}
 
-			context.Parser.Restore(fragmentIndex, offset);
+			context.Parser.Restore(restorePoint);
 		}
 
 		FlagContext flagContext = new(context, group.SharedFlags);
@@ -246,10 +246,10 @@ public sealed class CommandParser : BaseCommandParser
 
 			context.CancellationToken.ThrowIfCancellationRequested();
 
-			int fragmentIndex = context.Parser.CurrentFragment.Index, offset = context.Parser.Offset;
+			RestorePoint restorePoint = context.Parser.GetRestorePoint();
 			if (TryParseFlag(context, out IFlagParseResult? flag) is false)
 			{
-				context.Parser.Restore(fragmentIndex, offset);
+				context.Parser.Restore(restorePoint);
 				break;
 			}
 
@@ -292,7 +292,7 @@ public sealed class CommandParser : BaseCommandParser
 
 		result = default;
 
-		if (TryParseFlagName(context.Parser, out TextToken nameToken, out string? name) is false)
+		if (TryParseFlagName(context.Engine, context.Parser, out TextToken nameToken, out string? name) is false)
 		{
 			context.Diagnostics.Add(DiagnosticSource.Parsing, new(context.Parser.Point, context.Parser.Point), "Couldn't parse the flag name.");
 			return false;
@@ -317,7 +317,7 @@ public sealed class CommandParser : BaseCommandParser
 		context.CancellationToken.ThrowIfCancellationRequested();
 		result = default;
 
-		if (TryParseFlagName(context.Parser, out TextToken nameToken, out string? name) is false)
+		if (TryParseFlagName(context.Engine, context.Parser, out TextToken nameToken, out string? name) is false)
 		{
 			context.Diagnostics.Add(DiagnosticSource.Parsing, new(context.Parser.Point, context.Parser.Point), "Couldn't parse the flag name.");
 			return false;
@@ -613,22 +613,34 @@ public sealed class CommandParser : BaseCommandParser
 			context.ExtraTokens.Add(token);
 		}
 	}
-	private static bool TryParseFlagName(ITextParser parser, out TextToken token, [NotNullWhen(true)] out string? name)
+	private static bool TryParseFlagName(ICommandEngine engine, ITextParser parser, out TextToken token, [NotNullWhen(true)] out string? name)
 	{
-		TextPoint start = parser.Point;
-		name = parser.AdvanceWhile(c => c is '-' or '_' || char.IsLetterOrDigit(c));
-		TextPoint end = parser.Point;
-
-		if (string.IsNullOrEmpty(name))
+		bool oldIsLazy = parser.IsLazy;
+		try
 		{
-			token = default;
-			name = default;
+			parser.IsLazy = true;
+			using (parser.WithBreakCharacters([.. engine.Settings.FlagValueSeparators.Select(s => s[0])]))
+			{
+				TextPoint start = parser.Point;
+				name = parser.AdvanceUntilBreak();
+				TextPoint end = parser.Point;
 
-			return false;
+				if (string.IsNullOrEmpty(name))
+				{
+					token = default;
+					name = default;
+
+					return false;
+				}
+
+				token = new(TextTokenKind.FlagName, new(start, end), name);
+				return true;
+			}
 		}
-
-		token = new(TextTokenKind.FlagName, new(start, end), name);
-		return true;
+		finally
+		{
+			parser.IsLazy = oldIsLazy;
+		}
 	}
 	private static bool TryParseName(ITextParser parser, out TextToken token, [NotNullWhen(true)] out string? name)
 	{
