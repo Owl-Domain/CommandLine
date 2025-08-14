@@ -46,6 +46,10 @@ public interface ITextParser
 	/// <summary>Whether the current fragment should be greedy or lazy parsed.</summary>
 	/// <remarks>Only specialised parsers should ever modify this value.</remarks>
 	bool IsGreedy { get; set; }
+
+	/// <summary>The extra characters that are counted as break points.</summary>
+	/// <remarks>Whitespace will always be considered as a break character regardless of these characters.</remarks>
+	IReadOnlyCollection<char> BreakCharacters { get; }
 	#endregion
 
 	#region Methods
@@ -82,6 +86,16 @@ public interface ITextParser
 	/// </returns>
 	/// <exception cref="ArgumentOutOfRangeException">Thrown if the given <paramref name="offset"/> is negative.</exception>
 	char Peek(int offset);
+
+	/// <summary>Sets the given <paramref name="characters"/> to be the only break characters.</summary>
+	/// <param name="characters">The characters to consider as the only break point characters.</param>
+	/// <remarks>Whitespace will always be considered as a break character regardless of these characters.</remarks>
+	void SetBreakCharacters(params ReadOnlySpan<char> characters);
+
+	/// <summary>Adds the given <paramref name="characters"/> to be additional break characters.</summary>
+	/// <param name="characters">The extra characters to also consider as break point characters.</param>
+	/// <remarks>Whitespace will always be considered as a break character regardless of these characters.</remarks>
+	void AddBreakCharacters(params ReadOnlySpan<char> characters);
 	#endregion
 }
 

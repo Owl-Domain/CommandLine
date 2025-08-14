@@ -61,13 +61,21 @@ public abstract class BaseCollectionValueParser<TCollection, TValue>(IValueParse
 	}
 	private Structure Parse(IValueParseContext context, ITextParser parser, out string? error)
 	{
-		if (parser.Match(context.Engine.Settings.ListPrefix, TextTokenKind.Symbol, out TextToken prefixToken))
+		string prefix = context.Engine.Settings.ListPrefix;
+		string separator = context.Engine.Settings.ListValueSeparator;
+		string suffix = context.Engine.Settings.ListSuffix;
+
+		if (parser.Match(prefix, TextTokenKind.Symbol, out TextToken prefixToken))
 		{
 			parser.SkipTrivia();
-			return ParseSurrounded(context, parser, prefixToken, out error);
+
+			using (parser.WithBreakCharacters(prefix[0], separator[0], suffix[0]))
+				return ParseSurrounded(context, parser, prefixToken, out error);
 		}
 
-		return ParseInline(context, parser, out error);
+		// Note(Nightowl): This might not need the prefix and suffix break points, TBD;
+		using (parser.WithBreakCharacters(prefix[0], separator[0], suffix[0]))
+			return ParseInline(context, parser, out error);
 	}
 	private Structure ParseSurrounded(IValueParseContext context, ITextParser parser, TextToken prefix, out string? error)
 	{
@@ -123,8 +131,7 @@ public abstract class BaseCollectionValueParser<TCollection, TValue>(IValueParse
 		bool oldIsLazy = parser.IsLazy;
 		try
 		{
-			if (parser.Text.Contains(' ') is false)
-				parser.IsLazy = true;
+			parser.IsLazy = true;
 
 			IValueParseResult<TValue> valueResult = ValueParser.Parse(context, parser);
 			return valueResult;
