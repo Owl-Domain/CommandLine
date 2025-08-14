@@ -53,6 +53,9 @@ public sealed class EngineSettings : IEngineSettings
 
 	/// <inheritdoc/>
 	public required TimeSpan ValidationTimeout { get; init; }
+
+	/// <inheritdoc/>
+	public required string FlagArgumentSeparator { get; init; }
 	#endregion
 
 	#region Functions
@@ -91,6 +94,7 @@ public sealed class EngineSettings : IEngineSettings
 			ShortFlagPrefix = settings.ShortFlagPrefix,
 			FlagValueSeparators = [.. settings.FlagValueSeparators.OrderByDescending(s => s.Length)],
 			MergeLongAndShortFlags = settings.MergeLongAndShortFlags,
+			FlagArgumentSeparator = settings.FlagArgumentSeparator,
 
 			IncludeHelpFlag = settings.IncludeHelpFlag,
 			LongHelpFlagName = settings.LongHelpFlagName,

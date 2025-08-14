@@ -76,5 +76,8 @@ public interface IEngineSettings
 	/// <summary>The maximum amount of time a command can take to execute, use <see cref="TimeSpan.Zero"/> for an infinite amount of time.</summary>
 	/// <remarks>Once the actual command is being executed, this value is merely a suggestion that the command itself needs to respect.</remarks>
 	TimeSpan ExecutionTimeout { get; }
+
+	/// <summary>The separator used to mark the end of flags, where everything after it is going to be parsed as arguments.</summary>
+	string FlagArgumentSeparator { get; }
 	#endregion
 }

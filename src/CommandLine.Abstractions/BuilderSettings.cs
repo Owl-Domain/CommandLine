@@ -54,6 +54,9 @@ public sealed class BuilderSettings : IEngineSettings
 
 	/// <inheritdoc/>
 	public TimeSpan ExecutionTimeout { get; set; } = TimeSpan.Zero;
+
+	/// <inheritdoc/>
+	public string FlagArgumentSeparator { get; set; } = "--";
 	#endregion
 
 	#region Methods
@@ -207,6 +210,18 @@ public sealed class BuilderSettings : IEngineSettings
 		duration.ThrowIfLessThan(TimeSpan.Zero, nameof(duration));
 
 		ExecutionTimeout = duration;
+		return this;
+	}
+
+	/// <summary>Sets the <see cref="FlagArgumentSeparator"/> setting.</summary>
+	/// <param name="separator">The separator to use when marking the end of flags, where everything aftwards will be parsed as arguments.</param>
+	/// <returns>The used builder instance.</returns>
+	/// <exception cref="ArgumentException">Thrown if the given <paramref name="separator"/> is empty or only consists of white-space characters.</exception>
+	public BuilderSettings WithFlagArgumentSeparator(string separator)
+	{
+		separator.ThrowIfEmptyOrWhitespace(nameof(separator));
+
+		FlagArgumentSeparator = separator;
 		return this;
 	}
 	#endregion
