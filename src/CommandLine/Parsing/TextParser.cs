@@ -123,16 +123,17 @@ public sealed class TextParser : ITextParser
 	}
 
 	/// <inheritdoc/>
-	public void Restore(int fragmentIndex, int offset)
+	public RestorePoint GetRestorePoint() => new(CurrentFragment, Offset);
+
+	/// <inheritdoc/>
+	public void Restore(RestorePoint point)
 	{
-		fragmentIndex.ThrowIfNotBetween(0, Fragments.Count, RangeCheckMode.InclusiveExclusive, nameof(fragmentIndex));
+		if (Fragments.Contains(point.Fragment) is false)
+			Throw.New.ArgumentException(nameof(point), $"The fragment in the given point was not a part of the current text parser.");
 
-		TextFragment fragment = Fragments[fragmentIndex];
-		offset.ThrowIfNotBetween(0, fragment.Length, RangeCheckMode.Inclusive, nameof(offset));
-
-		_currentFragmentIndex = fragmentIndex;
-		CurrentFragment = fragment;
-		Offset = offset;
+		_currentFragmentIndex = point.Fragment.Index;
+		CurrentFragment = point.Fragment;
+		Offset = point.Offset;
 	}
 
 	/// <inheritdoc/>

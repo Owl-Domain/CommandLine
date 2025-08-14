@@ -49,13 +49,14 @@ public interface ITextParser
 	#endregion
 
 	#region Methods
-	/// <summary>Moves the parser back to the fragment at the given <paramref name="fragmentIndex"/>.</summary>
-	/// <param name="fragmentIndex">The index of the fragment to return to.</param>
-	/// <param name="offset">The offset inside of the fragment to return to.</param>
-	/// <exception cref="ArgumentOutOfRangeException">
-	/// 	Thrown if either the given <paramref name="fragmentIndex"/> or the given <paramref name="offset"/> are out of their valid ranges.
-	/// </exception>
-	void Restore(int fragmentIndex, int offset);
+	/// <summary>Gets a restore point for the current position of the parser.</summary>
+	/// <returns>The restore point for the current position of the parser.</returns>
+	RestorePoint GetRestorePoint();
+
+	/// <summary>Moves the text parser back to the given restore <paramref name="point"/>.</summary>
+	/// <param name="point">The point to restore the parser to.</param>
+	/// <exception cref="ArgumentException">Thrown if the given restore <paramref name="point"/> is not valid for this text parser.</exception>
+	void Restore(RestorePoint point);
 
 	/// <summary>Selects the next fragment for parsing.</summary>
 	/// <exception cref="InvalidOperationException">Thrown if the current fragment is the last one.</exception>

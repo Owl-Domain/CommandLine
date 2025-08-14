@@ -112,7 +112,7 @@ public sealed class CommandParser : BaseCommandParser
 
 		if (flagArgumentSeparatorReached is false && groupCommandError is not null)
 		{
-			int fragmentIndex = context.Parser.CurrentFragment.Index, offset = context.Parser.Offset;
+			RestorePoint restorePoint = context.Parser.GetRestorePoint();
 
 			if (TryParseName(context.Parser, out TextToken nameToken, out string? name))
 			{
@@ -136,7 +136,7 @@ public sealed class CommandParser : BaseCommandParser
 				}
 			}
 
-			context.Parser.Restore(fragmentIndex, offset);
+			context.Parser.Restore(restorePoint);
 		}
 
 		FlagContext flagContext = new(context, group.SharedFlags);
@@ -246,10 +246,10 @@ public sealed class CommandParser : BaseCommandParser
 
 			context.CancellationToken.ThrowIfCancellationRequested();
 
-			int fragmentIndex = context.Parser.CurrentFragment.Index, offset = context.Parser.Offset;
+			RestorePoint restorePoint = context.Parser.GetRestorePoint();
 			if (TryParseFlag(context, out IFlagParseResult? flag) is false)
 			{
-				context.Parser.Restore(fragmentIndex, offset);
+				context.Parser.Restore(restorePoint);
 				break;
 			}
 
