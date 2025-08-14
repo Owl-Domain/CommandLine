@@ -224,5 +224,30 @@ public sealed class BuilderSettings : IEngineSettings
 		FlagArgumentSeparator = separator;
 		return this;
 	}
+
+	/// <summary>Configures the settings to enable Windows styled syntax.</summary>
+	/// <param name="onlyOnWindows">Whether these settings should only be set when running on windows.</param>
+	/// <returns>The used builder instance.</returns>
+	/// <remarks>
+	/// 	This setting means:
+	/// 	<list type="bullet">
+	/// 		<item>The <see cref="MergeLongAndShortFlags"/> setting is set to <see langword="true"/>.</item>
+	/// 		<item>Both <see cref="ShortFlagPrefix"/> and <see cref="LongFlagPrefix"/> is set to <c>/</c>.</item>
+	/// 		<item>The short help flag name is set to <c>?</c>.</item>
+	/// 	</list>
+	/// </remarks>
+	public BuilderSettings WithWindowsStyleSyntax(bool onlyOnWindows = true)
+	{
+		if (onlyOnWindows)
+		{
+			if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) is false)
+				return this;
+		}
+
+		WithMergedFlagsPrefix("/");
+		ShortHelpFlagName = '?';
+
+		return this;
+	}
 	#endregion
 }
