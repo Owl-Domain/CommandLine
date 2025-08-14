@@ -9,13 +9,17 @@ namespace OwlDomain.CommandLine.Commands;
 /// <param name="flags">The flags that the command takes.</param>
 /// <param name="arguments">The arguments that the command takes.</param>
 /// <param name="documentation">The documentation for the command.</param>
+/// <param name="injectedParameters">The parameters that will be injected.</param>
+/// <param name="injectedProperties">The properties on the <paramref name="method"/> container that will be injected.</param>
 public sealed class MethodCommandInfo(
 	MethodInfo method,
 	string? name,
 	ICommandGroupInfo group,
 	IReadOnlyCollection<IFlagInfo> flags,
 	IReadOnlyList<IArgumentInfo> arguments,
-	IDocumentationInfo? documentation)
+	IDocumentationInfo? documentation,
+	IReadOnlyCollection<InjectedParameterInfo> injectedParameters,
+	IReadOnlyCollection<InjectedPropertyInfo> injectedProperties)
 	: BaseCommandInfo(name, group, flags, arguments, documentation), IMethodCommandInfo
 {
 	#region Properties
@@ -24,6 +28,12 @@ public sealed class MethodCommandInfo(
 
 	/// <inheritdoc/>
 	public override bool HasResultValue => Method.ReturnType != typeof(void);
+
+	/// <inheritdoc/>
+	public IReadOnlyCollection<InjectedParameterInfo> InjectedParameters { get; } = injectedParameters;
+
+	/// <inheritdoc/>
+	public IReadOnlyCollection<InjectedPropertyInfo> InjectedProperties { get; } = injectedProperties;
 	#endregion
 
 	#region Methods

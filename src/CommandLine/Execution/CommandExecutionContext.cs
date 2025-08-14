@@ -9,13 +9,16 @@ namespace OwlDomain.CommandLine.Execution;
 /// <param name="commandTarget">The targetted command.</param>
 /// <param name="arguments">The arguments that will be passed to the target upon execution.</param>
 /// <param name="flags">The flags that will be passed to the target upon execution.</param>
+/// <param name="validatorResult">The result of validating the command that will be executed.</param>
 public sealed class CommandExecutionContext(
 	DiagnosticBag diagnostics,
 	ICommandEngine engine,
 	ICommandGroupInfo groupTarget,
 	ICommandInfo? commandTarget,
 	IReadOnlyDictionary<IArgumentInfo, object?> arguments,
-	IReadOnlyDictionary<IFlagInfo, object?> flags) : ICommandExecutionContext
+	IReadOnlyDictionary<IFlagInfo, object?> flags,
+	ICommandValidatorResult validatorResult)
+	: ICommandExecutionContext
 {
 	#region Properties
 	/// <inheritdoc/>
@@ -41,6 +44,9 @@ public sealed class CommandExecutionContext(
 
 	/// <inheritdoc/>
 	public IReadOnlyDictionary<IFlagInfo, object?> Flags { get; } = flags;
+
+	/// <inheritdoc/>
+	public ICommandValidatorResult ValidatorResult { get; } = validatorResult;
 	#endregion
 
 	#region Methods

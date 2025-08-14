@@ -26,10 +26,10 @@ public sealed class CommandExecutor : ICommandExecutor
 
 		DiagnosticBag diagnostics = [];
 
+		CommandExecutionContext context = new(diagnostics, validatorResult.Engine, groupTarget, commandTarget, arguments, flags, validatorResult);
+
 		if (callback is not null || OnExecute is null)
 		{
-			CommandExecutionContext context = new(diagnostics, validatorResult.Engine, groupTarget, commandTarget, arguments, flags);
-
 			callback?.Invoke(context);
 			if (OnExecute is not null)
 			{
@@ -60,8 +60,8 @@ public sealed class CommandExecutor : ICommandExecutor
 		Debug.Assert(command.Arguments.Count == command.CommandInfo.Arguments.Count);
 		if (command.CommandInfo is IMethodCommandInfo methodCommand)
 		{
-			object? container = SetupContainer(methodCommand.Method, flags);
-			object?[] parameters = SetupArguments(methodCommand.Method, arguments);
+			object? container = SetupContainer(context, methodCommand.Method, flags, methodCommand.InjectedProperties);
+			object?[] parameters = SetupArguments(context, methodCommand.Method, arguments, methodCommand.InjectedParameters);
 
 			commandResult = methodCommand.Method.Invoke(container, parameters);
 		}
@@ -142,7 +142,11 @@ public sealed class CommandExecutor : ICommandExecutor
 
 		return arguments;
 	}
-	private static object? SetupContainer(MethodInfo method, IReadOnlyDictionary<IFlagInfo, object?> flags)
+	private static object? SetupContainer(
+		ICommandExecutionContext context,
+		MethodInfo method,
+		IReadOnlyDictionary<IFlagInfo, object?> flags,
+		IReadOnlyCollection<InjectedPropertyInfo> injectedProperties)
 	{
 		if (method.IsStatic is true)
 			return null;
@@ -167,9 +171,19 @@ public sealed class CommandExecutor : ICommandExecutor
 			}
 		}
 
+		foreach (InjectedPropertyInfo injected in injectedProperties)
+		{
+			object? value = injected.Injector.Inject(context, injected.Property);
+			injected.Property.SetValue(container, value);
+		}
+
 		return container;
 	}
-	private static object?[] SetupArguments(MethodInfo method, IReadOnlyDictionary<IArgumentInfo, object?> arguments)
+	private static object?[] SetupArguments(
+		ICommandExecutionContext context,
+		MethodInfo method,
+		IReadOnlyDictionary<IArgumentInfo, object?> arguments,
+		IReadOnlyCollection<InjectedParameterInfo> injectedParameters)
 	{
 		object?[] args = new object?[method.GetParameters().Length];
 
@@ -177,6 +191,12 @@ public sealed class CommandExecutor : ICommandExecutor
 		{
 			if (pair.Key is IParameterArgumentInfo parameterArgument)
 				args[parameterArgument.Parameter.Position] = pair.Value;
+		}
+
+		foreach (InjectedParameterInfo injected in injectedParameters)
+		{
+			object? value = injected.Injector.Inject(context, injected.Parameter);
+			args[injected.Parameter.Position] = value;
 		}
 
 		return args;

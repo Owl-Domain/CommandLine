@@ -29,6 +29,9 @@ public interface ICommandExecutionContext
 
 	/// <summary>The flags that will be passed to the target upon execution.</summary>
 	IReadOnlyDictionary<IFlagInfo, object?> Flags { get; }
+
+	/// <summary>The result of validating the command that will be executed.</summary>
+	ICommandValidatorResult ValidatorResult { get; }
 	#endregion
 
 	#region Methods
