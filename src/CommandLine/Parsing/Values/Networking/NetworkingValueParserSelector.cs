@@ -14,6 +14,9 @@ public sealed class NetworkingValueParserSelector : BaseValueParserSelector
 		if (type == typeof(IPAddress))
 			return new IPAddressValueParser();
 
+		if (type == typeof(IPEndPoint))
+			return new IPEndPointValueParser();
+
 		return null;
 	}
 	#endregion
