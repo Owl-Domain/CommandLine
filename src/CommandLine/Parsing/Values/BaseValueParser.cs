@@ -10,6 +10,8 @@ public abstract class BaseValueParser<T> : IValueParser<T>
 	/// <inheritdoc/>
 	public IValueParseResult<T> Parse(IValueParseContext context, ITextParser parser)
 	{
+		context.CancellationToken.ThrowIfCancellationRequested();
+
 		T? value;
 		string? error;
 		TextPoint start = parser.Point;

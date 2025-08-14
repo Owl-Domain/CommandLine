@@ -10,15 +10,38 @@ public sealed class CommandValidator : ICommandValidator
 	public ICommandValidatorResult Validate(ICommandParserResult parserResult)
 	{
 		if (parserResult.Successful is false)
-			return new CommandValidatorResult(false, parserResult, new DiagnosticBag(), default);
+			return new CommandValidatorResult(false, parserResult.WasCancelled, parserResult, new DiagnosticBag(), default);
 
 		Stopwatch watch = Stopwatch.StartNew();
 		DiagnosticBag diagnostics = [];
 
-		watch.Stop();
-		CommandValidatorResult result = new(diagnostics.Any() is false, parserResult, diagnostics, watch.Elapsed);
+		TimeSpan timeout = parserResult.Engine.Settings.ValidationTimeout;
+		if (timeout == TimeSpan.Zero)
+			return Validate(parserResult, diagnostics, watch, default);
 
-		return result;
+		try
+		{
+			CancellationTokenSource source = new(timeout);
+
+			return Validate(parserResult, diagnostics, watch, source.Token);
+		}
+		catch (OperationCanceledException)
+		{
+			watch.Stop();
+			return new CommandValidatorResult(false, true, parserResult, diagnostics, watch.Elapsed);
+		}
+	}
+	private ICommandValidatorResult Validate(
+		ICommandParserResult parserResult,
+		DiagnosticBag diagnostics,
+		Stopwatch watch,
+		CancellationToken cancellationToken)
+	{
+		cancellationToken.ThrowIfCancellationRequested();
+
+		watch.Stop();
+
+		return new CommandValidatorResult(true, false, parserResult, diagnostics, watch.Elapsed);
 	}
 	#endregion
 }

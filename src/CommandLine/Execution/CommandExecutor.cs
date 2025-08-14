@@ -15,13 +15,13 @@ public sealed class CommandExecutor : ICommandExecutor
 	public ICommandExecutorResult Execute(ICommandValidatorResult validatorResult, CommandExecutionDelegate? callback = null)
 	{
 		if (validatorResult.Successful is false)
-			return new CommandExecutorResult(false, false, validatorResult, new DiagnosticBag(), default, default);
+			return new CommandExecutorResult(false, validatorResult.WasCancelled, validatorResult, new DiagnosticBag(), default, default);
 
 		Stopwatch watch = Stopwatch.StartNew();
-		CancellationTokenSource cancellationTokenSource = new();
 		DiagnosticBag diagnostics = [];
 
 		TimeSpan timeout = validatorResult.Engine.Settings.ExecutionTimeout;
+		CancellationTokenSource cancellationTokenSource = new();
 
 		try
 		{
@@ -49,8 +49,8 @@ public sealed class CommandExecutor : ICommandExecutor
 		IReadOnlyDictionary<IFlagInfo, object?> flags = GetFlags(validatorResult.ParserResult);
 		IReadOnlyDictionary<IArgumentInfo, object?> arguments = GetArguments(validatorResult.ParserResult);
 
-		ICommandGroupInfo? groupTarget = GetTargetGroup(validatorResult.ParserResult.CommandOrGroup) ?? validatorResult.Engine.RootGroup;
-		ICommandInfo? commandTarget = GetTargetCommand(validatorResult.ParserResult.CommandOrGroup);
+		ICommandGroupInfo? groupTarget = GetTargetGroup(validatorResult.ParserResult.CommandOrGroup, cancellationTokenSource.Token) ?? validatorResult.Engine.RootGroup;
+		ICommandInfo? commandTarget = GetTargetCommand(validatorResult.ParserResult.CommandOrGroup, cancellationTokenSource.Token);
 
 		CommandExecutionContext context = new(diagnostics, validatorResult.Engine, groupTarget, commandTarget, arguments, flags, validatorResult, cancellationTokenSource);
 
@@ -115,10 +115,12 @@ public sealed class CommandExecutor : ICommandExecutor
 	#endregion
 
 	#region Helpers
-	private static ICommandInfo? GetTargetCommand(IParseResult? result)
+	private static ICommandInfo? GetTargetCommand(IParseResult? result, CancellationToken cancellationToken)
 	{
 		while (result is not null)
 		{
+			cancellationToken.ThrowIfCancellationRequested();
+
 			if (result is ICommandParseResult command)
 				return command.CommandInfo;
 
@@ -128,10 +130,12 @@ public sealed class CommandExecutor : ICommandExecutor
 
 		return null;
 	}
-	private static ICommandGroupInfo? GetTargetGroup(IParseResult? result)
+	private static ICommandGroupInfo? GetTargetGroup(IParseResult? result, CancellationToken cancellationToken)
 	{
 		while (result is not null)
 		{
+			cancellationToken.ThrowIfCancellationRequested();
+
 			if (result is ICommandParseResult command)
 				return command.CommandInfo.Group;
 
@@ -187,6 +191,8 @@ public sealed class CommandExecutor : ICommandExecutor
 		IReadOnlyDictionary<IFlagInfo, object?> flags,
 		IReadOnlyCollection<InjectedPropertyInfo> injectedProperties)
 	{
+		context.CancellationTokenSource.Token.ThrowIfCancellationRequested();
+
 		if (method.IsStatic is true)
 			return null;
 
@@ -198,6 +204,8 @@ public sealed class CommandExecutor : ICommandExecutor
 
 		foreach (KeyValuePair<IFlagInfo, object?> pair in flags)
 		{
+			context.CancellationTokenSource.Token.ThrowIfCancellationRequested();
+
 			if (pair.Key is IPropertyFlagInfo propertyFlag)
 			{
 				Type? declaringType = propertyFlag.Property.DeclaringType;
@@ -212,6 +220,8 @@ public sealed class CommandExecutor : ICommandExecutor
 
 		foreach (InjectedPropertyInfo injected in injectedProperties)
 		{
+			context.CancellationTokenSource.Token.ThrowIfCancellationRequested();
+
 			object? value = injected.Injector.Inject(context, injected.Property);
 			injected.Property.SetValue(container, value);
 		}
@@ -224,16 +234,22 @@ public sealed class CommandExecutor : ICommandExecutor
 		IReadOnlyDictionary<IArgumentInfo, object?> arguments,
 		IReadOnlyCollection<InjectedParameterInfo> injectedParameters)
 	{
+		context.CancellationTokenSource.Token.ThrowIfCancellationRequested();
+
 		object?[] args = new object?[method.GetParameters().Length];
 
 		foreach (KeyValuePair<IArgumentInfo, object?> pair in arguments)
 		{
+			context.CancellationTokenSource.Token.ThrowIfCancellationRequested();
+
 			if (pair.Key is IParameterArgumentInfo parameterArgument)
 				args[parameterArgument.Parameter.Position] = pair.Value;
 		}
 
 		foreach (InjectedParameterInfo injected in injectedParameters)
 		{
+			context.CancellationTokenSource.Token.ThrowIfCancellationRequested();
+
 			object? value = injected.Injector.Inject(context, injected.Parameter);
 			args[injected.Parameter.Position] = value;
 		}

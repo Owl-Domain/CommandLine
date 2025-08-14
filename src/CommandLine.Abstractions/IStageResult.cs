@@ -9,6 +9,9 @@ public interface IStageResult
 	/// <summary>Whether the operation was successful.</summary>
 	bool Successful { get; }
 
+	/// <summary>Whether the operation was cancelled.</summary>
+	bool WasCancelled { get; }
+
 	/// <summary>The stage the result is for.</summary>
 	DiagnosticSource Stage { get; }
 

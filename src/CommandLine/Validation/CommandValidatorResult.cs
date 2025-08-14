@@ -4,12 +4,14 @@ namespace OwlDomain.CommandLine.Validation;
 /// 	Represents the validation result for a parsed command.
 /// </summary>
 /// <param name="successful">Whether the operation was successful.</param>
+/// <param name="wasCancelled">whether the ooperation was cancelled.</param>
 /// <param name="parserResult">The parsing result that was validated.</param>
 /// <param name="diagnostics">The diagnostics that occurred during validation.</param>
 /// <param name="duration">The amount of time that the parsing operation took.</param>
 [DebuggerDisplay($"{{{nameof(DebuggerDisplay)}(), nq}}")]
 public sealed class CommandValidatorResult(
 	bool successful,
+	bool wasCancelled,
 	ICommandParserResult parserResult,
 	IDiagnosticBag diagnostics,
 	TimeSpan duration)
@@ -18,6 +20,9 @@ public sealed class CommandValidatorResult(
 	#region Properties
 	/// <inheritdoc/>
 	public bool Successful { get; } = successful;
+
+	/// <inheritdoc/>
+	public bool WasCancelled { get; } = wasCancelled;
 
 	/// <inheritdoc/>
 	public DiagnosticSource Stage => DiagnosticSource.Validation;

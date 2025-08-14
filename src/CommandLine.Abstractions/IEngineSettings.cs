@@ -65,6 +65,14 @@ public interface IEngineSettings
 	/// <summary>The separator used to separate the values in the list.</summary>
 	string ListValueSeparator { get; }
 
+	/// <summary>The maximum amount of time that a command can take to be parsed.</summary>
+	/// <remarks>This setting is merely a suggestion and it's up to the individual parsers to respect it.</remarks>
+	TimeSpan ParsingTimeout { get; }
+
+	/// <summary>The maximum amount of time that a command can take to be validated.</summary>
+	/// <remarks>This setting is merely a suggestion and it's up to the individual validators to respect it.</remarks>
+	TimeSpan ValidationTimeout { get; }
+
 	/// <summary>The maximum amount of time a command can take to execute, use <see cref="TimeSpan.Zero"/> for an infinite amount of time.</summary>
 	/// <remarks>Once the actual command is being executed, this value is merely a suggestion that the command itself needs to respect.</remarks>
 	TimeSpan ExecutionTimeout { get; }

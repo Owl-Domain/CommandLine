@@ -6,11 +6,12 @@ namespace OwlDomain.CommandLine.Parsing;
 public sealed class CommandParser : BaseCommandParser
 {
 	#region Nested types
-	private readonly struct Context(ICommandEngine engine, ITextParser parser)
+	private readonly struct Context(ICommandEngine engine, ITextParser parser, CancellationToken cancellationToken)
 	{
 		#region Properties
 		public ICommandEngine Engine { get; } = engine;
 		public ITextParser Parser { get; } = parser;
+		public CancellationToken CancellationToken { get; } = cancellationToken;
 		public DiagnosticBag Diagnostics { get; } = [];
 		public List<TextToken> ExtraTokens { get; } = [];
 		#endregion
@@ -20,6 +21,7 @@ public sealed class CommandParser : BaseCommandParser
 		#region Properties
 		public ICommandEngine Engine { get; } = context.Engine;
 		public ITextParser Parser { get; } = context.Parser;
+		public CancellationToken CancellationToken { get; } = context.CancellationToken;
 		public DiagnosticBag Diagnostics { get; } = context.Diagnostics;
 		public List<TextToken> ExtraTokens { get; } = context.ExtraTokens;
 		public IReadOnlyCollection<IFlagInfo> AvailableFlags { get; } = availableFlags;
@@ -30,6 +32,7 @@ public sealed class CommandParser : BaseCommandParser
 		#region Properties
 		public ICommandEngine Engine { get; } = context.Engine;
 		public ITextParser Parser { get; } = context.Parser;
+		public CancellationToken CancellationToken { get; } = context.CancellationToken;
 		public DiagnosticBag Diagnostics { get; } = context.Diagnostics;
 		public List<TextToken> ExtraTokens { get; } = context.ExtraTokens;
 		public IReadOnlyCollection<IFlagInfo> AvailableFlags { get; } = context.AvailableFlags;
@@ -41,6 +44,7 @@ public sealed class CommandParser : BaseCommandParser
 		#region Properties
 		public ICommandEngine Engine { get; } = context.Engine;
 		public ITextParser Parser { get; } = context.Parser;
+		public CancellationToken CancellationToken { get; } = context.CancellationToken;
 		public DiagnosticBag Diagnostics { get; } = context.Diagnostics;
 		public List<TextToken> ExtraTokens { get; } = context.ExtraTokens;
 		public IReadOnlyCollection<IFlagInfo> AvailableFlags { get; } = context.AvailableFlags;
@@ -54,6 +58,7 @@ public sealed class CommandParser : BaseCommandParser
 		#region Properties
 		public ICommandEngine Engine { get; } = context.Engine;
 		public ITextParser Parser { get; } = context.Parser;
+		public CancellationToken CancellationToken { get; } = context.CancellationToken;
 		public DiagnosticBag Diagnostics { get; } = context.Diagnostics;
 		public List<TextToken> ExtraTokens { get; } = context.ExtraTokens;
 		public IReadOnlyCollection<IFlagInfo> AvailableFlags { get; } = context.AvailableFlags;
@@ -67,19 +72,23 @@ public sealed class CommandParser : BaseCommandParser
 
 	#region Methods
 	/// <inheritdoc/>
-	protected override ICommandParserResult Parse(ICommandEngine engine, ITextParser parser)
+	protected override ICommandParserResult Parse(ICommandEngine engine, ITextParser parser, CancellationToken cancellationToken)
 	{
+		cancellationToken.ThrowIfCancellationRequested();
+
 		Stopwatch watch = Stopwatch.StartNew();
-		Context context = new(engine, parser);
+		Context context = new(engine, parser, cancellationToken);
 		IParseResult? result = ParseGroup(context, engine.RootGroup);
 
 		CheckForLeftOverInput(context);
 
 		watch.Stop();
-		return new CommandParserResult(context.Diagnostics.Any() is false, context.Engine, this, context.Diagnostics, result, context.ExtraTokens, watch.Elapsed);
+		return new CommandParserResult(context.Diagnostics.Any() is false, false, context.Engine, this, context.Diagnostics, result, context.ExtraTokens, watch.Elapsed);
 	}
 	private static IParseResult ParseGroup(Context context, ICommandGroupInfo group)
 	{
+		context.CancellationToken.ThrowIfCancellationRequested();
+
 		string? groupCommandError = (group.Groups.Any(), group.Commands.Any()) switch
 		{
 			(true, true) => "group/command",
@@ -151,6 +160,8 @@ public sealed class CommandParser : BaseCommandParser
 	}
 	private static ICommandParseResult ParseCommand(Context context, ICommandInfo command, TextToken? nameToken)
 	{
+		context.CancellationToken.ThrowIfCancellationRequested();
+
 		if (nameToken is not null)
 			nameToken = new(TextTokenKind.CommandName, nameToken.Value.Location, nameToken.Value.Value);
 
@@ -174,9 +185,11 @@ public sealed class CommandParser : BaseCommandParser
 	}
 	private static bool TryParseArgument(Context context, IArgumentInfo argument, [NotNullWhen(true)] out IArgumentParseResult? result)
 	{
+		context.CancellationToken.ThrowIfCancellationRequested();
+
 		TextLocation location = new(context.Parser.Point, context.Parser.Point);
 
-		ArgumentValueParseContext argumentContext = new(context.Engine, argument);
+		ArgumentValueParseContext argumentContext = new(context.Engine, argument, context.CancellationToken);
 		IValueParseResult value = argument.Parser.Parse(argumentContext, context.Parser);
 
 		if (value.Successful)
@@ -209,6 +222,8 @@ public sealed class CommandParser : BaseCommandParser
 	{
 		do
 		{
+			context.CancellationToken.ThrowIfCancellationRequested();
+
 			int fragmentIndex = context.Parser.CurrentFragment.Index, offset = context.Parser.Offset;
 			if (TryParseFlag(context, out IFlagParseResult? flag) is false)
 			{
@@ -223,6 +238,8 @@ public sealed class CommandParser : BaseCommandParser
 	}
 	private static bool TryParseFlag(FlagContext context, [NotNullWhen(true)] out IFlagParseResult? result)
 	{
+		context.CancellationToken.ThrowIfCancellationRequested();
+
 		string longPrefix = context.Engine.Settings.LongFlagPrefix;
 		string shortPrefix = context.Engine.Settings.ShortFlagPrefix;
 
@@ -248,6 +265,7 @@ public sealed class CommandParser : BaseCommandParser
 	}
 	private static bool TryParseLongFlag(FlagPrefixContext context, [NotNullWhen(true)] out IFlagParseResult? result)
 	{
+		context.CancellationToken.ThrowIfCancellationRequested();
 		string longPrefix = context.Engine.Settings.LongFlagPrefix;
 
 		result = default;
@@ -274,6 +292,7 @@ public sealed class CommandParser : BaseCommandParser
 	}
 	private static bool TryParseShortFlag(FlagPrefixContext context, [NotNullWhen(true)] out IFlagParseResult? result)
 	{
+		context.CancellationToken.ThrowIfCancellationRequested();
 		result = default;
 
 		if (TryParseFlagName(context.Parser, out TextToken nameToken, out string? name) is false)
@@ -299,6 +318,7 @@ public sealed class CommandParser : BaseCommandParser
 	}
 	private static bool TryParseSimpleFlag(NamedFlagContext context, [NotNullWhen(true)] out IFlagParseResult? result)
 	{
+		context.CancellationToken.ThrowIfCancellationRequested();
 		string shortPrefix = context.Engine.Settings.ShortFlagPrefix;
 
 		IFlagInfo? flag = context.AvailableFlags.SingleOrDefault(f => f.ShortName == context.Name[0]);
@@ -320,6 +340,7 @@ public sealed class CommandParser : BaseCommandParser
 	}
 	private static bool TryParseChainFlag(NamedFlagContext context, [NotNullWhen(true)] out IFlagParseResult? result)
 	{
+		context.CancellationToken.ThrowIfCancellationRequested();
 		string shortPrefix = context.Engine.Settings.ShortFlagPrefix;
 
 		List<IFlagInfo> flags = [];
@@ -365,6 +386,7 @@ public sealed class CommandParser : BaseCommandParser
 	}
 	private static bool TryParseRepeatFlag(NamedFlagContext context, [NotNullWhen(true)] out IFlagParseResult? result)
 	{
+		context.CancellationToken.ThrowIfCancellationRequested();
 		string shortPrefix = context.Engine.Settings.ShortFlagPrefix;
 
 		IFlagInfo? flag = context.AvailableFlags.SingleOrDefault(f => f.ShortName == context.Name[0]);
@@ -389,6 +411,8 @@ public sealed class CommandParser : BaseCommandParser
 	}
 	private static bool TryParseFlagValue(SingleFlagContext context, [NotNullWhen(true)] out IFlagParseResult? result)
 	{
+		context.CancellationToken.ThrowIfCancellationRequested();
+
 		if (TryParseFlagValueSeparator(context, out TextToken? separator) is false)
 		{
 			if (context.Flag.Kind is FlagKind.Toggle)
@@ -409,7 +433,7 @@ public sealed class CommandParser : BaseCommandParser
 
 		TextLocation location = new(context.Parser.Point, context.Parser.Point);
 
-		FlagValueParseContext flagContext = new(context.Engine, context.Flag);
+		FlagValueParseContext flagContext = new(context.Engine, context.Flag, context.CancellationToken);
 		IValueParseResult value = context.Flag.Parser.Parse(flagContext, context.Parser);
 
 		if (value.Error is null)
@@ -438,6 +462,8 @@ public sealed class CommandParser : BaseCommandParser
 	}
 	private static bool TryParseFlagValueSeparator(SingleFlagContext context, out TextToken? separator)
 	{
+		context.CancellationToken.ThrowIfCancellationRequested();
+
 		// Todo(Nightowl): Add flag value separator setting;
 		if (context.Parser.MatchAny(context.Engine.Settings.FlagValueSeparators.Where(s => s is not " "), TextTokenKind.Symbol, out TextToken sep))
 		{
@@ -514,6 +540,8 @@ public sealed class CommandParser : BaseCommandParser
 	}
 	private static void CheckForLeftOverInput(Context context)
 	{
+		context.CancellationToken.ThrowIfCancellationRequested();
+
 		context.Parser.SkipTrivia();
 		bool hasLeftOver = (context.Parser.IsAtEnd && context.Parser.IsLastFragment) is false;
 

@@ -47,6 +47,12 @@ public sealed class EngineSettings : IEngineSettings
 
 	/// <inheritdoc/>
 	public required TimeSpan ExecutionTimeout { get; init; }
+
+	/// <inheritdoc/>
+	public required TimeSpan ParsingTimeout { get; init; }
+
+	/// <inheritdoc/>
+	public required TimeSpan ValidationTimeout { get; init; }
 	#endregion
 
 	#region Functions
@@ -70,8 +76,9 @@ public sealed class EngineSettings : IEngineSettings
 		if (settings.FlagValueSeparators.Count is 0)
 			errors.Add($"The {nameof(FlagValueSeparators)} setting must have at least one separator.");
 
-		if (settings.ExecutionTimeout < TimeSpan.Zero)
-			errors.Add($"The {nameof(ExecutionTimeout)} setting must not be negative.");
+		if (settings.ParsingTimeout < TimeSpan.Zero) errors.Add($"The {nameof(ParsingTimeout)} setting must not be negative.");
+		if (settings.ValidationTimeout < TimeSpan.Zero) errors.Add($"The {nameof(ValidationTimeout)} setting must not be negative.");
+		if (settings.ExecutionTimeout < TimeSpan.Zero) errors.Add($"The {nameof(ExecutionTimeout)} setting must not be negative.");
 
 		if (errors.Count > 0)
 			Throw.New.ArgumentException(nameof(settings), string.Join(Environment.NewLine, errors));
@@ -79,18 +86,25 @@ public sealed class EngineSettings : IEngineSettings
 		return new EngineSettings()
 		{
 			AllowFlagShadowing = settings.AllowFlagShadowing,
+
 			LongFlagPrefix = settings.LongFlagPrefix,
 			ShortFlagPrefix = settings.ShortFlagPrefix,
+			FlagValueSeparators = [.. settings.FlagValueSeparators.OrderByDescending(s => s.Length)],
 			MergeLongAndShortFlags = settings.MergeLongAndShortFlags,
+
 			IncludeHelpFlag = settings.IncludeHelpFlag,
 			LongHelpFlagName = settings.LongHelpFlagName,
 			ShortHelpFlagName = settings.ShortHelpFlagName,
+
 			IncludeHelpCommand = settings.IncludeHelpCommand,
 			HelpCommandName = settings.HelpCommandName,
-			FlagValueSeparators = [.. settings.FlagValueSeparators.OrderByDescending(s => s.Length)],
+
 			ListPrefix = settings.ListPrefix,
 			ListSuffix = settings.ListSuffix,
 			ListValueSeparator = settings.ListValueSeparator,
+
+			ParsingTimeout = settings.ParsingTimeout,
+			ValidationTimeout = settings.ValidationTimeout,
 			ExecutionTimeout = settings.ExecutionTimeout,
 		};
 	}

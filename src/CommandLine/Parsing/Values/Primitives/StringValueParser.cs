@@ -19,10 +19,10 @@ public sealed class StringValueParser : BaseValueParser<string>
 		}
 
 		if (parser.Match('"'))
-			return TryParseDoubleQuote(parser, out error);
+			return TryParseDoubleQuote(context, parser, out error);
 
 		if (parser.Match('\''))
-			return TryParseSingleQuote(parser, out error);
+			return TryParseSingleQuote(context, parser, out error);
 
 		string value = parser.AdvanceWhile(Filter);
 
@@ -32,13 +32,15 @@ public sealed class StringValueParser : BaseValueParser<string>
 	#endregion
 
 	#region Helpers
-	private static string? TryParseDoubleQuote(ITextParser parser, out string? error)
+	private static string? TryParseDoubleQuote(IValueParseContext context, ITextParser parser, out string? error)
 	{
 		StringBuilder builder = new();
 
 		bool closed = false;
 		while (parser.Current is not '\0')
 		{
+			context.CancellationToken.ThrowIfCancellationRequested();
+
 			if (parser.Match('"'))
 			{
 				closed = true;
@@ -61,13 +63,15 @@ public sealed class StringValueParser : BaseValueParser<string>
 		error = default;
 		return builder.ToString();
 	}
-	private static string? TryParseSingleQuote(ITextParser parser, out string? error)
+	private static string? TryParseSingleQuote(IValueParseContext context, ITextParser parser, out string? error)
 	{
 		StringBuilder builder = new();
 
 		bool closed = false;
 		while (parser.Current is not '\0')
 		{
+			context.CancellationToken.ThrowIfCancellationRequested();
+
 			if (parser.Match('\''))
 			{
 				closed = true;

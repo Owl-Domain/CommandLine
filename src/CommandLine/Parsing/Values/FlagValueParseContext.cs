@@ -5,7 +5,12 @@ namespace OwlDomain.CommandLine.Parsing.Values;
 /// </summary>
 /// <param name="engine">The command engine that the parse context belongs to.</param>
 /// <param name="flag">The flag that the value is being parsed for.</param>
-public sealed class FlagValueParseContext(ICommandEngine engine, IFlagInfo flag) : IFlagValueParseContext
+/// <param name="cancellationToken">A cancellation token that can be used to cancel the operation.</param>
+public sealed class FlagValueParseContext(
+	ICommandEngine engine,
+	IFlagInfo flag,
+	CancellationToken cancellationToken)
+	: IFlagValueParseContext
 {
 	#region Properties
 	/// <inheritdoc/>
@@ -16,5 +21,8 @@ public sealed class FlagValueParseContext(ICommandEngine engine, IFlagInfo flag)
 
 	/// <inheritdoc/>
 	public Type ValueType => Flag.ValueType;
+
+	/// <inheritdoc/>
+	public CancellationToken CancellationToken { get; } = cancellationToken;
 	#endregion
 }

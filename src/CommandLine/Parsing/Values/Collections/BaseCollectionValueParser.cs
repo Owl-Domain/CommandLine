@@ -28,6 +28,8 @@ public abstract class BaseCollectionValueParser<TCollection, TValue>(IValueParse
 	/// <inheritdoc/>
 	public ICollectionValueParseResult<TCollection, TValue> Parse(IValueParseContext context, ITextParser parser)
 	{
+		context.CancellationToken.ThrowIfCancellationRequested();
+
 		Structure structure;
 		string? error;
 		TextPoint start = parser.Point;
@@ -77,6 +79,8 @@ public abstract class BaseCollectionValueParser<TCollection, TValue>(IValueParse
 
 		while (IsValueMissing(parser) is false)
 		{
+			context.CancellationToken.ThrowIfCancellationRequested();
+
 			if (parser.Match(suffix, TextTokenKind.Symbol, out TextToken suffixToken))
 			{
 				parser.SkipTrivia();
@@ -139,6 +143,8 @@ public abstract class BaseCollectionValueParser<TCollection, TValue>(IValueParse
 
 		while (IsValueMissing(parser) is false)
 		{
+			context.CancellationToken.ThrowIfCancellationRequested();
+
 			IValueParseResult<TValue> valueResult = ParseValue(context, parser);
 			if (valueResult.Successful is false)
 			{

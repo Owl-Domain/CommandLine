@@ -15,6 +15,9 @@ public sealed class CommandParserResult : ICommandParserResult
 	public bool Successful { get; }
 
 	/// <inheritdoc/>
+	public bool WasCancelled { get; }
+
+	/// <inheritdoc/>
 	public DiagnosticSource Stage => DiagnosticSource.Parsing;
 
 	/// <inheritdoc/>
@@ -45,6 +48,7 @@ public sealed class CommandParserResult : ICommandParserResult
 	#region Constructors
 	/// <summary>Creates a new instance of the <see cref="CommandParserResult"/>.</summary>
 	/// <param name="successful">Whether the operation was successful.</param>
+	/// <param name="wasCancelled">Whether the operation was cancelled.</param>
 	/// <param name="engine">The engine that was used for the parsing operation.</param>
 	/// <param name="parser">The parser that was used to parse the command.</param>
 	/// <param name="diagnostics">The diagnostics that occurred during the parsing operation.</param>
@@ -53,6 +57,7 @@ public sealed class CommandParserResult : ICommandParserResult
 	/// <param name="duration">The amount of time that the parsing operation took.</param>
 	public CommandParserResult(
 		bool successful,
+		bool wasCancelled,
 		ICommandEngine engine,
 		ICommandParser parser,
 		IDiagnosticBag diagnostics,
@@ -64,6 +69,7 @@ public sealed class CommandParserResult : ICommandParserResult
 			Throw.New.ArgumentException(nameof(IParseResult), $"The given parse result ({commandOrGroup.GetType()}) was not a command or a group parse result.");
 
 		Successful = successful;
+		WasCancelled = wasCancelled;
 		Engine = engine;
 		Parser = parser;
 		Diagnostics = diagnostics;

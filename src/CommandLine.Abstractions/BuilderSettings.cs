@@ -47,6 +47,12 @@ public sealed class BuilderSettings : IEngineSettings
 	public string ListValueSeparator { get; set; } = ",";
 
 	/// <inheritdoc/>
+	public TimeSpan ParsingTimeout { get; set; } = TimeSpan.Zero;
+
+	/// <inheritdoc/>
+	public TimeSpan ValidationTimeout { get; set; } = TimeSpan.Zero;
+
+	/// <inheritdoc/>
 	public TimeSpan ExecutionTimeout { get; set; } = TimeSpan.Zero;
 	#endregion
 
@@ -165,6 +171,30 @@ public sealed class BuilderSettings : IEngineSettings
 	public BuilderSettings WithListSeparator(string separator)
 	{
 		ListValueSeparator = separator;
+		return this;
+	}
+
+	/// <summary>Sets the <see cref="ParsingTimeout"/> setting.</summary>
+	/// <param name="duration">The amount of time that command parsing is allowed to take.</param>
+	/// <returns>The used builder instance.</returns>
+	/// <remarks>This setting is merely a suggestion and it's up to the individual parsers to respect it.</remarks>
+	public BuilderSettings WithParsingTimeout(TimeSpan duration)
+	{
+		duration.ThrowIfLessThan(TimeSpan.Zero, nameof(duration));
+
+		ParsingTimeout = duration;
+		return this;
+	}
+
+	/// <summary>Sets the <see cref="ValidationTimeout"/> setting.</summary>
+	/// <param name="duration">The amount of time that command validation is allowed to take.</param>
+	/// <returns>The used builder instance.</returns>
+	/// <remarks>This setting is merely a suggestion and it's up to the individual validators to respect it.</remarks>
+	public BuilderSettings WithValidationTimeout(TimeSpan duration)
+	{
+		duration.ThrowIfLessThan(TimeSpan.Zero, nameof(duration));
+
+		ValidationTimeout = duration;
 		return this;
 	}
 

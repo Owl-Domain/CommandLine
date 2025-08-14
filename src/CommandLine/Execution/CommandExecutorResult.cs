@@ -4,7 +4,7 @@ namespace OwlDomain.CommandLine.Execution;
 /// 	Represents the execution result for a validated command.
 /// </summary>
 /// <param name="successful">Whether the operation was successful.</param>
-/// <param name="wasCancelled">whether the execution operation was cancelled.</param>
+/// <param name="wasCancelled">whether the ooperation was cancelled.</param>
 /// <param name="validatorResult">The validation result that was executed.</param>
 /// <param name="diagnostics">The diagnostics that occurred during execution.</param>
 /// <param name="duration">The amount of time that the execution operation took.</param>
