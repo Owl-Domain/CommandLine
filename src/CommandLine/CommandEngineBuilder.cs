@@ -113,7 +113,9 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 
 		IEngineSettings settings = EngineSettings.From(_settings);
 
+		WithSelector<NetworkingValueParserSelector>();
 		WithSelector<PrimitiveValueParserSelector>();
+
 		WithInjector<EngineCommandInjector>();
 
 		_nameExtractor ??= NameExtractor.Instance;
