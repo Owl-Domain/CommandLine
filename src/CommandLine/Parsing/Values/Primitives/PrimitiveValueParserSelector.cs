@@ -7,36 +7,9 @@ namespace OwlDomain.CommandLine.Parsing.Values.Primitives;
 /// </summary>
 public sealed class PrimitiveValueParserSelector : BaseValueParserSelector
 {
-	#region Fields
-	private readonly Dictionary<Type, WeakReference<IValueParser>> _cache = [];
-	#endregion
-
 	#region Methods
 	/// <inheritdoc/>
 	protected override IValueParser? TrySelect(IRootValueParserSelector rootSelector, Type type)
-	{
-		IValueParser? parser;
-
-		if (_cache.TryGetValue(type, out WeakReference<IValueParser>? weakRef))
-		{
-			if (weakRef.TryGetTarget(out parser))
-				return parser;
-
-			parser = CreateParser(rootSelector, type);
-
-			if (parser is not null)
-				weakRef.SetTarget(parser);
-
-			return parser;
-		}
-
-		parser = CreateParser(rootSelector, type);
-		if (parser is not null)
-			_cache.Add(type, new(parser));
-
-		return parser;
-	}
-	private static IValueParser? CreateParser(IRootValueParserSelector rootSelector, Type type)
 	{
 		if (type == typeof(string))
 			return new StringValueParser();
