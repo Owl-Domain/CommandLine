@@ -1,3 +1,5 @@
+using System.IO;
+
 namespace OwlDomain.CommandLine.Parsing.Values.Paths;
 
 /// <summary>
@@ -11,6 +13,12 @@ public sealed class PathValueParserSelector : BaseValueParserSelector
 	{
 		if (type == typeof(Uri))
 			return new UriValueParser();
+
+		if (type == typeof(FileInfo))
+			return new FileInfoValueParser();
+
+		if (type == typeof(DirectoryInfo))
+			return new DirectoryInfoValueParser();
 
 		return default;
 	}
