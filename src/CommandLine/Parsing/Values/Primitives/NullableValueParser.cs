@@ -19,24 +19,13 @@ public sealed class NullableValueParser<T>(IValueParser<T> valueParser) : BaseVa
 
 	#region Methods
 	/// <inheritdoc/>
-	protected override T? TryParse(IArgumentValueParseContext context, ITextParser parser, out string? error)
-	{
-		return TryParse(context, parser, context.Argument.IsNullable, out error);
-	}
-
-	/// <inheritdoc/>
-	protected override T? TryParse(IFlagValueParseContext context, ITextParser parser, out string? error)
-	{
-		return TryParse(context, parser, context.Flag.IsNullable, out error);
-	}
-
-	private T? TryParse(IValueParseContext context, ITextParser parser, bool isNullable, out string? error)
+	protected override T? TryParse(IValueParseContext context, ITextParser parser, out string? error)
 	{
 		error = default;
 
 		if (IsEmptyValue(parser))
 		{
-			if (isNullable is false)
+			if (IsNullable(context) is false)
 				error = string.Empty;
 
 			return null;

@@ -32,8 +32,8 @@ public abstract class BaseValueParser<T> : IValueParser<T>
 		}
 		else if (AllowEmptyValues is false && IsEmptyValue(parser))
 		{
+			error = IsNullable(context) ? default : string.Empty;
 			value = default;
-			error = string.Empty;
 		}
 		else if (context is IFlagValueParseContext flag)
 			value = TryParse(flag, parser, out error);
@@ -116,6 +116,23 @@ public abstract class BaseValueParser<T> : IValueParser<T>
 		Debug.Assert(parser.IsGreedy);
 
 		return parser.CurrentFragment.Length is 0;
+	}
+
+	/// <summary>Checks whether the given parse <paramref name="context"/> allows <see langword="null"/> values.</summary>
+	/// <param name="context">The parse context to check.</param>
+	/// <returns>
+	/// 	<see langword="true"/> if the given parse <paramref name="context"/>
+	/// 	allows <see langword="null"/> values, <see langword="false"/> otherwise.
+	/// </returns>
+	public bool IsNullable(IValueParseContext context)
+	{
+		return context switch
+		{
+			IFlagValueParseContext flag => flag.Flag.IsNullable,
+			IArgumentValueParseContext argument => argument.Argument.IsNullable,
+
+			_ => Throw.New.ArgumentException<bool>(nameof(context), $"Unknown value parse context type ({context?.GetType()}).")
+		};
 	}
 	#endregion
 }
