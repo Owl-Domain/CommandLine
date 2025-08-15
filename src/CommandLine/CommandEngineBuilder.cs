@@ -113,6 +113,7 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 
 		IEngineSettings settings = EngineSettings.From(_settings);
 
+		WithSelector<PathValueParserSelector>();
 		WithSelector<NetworkingValueParserSelector>();
 		WithSelector<PrimitiveValueParserSelector>();
 
