@@ -21,6 +21,9 @@ public interface IFlagInfo
 	/// <summary>Whether the flag has to be set when executing a command.</summary>
 	bool IsRequired { get; }
 
+	/// <summary>Whether the flag supports <see langword="null"/> values.</summary>
+	bool IsNullable { get; }
+
 	/// <summary>The default value for the flag.</summary>
 	object? DefaultValue { get; }
 

@@ -14,6 +14,7 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 	#endregion
 
 	#region Fields
+	private readonly NullabilityInfoContext _nullabilityContext = new();
 	private readonly BuilderSettings _settings = new();
 	private readonly HashSet<Type> _classes = [];
 	private readonly List<IValueParserSelector> _selectors = [];
@@ -231,12 +232,11 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 				continue;
 			}
 
-#if NET7_0_OR_GREATER
-			bool isRequired = property.GetCustomAttribute<RequiredMemberAttribute>() is not null;
-#else
-			bool isRequired = false;
-#endif
+			bool isNullable =
+				_nullabilityContext.Create(property).WriteState is NullabilityState.Nullable &&
+				property.GetCustomAttribute<DisallowNullAttribute>() is null;
 
+			bool isRequired = property.GetCustomAttribute<RequiredMemberAttribute>() is not null;
 			object? defaultValue = isRequired ? null : property.GetValue(instance);
 
 			string? longName = _nameExtractor.GetLongFlagName(property);
@@ -245,7 +245,7 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 			FlagKind kind = GetFlagKind(property.PropertyType, property.Name, longName, shortName);
 			IDocumentationInfo? documentation = _documentationProvider.GetInfo(property);
 
-			IPropertyFlagInfo flag = CreatePropertyFlag(property, kind, longName, shortName, isRequired, defaultValue, parser, documentation, null);
+			IPropertyFlagInfo flag = CreatePropertyFlag(property, kind, longName, shortName, isRequired, isNullable, defaultValue, parser, documentation, null);
 
 			flags.Add(flag);
 		}
@@ -274,12 +274,16 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 			string name = _nameExtractor.GetArgumentName(parameter.Name);
 			int position = parameter.Position;
 
+			bool isNullable =
+				_nullabilityContext.Create(parameter).WriteState is NullabilityState.Nullable &&
+				parameter.GetCustomAttribute<DisallowNullAttribute>() is null;
+
 			bool isRequired = parameter.HasDefaultValue is false;
 			object? defaultValue = parameter.HasDefaultValue ? parameter.RawDefaultValue : null;
 			IValueParser parser = SelectValueParser(parameter);
 			IDocumentationInfo? documentation = _documentationProvider.GetInfo(parameter);
 
-			IArgumentInfo argument = CreateParameterArgument(parameter, name, position, isRequired, defaultValue, parser, documentation, null);
+			IArgumentInfo argument = CreateParameterArgument(parameter, name, position, isRequired, isNullable, defaultValue, parser, documentation, null);
 			arguments.Add(argument);
 		}
 
@@ -334,6 +338,7 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 			settings.ShortHelpFlagName,
 			false,
 			false,
+			false,
 			parser,
 			documentation,
 			null);
@@ -376,7 +381,7 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 	#region Helpers
 	private static FlagKind GetFlagKind(Type valueType, string originalName, string? longName, char? shortName)
 	{
-		if (valueType == typeof(bool))
+		if (valueType == typeof(bool) || valueType == typeof(bool?))
 			return FlagKind.Toggle;
 
 		if (IsVerbosityFlag(originalName, longName, shortName) && IsNumericType(valueType))
@@ -495,6 +500,7 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 		string? longName,
 		char? shortName,
 		bool isRequired,
+		bool isNullable,
 		object? defaultValue,
 		IValueParser parser,
 		IDocumentationInfo? documentation,
@@ -502,7 +508,7 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 	{
 		Type type = typeof(PropertyFlagInfo<>).MakeGenericType(property.PropertyType);
 
-		object? untyped = Activator.CreateInstance(type, [property, kind, longName, shortName, isRequired, defaultValue, parser, documentation, defaultValueLabel]);
+		object? untyped = Activator.CreateInstance(type, [property, kind, longName, shortName, isRequired, isNullable, defaultValue, parser, documentation, defaultValueLabel]);
 		Debug.Assert(untyped is not null);
 
 		return (IPropertyFlagInfo)untyped;
@@ -513,6 +519,7 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 		string? longName,
 		char? shortName,
 		bool isRequired,
+		bool isNullable,
 		object? defaultValue,
 		IValueParser parser,
 		IDocumentationInfo? documentation,
@@ -520,7 +527,7 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 	{
 		Type type = typeof(ParameterFlagInfo<>).MakeGenericType(parameter.ParameterType);
 
-		object? untyped = Activator.CreateInstance(type, [parameter, kind, longName, shortName, isRequired, defaultValue, parser, documentation, defaultValueLabel]);
+		object? untyped = Activator.CreateInstance(type, [parameter, kind, longName, shortName, isRequired, isNullable, defaultValue, parser, documentation, defaultValueLabel]);
 		Debug.Assert(untyped is not null);
 
 		return (IParameterFlagInfo)untyped;
@@ -530,6 +537,7 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 		string name,
 		int position,
 		bool isRequired,
+		bool isNullable,
 		object? defaultValue,
 		IValueParser parser,
 		IDocumentationInfo? documentation,
@@ -537,7 +545,7 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 	{
 		Type type = typeof(ParameterArgumentInfo<>).MakeGenericType(parameter.ParameterType);
 
-		object? untyped = Activator.CreateInstance(type, [parameter, name, position, isRequired, defaultValue, parser, documentation, defaultValueLabel]);
+		object? untyped = Activator.CreateInstance(type, [parameter, name, position, isRequired, isNullable, defaultValue, parser, documentation, defaultValueLabel]);
 		Debug.Assert(untyped is not null);
 
 		return (IParameterArgumentInfo)untyped;

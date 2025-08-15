@@ -32,8 +32,8 @@ public abstract class BaseValueParser<T> : IValueParser<T>
 		}
 		else if (AllowEmptyValues is false && IsEmptyValue(parser))
 		{
+			error = IsNullable(context) ? default : string.Empty;
 			value = default;
-			error = string.Empty;
 		}
 		else if (context is IFlagValueParseContext flag)
 			value = TryParse(flag, parser, out error);
@@ -92,7 +92,10 @@ public abstract class BaseValueParser<T> : IValueParser<T>
 	#endregion
 
 	#region Helpers
-	private static bool IsValueMissing(ITextParser parser)
+	/// <summary>Checks whether the next thing to parse is a missing value.</summary>
+	/// <param name="parser">The parser to use for the check.</param>
+	/// <returns><see langword="true"/> if the next thing to parse is a missing value, <see langword="false"/> otherwise.</returns>
+	public bool IsValueMissing(ITextParser parser)
 	{
 		if (parser.IsLazy)
 			return parser.IsAtEnd;
@@ -101,7 +104,11 @@ public abstract class BaseValueParser<T> : IValueParser<T>
 
 		return parser.IsAtEnd && parser.CurrentFragment.Length > 0;
 	}
-	private static bool IsEmptyValue(ITextParser parser)
+
+	/// <summary>Checks whether the next thing to parse is an empty value.</summary>
+	/// <param name="parser">The parser to use for the check.</param>
+	/// <returns><see langword="true"/> if the next thing to parse is an empty value, <see langword="false"/> otherwise.</returns>
+	public bool IsEmptyValue(ITextParser parser)
 	{
 		if (parser.IsLazy)
 			return false;
@@ -109,6 +116,23 @@ public abstract class BaseValueParser<T> : IValueParser<T>
 		Debug.Assert(parser.IsGreedy);
 
 		return parser.CurrentFragment.Length is 0;
+	}
+
+	/// <summary>Checks whether the given parse <paramref name="context"/> allows <see langword="null"/> values.</summary>
+	/// <param name="context">The parse context to check.</param>
+	/// <returns>
+	/// 	<see langword="true"/> if the given parse <paramref name="context"/>
+	/// 	allows <see langword="null"/> values, <see langword="false"/> otherwise.
+	/// </returns>
+	public bool IsNullable(IValueParseContext context)
+	{
+		return context switch
+		{
+			IFlagValueParseContext flag => flag.Flag.IsNullable,
+			IArgumentValueParseContext argument => argument.Argument.IsNullable,
+
+			_ => Throw.New.ArgumentException<bool>(nameof(context), $"Unknown value parse context type ({context?.GetType()}).")
+		};
 	}
 	#endregion
 }

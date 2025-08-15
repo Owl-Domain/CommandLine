@@ -9,6 +9,7 @@ namespace OwlDomain.CommandLine.Flags;
 /// <param name="longName">The long name of the flag.</param>
 /// <param name="shortName">The short name of the flag.</param>
 /// <param name="isRequired">Whether the flag has to be set when executing the command.</param>
+/// <param name="isNullable">Whether the argument allows <see langword="null"/> values.</param>
 /// <param name="defaultValue">The default value for the flag.</param>
 /// <param name="parser">The value parser selected for the flag.</param>
 /// <param name="documentation">The documentation for the flag.</param>
@@ -19,11 +20,12 @@ public class ParameterFlagInfo<T>(
 	string? longName,
 	char? shortName,
 	bool isRequired,
+	bool isNullable,
 	T? defaultValue,
 	IValueParser<T> parser,
 	IDocumentationInfo? documentation,
 	string? defaultValueLabel)
-	: BaseFlagInfo<T>(kind, longName, shortName, isRequired, defaultValue, parser, documentation, defaultValueLabel), IParameterFlagInfo<T>
+	: BaseFlagInfo<T>(kind, longName, shortName, isRequired, isNullable, defaultValue, parser, documentation, defaultValueLabel), IParameterFlagInfo<T>
 {
 	#region Properties
 	/// <inheritdoc/>

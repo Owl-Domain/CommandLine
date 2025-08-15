@@ -8,6 +8,7 @@ namespace OwlDomain.CommandLine.Arguments;
 /// <param name="name">The name of the argument.</param>
 /// <param name="position">The position of the argument.</param>
 /// <param name="isRequired">Whether the argument has to be set when executing the command.</param>
+/// <param name="isNullable">Whether the argument allows <see langword="null"/> values.</param>
 /// <param name="defaultValue">The default value for the argument.</param>
 /// <param name="parser">The value parser selected for the argument.</param>
 /// <param name="documentation">The documentation for the argument.</param>
@@ -17,11 +18,12 @@ public sealed class ParameterArgumentInfo<T>(
 	string name,
 	int position,
 	bool isRequired,
+	bool isNullable,
 	T? defaultValue,
 	IValueParser<T> parser,
 	IDocumentationInfo? documentation,
 	string? defaultValueLabel)
-	: BaseArgumentInfo<T>(name, position, isRequired, defaultValue, parser, documentation, defaultValueLabel), IParameterArgumentInfo<T>
+	: BaseArgumentInfo<T>(name, position, isRequired, isNullable, defaultValue, parser, documentation, defaultValueLabel), IParameterArgumentInfo<T>
 {
 	#region Properties
 	/// <inheritdoc/>
