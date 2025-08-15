@@ -15,26 +15,15 @@ public interface IFlagInfo
 	/// <summary>The short name of the flag.</summary>
 	char? ShortName { get; }
 
-	/// <summary>The type of the flag's value.</summary>
-	Type ValueType { get; }
+	/// <summary>The information about the flag's value.</summary>
+	IValueInfo ValueInfo { get; }
 
-	/// <summary>Whether the flag has to be set when executing a command.</summary>
-	bool IsRequired { get; }
-
-	/// <summary>Whether the flag supports <see langword="null"/> values.</summary>
-	bool IsNullable { get; }
-
-	/// <summary>The default value for the flag.</summary>
-	object? DefaultValue { get; }
-
-	/// <summary>The value parser selected for the flag.</summary>
-	IValueParser Parser { get; }
+	/// <summary>The information about the flag's default value.</summary>
+	/// <remarks>If this value is <see langword="null"/> then the flag must be required.</remarks>
+	IDefaultValueInfo? DefaultValueInfo { get; }
 
 	/// <summary>The documentation for the flag.</summary>
 	IDocumentationInfo? Documentation { get; }
-
-	/// <summary>The label for the <see cref="DefaultValue"/>.</summary>
-	string? DefaultValueLabel { get; }
 	#endregion
 }
 
@@ -45,14 +34,8 @@ public interface IFlagInfo
 public interface IFlagInfo<out T> : IFlagInfo
 {
 	#region Properties
-	Type IFlagInfo.ValueType => typeof(T);
-
-	/// <summary>The default value for the flag.</summary>
-	new T? DefaultValue { get; }
-	object? IFlagInfo.DefaultValue => DefaultValue;
-
-	/// <summary>The value parser selected for the flag.</summary>
-	new IValueParser<T> Parser { get; }
-	IValueParser IFlagInfo.Parser => Parser;
+	/// <summary>The information about the flag's value.</summary>
+	new IValueInfo<T> ValueInfo { get; }
+	IValueInfo IFlagInfo.ValueInfo => ValueInfo;
 	#endregion
 }

@@ -20,7 +20,7 @@ public sealed class FlagValueParseContext(
 	public IFlagInfo Flag { get; } = flag;
 
 	/// <inheritdoc/>
-	public Type ValueType => Flag.ValueType;
+	public IValueInfo ValueInfo => Flag.ValueInfo;
 
 	/// <inheritdoc/>
 	public CancellationToken CancellationToken { get; } = cancellationToken;

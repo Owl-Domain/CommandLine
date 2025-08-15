@@ -6,8 +6,6 @@ namespace OwlDomain.CommandLine.Arguments;
 public interface IParameterArgumentInfo : IArgumentInfo, IHasAttributes
 {
 	#region Properties
-	Type IArgumentInfo.ValueType => Parameter.ParameterType;
-
 	/// <summary>The parameter that represents the argument.</summary>
 	ParameterInfo Parameter { get; }
 	#endregion
@@ -19,7 +17,4 @@ public interface IParameterArgumentInfo : IArgumentInfo, IHasAttributes
 /// <typeparam name="T">The type of the argument's value.</typeparam>
 public interface IParameterArgumentInfo<out T> : IParameterArgumentInfo, IArgumentInfo<T>
 {
-	#region Properties
-	Type IArgumentInfo.ValueType => typeof(T);
-	#endregion
 }

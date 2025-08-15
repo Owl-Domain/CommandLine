@@ -20,7 +20,7 @@ public sealed class ArgumentValueParseContext(
 	public IArgumentInfo Argument { get; } = argument;
 
 	/// <inheritdoc/>
-	public Type ValueType => Argument.ValueType;
+	public IValueInfo ValueInfo => Argument.ValueInfo;
 
 	/// <inheritdoc/>
 	public CancellationToken CancellationToken { get; } = cancellationToken;
