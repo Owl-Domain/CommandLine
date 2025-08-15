@@ -1,4 +1,3 @@
-using OwlDomain.CommandLine.Parsing.Values.Primitives;
 using OwlDomain.Documentation.Document.Nodes;
 
 namespace OwlDomain.CommandLine;
@@ -237,15 +236,18 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 				property.GetCustomAttribute<DisallowNullAttribute>() is null;
 
 			bool isRequired = property.GetCustomAttribute<RequiredMemberAttribute>() is not null;
-			object? defaultValue = isRequired ? null : property.GetValue(instance);
 
 			string? longName = _nameExtractor.GetLongFlagName(property);
 			char? shortName = _nameExtractor.GetShortFlagName(property);
-			IValueParser parser = SelectValueParser(property);
 			FlagKind kind = GetFlagKind(property.PropertyType, property.Name, longName, shortName);
+			IValueParser parser = SelectValueParser(property);
+			IValueInfo valueInfo = CreateValueInfo(property.PropertyType, isRequired, isNullable, parser);
+
+			// Todo(Nightowl): Update default value label;
+			IDefaultValueInfo? defaultValueInfo = isRequired ? null : new DefaultValueInfo("");
 			IDocumentationInfo? documentation = _documentationProvider.GetInfo(property);
 
-			IPropertyFlagInfo flag = CreatePropertyFlag(property, kind, longName, shortName, isRequired, isNullable, defaultValue, parser, documentation, null);
+			IPropertyFlagInfo flag = CreatePropertyFlag(property, kind, longName, shortName, valueInfo, defaultValueInfo, documentation);
 
 			flags.Add(flag);
 		}
@@ -279,11 +281,14 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 				parameter.GetCustomAttribute<DisallowNullAttribute>() is null;
 
 			bool isRequired = parameter.HasDefaultValue is false;
-			object? defaultValue = parameter.HasDefaultValue ? parameter.RawDefaultValue : null;
 			IValueParser parser = SelectValueParser(parameter);
+			IValueInfo valueInfo = CreateValueInfo(parameter.ParameterType, isRequired, isNullable, parser);
+
+			// Todo(Nightowl): Update default value label;
+			IDefaultValueInfo? defaultValueInfo = isRequired ? null : new DefaultValueInfo("");
 			IDocumentationInfo? documentation = _documentationProvider.GetInfo(parameter);
 
-			IArgumentInfo argument = CreateParameterArgument(parameter, name, position, isRequired, isNullable, defaultValue, parser, documentation, null);
+			IArgumentInfo argument = CreateParameterArgument(parameter, name, position, valueInfo, defaultValueInfo, documentation);
 			arguments.Add(argument);
 		}
 
@@ -332,16 +337,15 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 
 		IValueParser<bool> parser = SelectValueParser<bool>();
 
+		// Todo(Nightowl): Update default value label;
+
 		return new VirtualFlagInfo<bool>(
 			FlagKind.Toggle,
 			settings.LongHelpFlagName,
 			settings.ShortHelpFlagName,
-			false,
-			false,
-			false,
-			parser,
-			documentation,
-			null);
+			new ValueInfo<bool>(false, false, parser),
+			new DefaultValueInfo("false"),
+			documentation);
 	}
 	private static IVirtualCommandInfo? TryCreateHelpCommand(IEngineSettings settings)
 	{
@@ -494,21 +498,27 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 	#endregion
 
 	#region Generic type helpers
+	private static IValueInfo CreateValueInfo(Type valueType, bool isRequired, bool isNullable, IValueParser parser)
+	{
+		Type type = typeof(ValueInfo<>).MakeGenericType(valueType);
+
+		object? untyped = Activator.CreateInstance(type, [isRequired, isNullable, parser]);
+		Debug.Assert(untyped is not null);
+
+		return (IValueInfo)untyped;
+	}
 	private static IPropertyFlagInfo CreatePropertyFlag(
 		PropertyInfo property,
 		FlagKind kind,
 		string? longName,
 		char? shortName,
-		bool isRequired,
-		bool isNullable,
-		object? defaultValue,
-		IValueParser parser,
-		IDocumentationInfo? documentation,
-		string? defaultValueLabel)
+		IValueInfo valueInfo,
+		IDefaultValueInfo? defaultValueInfo,
+		IDocumentationInfo? documentation)
 	{
 		Type type = typeof(PropertyFlagInfo<>).MakeGenericType(property.PropertyType);
 
-		object? untyped = Activator.CreateInstance(type, [property, kind, longName, shortName, isRequired, isNullable, defaultValue, parser, documentation, defaultValueLabel]);
+		object? untyped = Activator.CreateInstance(type, [property, kind, longName, shortName, valueInfo, defaultValueInfo, documentation]);
 		Debug.Assert(untyped is not null);
 
 		return (IPropertyFlagInfo)untyped;
@@ -518,16 +528,13 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 		FlagKind kind,
 		string? longName,
 		char? shortName,
-		bool isRequired,
-		bool isNullable,
-		object? defaultValue,
-		IValueParser parser,
-		IDocumentationInfo? documentation,
-		string? defaultValueLabel)
+		IValueInfo valueInfo,
+		IDefaultValueInfo? defaultValueInfo,
+		IDocumentationInfo? documentation)
 	{
 		Type type = typeof(ParameterFlagInfo<>).MakeGenericType(parameter.ParameterType);
 
-		object? untyped = Activator.CreateInstance(type, [parameter, kind, longName, shortName, isRequired, isNullable, defaultValue, parser, documentation, defaultValueLabel]);
+		object? untyped = Activator.CreateInstance(type, [parameter, kind, longName, shortName, valueInfo, defaultValueInfo, documentation]);
 		Debug.Assert(untyped is not null);
 
 		return (IParameterFlagInfo)untyped;
@@ -536,16 +543,13 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 		ParameterInfo parameter,
 		string name,
 		int position,
-		bool isRequired,
-		bool isNullable,
-		object? defaultValue,
-		IValueParser parser,
-		IDocumentationInfo? documentation,
-		string? defaultValueLabel)
+		IValueInfo valueInfo,
+		IDefaultValueInfo? defaultValueInfo,
+		IDocumentationInfo? documentation)
 	{
 		Type type = typeof(ParameterArgumentInfo<>).MakeGenericType(parameter.ParameterType);
 
-		object? untyped = Activator.CreateInstance(type, [parameter, name, position, isRequired, isNullable, defaultValue, parser, documentation, defaultValueLabel]);
+		object? untyped = Activator.CreateInstance(type, [parameter, name, position, valueInfo, defaultValueInfo, documentation]);
 		Debug.Assert(untyped is not null);
 
 		return (IParameterArgumentInfo)untyped;

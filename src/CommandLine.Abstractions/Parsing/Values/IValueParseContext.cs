@@ -6,8 +6,8 @@ namespace OwlDomain.CommandLine.Parsing.Values;
 public interface IValueParseContext : IParseContext
 {
 	#region Properties
-	/// <summary>The type of the value being parsed.</summary>
-	Type ValueType { get; }
+	/// <summary>The information about the value.</summary>
+	IValueInfo ValueInfo { get; }
 
 	/// <summary>The target that the value is being parsed for.</summary>
 	object Target { get; }

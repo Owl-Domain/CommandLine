@@ -1,6 +1,3 @@
-using OwlDomain.CommandLine.Parsing.Values.Collections;
-using OwlDomain.CommandLine.Parsing.Values.Primitives;
-
 namespace OwlDomain.CommandLine.Tests.Parsing;
 
 [TestClass]
@@ -63,9 +60,7 @@ public sealed class CommandParserTests
 		ICommandInfo command = Substitute.For<ICommandInfo>();
 		ICommandGroupInfo rootGroup = Substitute.For<ICommandGroupInfo>();
 		ICommandEngine engine = Substitute.For<ICommandEngine>();
-
-		argument.DefaultValue.Returns(null);
-		argument.Parser.Returns(new StringValueParser());
+		argument.ValueInfo.Returns(new ValueInfo<string>(true, false, new StringValueParser()));
 
 		command.Name.Returns(commandName);
 		command.Arguments.Returns([argument]);
@@ -120,8 +115,7 @@ public sealed class CommandParserTests
 		ICommandGroupInfo rootGroup = Substitute.For<ICommandGroupInfo>();
 		ICommandEngine engine = Substitute.For<ICommandEngine>();
 
-		argument.DefaultValue.Returns(null);
-		argument.Parser.Returns(new StringValueParser());
+		argument.ValueInfo.Returns(new ValueInfo<string>(true, false, new StringValueParser()));
 
 		command.Name.Returns("command");
 		command.Arguments.Returns([argument]);
@@ -292,19 +286,15 @@ public sealed class CommandParserTests
 		command.Name.Returns(commandName);
 		group.Name.Returns(groupName);
 
-		valueFlag.Parser.Returns(stringParser);
-		argument.Parser.Returns(stringParser);
-		repeatFlag.Parser.Returns(new ParsableValueParser<int>());
-		toggleFlag.Parser.Returns(new BooleanValueParser());
+		valueFlag.ValueInfo.Returns(new ValueInfo<string>(false, false, stringParser));
+		argument.ValueInfo.Returns(new ValueInfo<string>(false, false, stringParser));
+
+		repeatFlag.ValueInfo.Returns(new ValueInfo<int>(false, false, new IntegerValueParser<int>()));
+		toggleFlag.ValueInfo.Returns(new ValueInfo<bool>(false, false, new BooleanValueParser()));
 
 		valueFlag.Kind.Returns(FlagKind.Regular);
 		repeatFlag.Kind.Returns(FlagKind.Repeat);
 		toggleFlag.Kind.Returns(FlagKind.Toggle);
-
-		valueFlag.IsRequired.Returns(false);
-		repeatFlag.IsRequired.Returns(false);
-		toggleFlag.IsRequired.Returns(false);
-		argument.IsRequired.Returns(false);
 
 		IFlagInfo[] flags = [valueFlag, repeatFlag, toggleFlag];
 
@@ -346,8 +336,7 @@ public sealed class CommandParserTests
 		ICommandGroupInfo rootGroup = Substitute.For<ICommandGroupInfo>();
 		ICommandEngine engine = Substitute.For<ICommandEngine>();
 
-		argument.IsRequired.Returns(true);
-		argument.Parser.Returns(arrayParser);
+		argument.ValueInfo.Returns(new ValueInfo<string[]>(true, false, arrayParser));
 
 		command.Arguments.Returns([argument]);
 		rootGroup.ImplicitCommand.Returns(command);

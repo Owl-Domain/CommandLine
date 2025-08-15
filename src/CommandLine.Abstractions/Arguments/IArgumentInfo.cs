@@ -12,26 +12,15 @@ public interface IArgumentInfo
 	/// <summary>The position of the argument.</summary>
 	int Position { get; }
 
-	/// <summary>The type of the argument's value.</summary>
-	Type ValueType { get; }
+	/// <summary>The information about the argument's value.</summary>
+	IValueInfo ValueInfo { get; }
 
-	/// <summary>Whether the argument has to be set when executing a command.</summary>
-	bool IsRequired { get; }
-
-	/// <summary>Whether the argument supports <see langword="null"/> values.</summary>
-	bool IsNullable { get; }
-
-	/// <summary>The default value for the argument.</summary>
-	object? DefaultValue { get; }
-
-	/// <summary>The value parser selected for the argument.</summary>
-	IValueParser Parser { get; }
+	/// <summary>The information about the argument's default value.</summary>
+	/// <remarks>If this value is <see langword="null"/> then the argument must be required.</remarks>
+	IDefaultValueInfo? DefaultValueInfo { get; }
 
 	/// <summary>The documentation for the argument.</summary>
 	IDocumentationInfo? Documentation { get; }
-
-	/// <summary>The label for the <see cref="DefaultValue"/>.</summary>
-	string? DefaultValueLabel { get; }
 	#endregion
 }
 
@@ -42,14 +31,8 @@ public interface IArgumentInfo
 public interface IArgumentInfo<out T> : IArgumentInfo
 {
 	#region Properties
-	Type IArgumentInfo.ValueType => typeof(T);
-
-	/// <summary>The default value for the argument.</summary>
-	new T? DefaultValue { get; }
-	object? IArgumentInfo.DefaultValue => DefaultValue;
-
-	/// <summary>The value parser selected for the argument.</summary>
-	new IValueParser<T> Parser { get; }
-	IValueParser IArgumentInfo.Parser => Parser;
+	/// <summary>The information about the flargument's value.</summary>
+	new IValueInfo<T> ValueInfo { get; }
+	IValueInfo IArgumentInfo.ValueInfo => ValueInfo;
 	#endregion
 }

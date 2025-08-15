@@ -6,8 +6,6 @@ namespace OwlDomain.CommandLine.Flags;
 public interface IParameterFlagInfo : IFlagInfo, IHasAttributes
 {
 	#region Properties
-	Type IFlagInfo.ValueType => Parameter.ParameterType;
-
 	/// <summary>The parameter that represents the flag.</summary>
 	ParameterInfo Parameter { get; }
 	#endregion
@@ -19,7 +17,4 @@ public interface IParameterFlagInfo : IFlagInfo, IHasAttributes
 /// <typeparam name="T">The type of the flag's value.</typeparam>
 public interface IParameterFlagInfo<out T> : IParameterFlagInfo, IFlagInfo<T>
 {
-	#region Properties
-	Type IFlagInfo.ValueType => typeof(T);
-	#endregion
 }

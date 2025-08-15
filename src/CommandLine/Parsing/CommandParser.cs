@@ -204,7 +204,7 @@ public sealed class CommandParser : BaseCommandParser
 		TextLocation location = new(context.Parser.Point, context.Parser.Point);
 
 		ArgumentValueParseContext argumentContext = new(context.Engine, argument, context.CancellationToken);
-		IValueParseResult value = argument.Parser.Parse(argumentContext, context.Parser);
+		IValueParseResult value = argument.ValueInfo.Parser.Parse(argumentContext, context.Parser);
 
 		if (value.Successful)
 		{
@@ -217,7 +217,7 @@ public sealed class CommandParser : BaseCommandParser
 		Debug.Assert(value.Error is not null);
 		result = default;
 
-		if (argument.IsRequired)
+		if (argument.ValueInfo.IsRequired)
 		{
 			if (value.Error == string.Empty)
 				context.Diagnostics.Add(DiagnosticSource.Parsing, location, $"Expected value for the '{argument.Name}' argument.");
@@ -493,7 +493,7 @@ public sealed class CommandParser : BaseCommandParser
 		TextLocation location = new(context.Parser.Point, context.Parser.Point);
 
 		FlagValueParseContext flagContext = new(context.Engine, context.Flag, context.CancellationToken);
-		IValueParseResult value = context.Flag.Parser.Parse(flagContext, context.Parser);
+		IValueParseResult value = context.Flag.ValueInfo.Parser.Parse(flagContext, context.Parser);
 
 		if (value.Error is null)
 		{
@@ -505,7 +505,7 @@ public sealed class CommandParser : BaseCommandParser
 
 		result = default;
 
-		if (context.Flag.IsRequired)
+		if (context.Flag.ValueInfo.IsRequired)
 		{
 			Debug.Assert(context.Prefix.Value is not null);
 

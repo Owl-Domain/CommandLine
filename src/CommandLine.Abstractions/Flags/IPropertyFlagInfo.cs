@@ -6,8 +6,6 @@ namespace OwlDomain.CommandLine.Flags;
 public interface IPropertyFlagInfo : IFlagInfo, IHasAttributes
 {
 	#region Properties
-	Type IFlagInfo.ValueType => Property.PropertyType;
-
 	/// <summary>The property that represents the flag.</summary>
 	PropertyInfo Property { get; }
 	#endregion
@@ -19,7 +17,4 @@ public interface IPropertyFlagInfo : IFlagInfo, IHasAttributes
 /// <typeparam name="T">The type of the flag's value.</typeparam>
 public interface IPropertyFlagInfo<out T> : IPropertyFlagInfo, IFlagInfo<T>
 {
-	#region Properties
-	Type IFlagInfo.ValueType => typeof(T);
-	#endregion
 }

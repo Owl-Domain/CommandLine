@@ -25,7 +25,7 @@ public sealed class NullableValueParser<T>(IValueParser<T> valueParser) : BaseVa
 
 		if (IsEmptyValue(parser))
 		{
-			if (IsNullable(context) is false)
+			if (context.ValueInfo.IsNullable is false)
 				error = string.Empty;
 
 			return null;

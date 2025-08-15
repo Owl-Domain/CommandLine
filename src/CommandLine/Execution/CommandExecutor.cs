@@ -167,7 +167,7 @@ public sealed class CommandExecutor : ICommandExecutor
 			}
 			else if (flag is IRepeatFlagParseResult repeatFlag)
 			{
-				object? value = Convert.ChangeType(repeatFlag.Repetition, repeatFlag.FlagInfo.ValueType);
+				object? value = Convert.ChangeType(repeatFlag.Repetition, repeatFlag.FlagInfo.ValueInfo.Type);
 				flags.Add(repeatFlag.FlagInfo, value);
 			}
 			else
