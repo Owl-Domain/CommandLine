@@ -27,25 +27,19 @@ public interface ICommandEngineBuilder
 	/// <param name="selector">The value parse selector to use for selecting the value parsers.</param>
 	/// <returns>The used builder instance.</returns>
 	/// <remarks>The order in which the selectors are added is the order in which they'll be used.</remarks>
-	ICommandEngineBuilder WithSelector(IValueParserSelector selector);
-
-	/// <summary>Creates and uses an instance of the value parser selector of the given type <typeparamref name="T"/>.</summary>
-	/// <typeparam name="T">The type of the value parser selector to create and use.</typeparam>
-	/// <returns>The used builder instance.</returns>
-	/// <remarks>The order in which the selectors are added is the order in which they'll be used.</remarks>
-	ICommandEngineBuilder WithSelector<T>() where T : IValueParserSelector, new();
+	ICommandEngineBuilder With(IValueParserSelector selector);
 
 	/// <summary>Includes the given command <paramref name="injector"/> for injecting command values.</summary>
 	/// <param name="injector">The injector to include.</param>
 	/// <returns>The used builder instance.</returns>
-	/// <remarks>Multiple injectors can be provided.</remarks>
-	ICommandEngineBuilder WithInjector(ICommandInjector injector);
+	/// <remarks>The order in which the injectors are added is the order in which they'll be used.</remarks>
+	ICommandEngineBuilder With(ICommandInjector injector);
 
-	/// <summary>Creates and includes an instance of the command injector of the given <typeparamref name="T"/>.</summary>
-	/// <typeparam name="T">The type of the command injector to create and include.</typeparam>
+	/// <summary>Includes the given default value label <paramref name="provider"/> for getting default value labels.</summary>
+	/// <param name="provider">The provider to include.</param>
 	/// <returns>The used builder instance.</returns>
-	/// <remarks>Multiple injectors can be provided.</remarks>
-	ICommandEngineBuilder WithInjector<T>() where T : ICommandInjector, new();
+	/// <remarks>The order in which the providers are added is the order in which they'll be used.</remarks>
+	ICommandEngineBuilder With(IDefaultValueLabelProvider provider);
 
 	/// <summary>Allows for customising the engine settings.</summary>
 	/// <param name="callback">The callback which can be used to customise the engine settings.</param>
@@ -91,6 +85,39 @@ public static class ICommandEngineBuilderExtensions
 		buildDuration = watch.Elapsed;
 
 		return engine;
+	}
+
+	/// <summary>Creates and uses an instance of the value parser selector of the given type <typeparamref name="T"/>.</summary>
+	/// <typeparam name="T">The type of the value parser selector to create and use.</typeparam>
+	/// <param name="builder">The builder to pass the created value parser selector to.</param>
+	/// <returns>The used builder instance.</returns>
+	/// <remarks>The order in which the selectors are added is the order in which they'll be used.</remarks>
+	public static ICommandEngineBuilder WithValueParserSelector<T>(this ICommandEngineBuilder builder) where T : IValueParserSelector, new()
+	{
+		T selector = new();
+		return builder.With(selector);
+	}
+
+	/// <summary>Creates and includes an instance of the command injector of the given <typeparamref name="T"/>.</summary>
+	/// <typeparam name="T">The type of the command injector to create and include.</typeparam>
+	/// <param name="builder">The builder to pass the created injector to.</param>
+	/// <returns>The used builder instance.</returns>
+	/// <remarks>The order in which the injectors are added is the order in which they'll be used.</remarks>
+	public static ICommandEngineBuilder WithCommandInjector<T>(this ICommandEngineBuilder builder) where T : ICommandInjector, new()
+	{
+		T injector = new();
+		return builder.With(injector);
+	}
+
+	/// <summary>Creates and includes an instance of the default value label provider of the given <typeparamref name="T"/>.</summary>
+	/// <typeparam name="T">The type of the default value provider to create and include.</typeparam>
+	/// <param name="builder">The builder to pass the created provider to.</param>
+	/// <returns>The used builder instance.</returns>
+	/// <remarks>The order in which the providers are added is the order in which they'll be used.</remarks>
+	public static ICommandEngineBuilder WithDefaultValueLabelProvider<T>(this ICommandEngineBuilder builder) where T : IDefaultValueLabelProvider, new()
+	{
+		T provider = new();
+		return builder.With(provider);
 	}
 	#endregion
 }

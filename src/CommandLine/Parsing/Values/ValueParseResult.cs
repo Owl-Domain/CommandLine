@@ -67,7 +67,7 @@ public class ValueParseResult<T> : IValueParseResult<T>
 	[ExcludeFromCodeCoverage]
 	private string DebuggerDisplay()
 	{
-		string typeName = nameof(ValueParseResult<object>);
+		string typeName = nameof(ValueParseResult<T>);
 
 		if (Error is not null)
 			return $"{typeName} {{ {nameof(Error)} = ({Error}) }}";

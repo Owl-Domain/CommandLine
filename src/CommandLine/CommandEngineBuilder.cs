@@ -16,8 +16,9 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 	private readonly NullabilityInfoContext _nullabilityContext = new();
 	private readonly BuilderSettings _settings = new();
 	private readonly HashSet<Type> _classes = [];
-	private readonly List<IValueParserSelector> _selectors = [];
+	private readonly List<IValueParserSelector> _parserSelectors = [];
 	private readonly List<ICommandInjector> _injectors = [];
+	private readonly List<IDefaultValueLabelProvider> _labelProviders = [];
 	private INameExtractor? _nameExtractor;
 	private ICommandParser? _commandParser;
 	private IRootValueParserSelector? _valueParserSelector;
@@ -53,23 +54,16 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 	}
 
 	/// <inheritdoc/>
-	public ICommandEngineBuilder WithSelector(IValueParserSelector selector)
+	public ICommandEngineBuilder With(IValueParserSelector selector)
 	{
-		if (_selectors.Contains(selector) is false)
-			_selectors.Add(selector);
+		if (_parserSelectors.Contains(selector) is false)
+			_parserSelectors.Add(selector);
 
 		return this;
 	}
 
 	/// <inheritdoc/>
-	public ICommandEngineBuilder WithSelector<T>() where T : IValueParserSelector, new()
-	{
-		T selector = new();
-		return WithSelector(selector);
-	}
-
-	/// <inheritdoc/>
-	public ICommandEngineBuilder WithInjector(ICommandInjector injector)
+	public ICommandEngineBuilder With(ICommandInjector injector)
 	{
 		if (_injectors.Contains(injector) is false)
 			_injectors.Add(injector);
@@ -78,10 +72,12 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 	}
 
 	/// <inheritdoc/>
-	public ICommandEngineBuilder WithInjector<T>() where T : ICommandInjector, new()
+	public ICommandEngineBuilder With(IDefaultValueLabelProvider provider)
 	{
-		T injector = new();
-		return WithInjector(injector);
+		if (_labelProviders.Contains(provider) is false)
+			_labelProviders.Add(provider);
+
+		return this;
 	}
 
 	/// <inheritdoc/>
@@ -113,20 +109,7 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 
 		IEngineSettings settings = EngineSettings.From(_settings);
 
-		WithSelector<PathValueParserSelector>();
-		WithSelector<NetworkingValueParserSelector>();
-		WithSelector<PrimitiveValueParserSelector>();
-
-		WithInjector<EngineCommandInjector>();
-
-		_nameExtractor ??= NameExtractor.Instance;
-		_commandParser ??= new CommandParser();
-		_valueParserSelector = new RootValueParserSelector(_selectors);
-		_commandValidator ??= new CommandValidator();
-		_commandExecutor ??= new CommandExecutor();
-		_documentationProvider ??= new DocumentationProvider();
-		_documentationPrinter ??= new DocumentationPrinter();
-
+		EnsureDefaults();
 		SetupVirtual(settings, out IVirtualFlags virtualFlags, out IVirtualCommands virtualCommands);
 
 		Dictionary<string, ICommandGroupInfo> childGroups = [];
@@ -173,6 +156,27 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 	#endregion
 
 	#region Build helpers
+	[MemberNotNull(
+		nameof(_commandParser), nameof(_valueParserSelector), nameof(_commandValidator),
+		nameof(_commandExecutor), nameof(_documentationProvider), nameof(_documentationPrinter))]
+	private void EnsureDefaults()
+	{
+		this.WithValueParserSelector<PathValueParserSelector>();
+		this.WithValueParserSelector<NetworkingValueParserSelector>();
+		this.WithValueParserSelector<PrimitiveValueParserSelector>();
+
+		this.WithCommandInjector<EngineCommandInjector>();
+
+		this.WithDefaultValueLabelProvider<PrimitiveDefaultValueLabelProvider>();
+
+		_nameExtractor ??= NameExtractor.Instance;
+		_commandParser ??= new CommandParser();
+		_valueParserSelector = new RootValueParserSelector(_parserSelectors);
+		_commandValidator ??= new CommandValidator();
+		_commandExecutor ??= new CommandExecutor();
+		_documentationProvider ??= new DocumentationProvider();
+		_documentationPrinter ??= new DocumentationPrinter();
+	}
 	private IReadOnlyCollection<IMethodCommandInfo> GetCommands(
 		Type classType,
 		ICommandGroupInfo group,
@@ -219,8 +223,7 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 		List<InjectedPropertyInfo> injected = [];
 		injectedProperties = injected;
 
-		object? instance = Activator.CreateInstance(type);
-		Debug.Assert(instance is not null);
+		object? container = null;
 
 		PropertyInfo[] properties = type.GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.FlattenHierarchy);
 		foreach (PropertyInfo property in properties)
@@ -231,20 +234,25 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 				continue;
 			}
 
+			string? longName = _nameExtractor.GetLongFlagName(property);
+			char? shortName = _nameExtractor.GetShortFlagName(property);
+			FlagKind kind = GetFlagKind(property.PropertyType, property.Name, longName, shortName);
+
 			bool isNullable =
 				_nullabilityContext.Create(property).WriteState is NullabilityState.Nullable &&
 				property.GetCustomAttribute<DisallowNullAttribute>() is null;
 
 			bool isRequired = property.GetCustomAttribute<RequiredMemberAttribute>() is not null;
-
-			string? longName = _nameExtractor.GetLongFlagName(property);
-			char? shortName = _nameExtractor.GetShortFlagName(property);
-			FlagKind kind = GetFlagKind(property.PropertyType, property.Name, longName, shortName);
 			IValueParser parser = SelectValueParser(property);
 			IValueInfo valueInfo = CreateValueInfo(property.PropertyType, isRequired, isNullable, parser);
 
-			// Todo(Nightowl): Update default value label;
-			IDefaultValueInfo? defaultValueInfo = isRequired ? null : new DefaultValueInfo("");
+			IDefaultValueInfo? defaultValueInfo = null;
+			if (isRequired is false)
+			{
+				string label = GetDefaultValueLabel(property, type, ref container);
+				defaultValueInfo = new DefaultValueInfo(label);
+			}
+
 			IDocumentationInfo? documentation = _documentationProvider.GetInfo(property);
 
 			IPropertyFlagInfo flag = CreatePropertyFlag(property, kind, longName, shortName, valueInfo, defaultValueInfo, documentation);
@@ -284,8 +292,13 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 			IValueParser parser = SelectValueParser(parameter);
 			IValueInfo valueInfo = CreateValueInfo(parameter.ParameterType, isRequired, isNullable, parser);
 
-			// Todo(Nightowl): Update default value label;
-			IDefaultValueInfo? defaultValueInfo = isRequired ? null : new DefaultValueInfo("");
+			IDefaultValueInfo? defaultValueInfo = null;
+			if (isRequired is false)
+			{
+				string label = GetDefaultValueLabel(parameter);
+				defaultValueInfo = new DefaultValueInfo(label);
+			}
+
 			IDocumentationInfo? documentation = _documentationProvider.GetInfo(parameter);
 
 			IArgumentInfo argument = CreateParameterArgument(parameter, name, position, valueInfo, defaultValueInfo, documentation);
@@ -336,15 +349,14 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 		DocumentationInfo documentation = new(summary, null);
 
 		IValueParser<bool> parser = SelectValueParser<bool>();
-
-		// Todo(Nightowl): Update default value label;
+		string label = GetDefaultValueLabel(false);
 
 		return new VirtualFlagInfo<bool>(
 			FlagKind.Toggle,
 			settings.LongHelpFlagName,
 			settings.ShortHelpFlagName,
 			new ValueInfo<bool>(false, false, parser),
-			new DefaultValueInfo("false"),
+			new DefaultValueInfo(label),
 			documentation);
 	}
 	private static IVirtualCommandInfo? TryCreateHelpCommand(IEngineSettings settings)
@@ -382,7 +394,46 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 	}
 	#endregion
 
-	#region Helpers
+	#region Value parser helpers
+	private IValueParser<T> SelectValueParser<T>()
+	{
+		IValueParser parser = SelectValueParser(typeof(T));
+
+		return (IValueParser<T>)parser;
+	}
+	private IValueParser SelectValueParser(Type type)
+	{
+		Debug.Assert(_valueParserSelector is not null);
+
+		if (_valueParserSelector.TrySelect(type, out IValueParser? parser))
+			return parser;
+
+		Throw.New.NotSupportedException($"Couldn't select a value parser for the type ({type}).");
+		return default;
+	}
+	private IValueParser SelectValueParser(PropertyInfo property)
+	{
+		Debug.Assert(_valueParserSelector is not null);
+
+		if (_valueParserSelector.TrySelect(property, out IValueParser? parser))
+			return parser;
+
+		Throw.New.NotSupportedException($"Couldn't select a value parser for the property ({property}).");
+		return default;
+	}
+	private IValueParser SelectValueParser(ParameterInfo parameter)
+	{
+		Debug.Assert(_valueParserSelector is not null);
+
+		if (_valueParserSelector.TrySelect(parameter, out IValueParser? parser))
+			return parser;
+
+		Throw.New.NotSupportedException($"Couldn't select a value parser for the parameter ({parameter}).");
+		return default;
+	}
+	#endregion
+
+	#region Flag helpers
 	private static FlagKind GetFlagKind(Type valueType, string originalName, string? longName, char? shortName)
 	{
 		if (valueType == typeof(bool) || valueType == typeof(bool?))
@@ -431,42 +482,9 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 
 		return false;
 	}
-	private IValueParser<T> SelectValueParser<T>()
-	{
-		IValueParser parser = SelectValueParser(typeof(T));
+	#endregion
 
-		return (IValueParser<T>)parser;
-	}
-	private IValueParser SelectValueParser(Type type)
-	{
-		Debug.Assert(_valueParserSelector is not null);
-
-		if (_valueParserSelector.TrySelect(type, out IValueParser? parser))
-			return parser;
-
-		Throw.New.NotSupportedException($"Couldn't select a value parser for the type ({type}).");
-		return default;
-	}
-	private IValueParser SelectValueParser(PropertyInfo property)
-	{
-		Debug.Assert(_valueParserSelector is not null);
-
-		if (_valueParserSelector.TrySelect(property, out IValueParser? parser))
-			return parser;
-
-		Throw.New.NotSupportedException($"Couldn't select a value parser for the property ({property}).");
-		return default;
-	}
-	private IValueParser SelectValueParser(ParameterInfo parameter)
-	{
-		Debug.Assert(_valueParserSelector is not null);
-
-		if (_valueParserSelector.TrySelect(parameter, out IValueParser? parser))
-			return parser;
-
-		Throw.New.NotSupportedException($"Couldn't select a value parser for the parameter ({parameter}).");
-		return default;
-	}
+	#region Injection helpers
 	private bool TryGetInjected(ParameterInfo parameter, out InjectedParameterInfo injected)
 	{
 		foreach (ICommandInjector injector in _injectors)
@@ -494,6 +512,65 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 
 		injected = default;
 		return false;
+	}
+	#endregion
+
+	#region Label helpers
+	private string GetDefaultValueLabel(PropertyInfo property, Type containerType, ref object? container)
+	{
+		foreach (IDefaultValueLabelProvider provider in _labelProviders)
+		{
+			if (provider.TryGet(property, out string? label))
+				return label;
+		}
+
+		container ??= Activator.CreateInstance(containerType);
+		Debug.Assert(container is not null);
+
+		object? value = property.GetValue(container);
+
+		foreach (IDefaultValueLabelProvider provider in _labelProviders)
+		{
+			if (provider.TryGet(property, value, out string? label))
+				return label;
+		}
+
+		return GetDefaultValueLabel(value);
+	}
+	private string GetDefaultValueLabel(ParameterInfo parameter)
+	{
+		foreach (IDefaultValueLabelProvider provider in _labelProviders)
+		{
+			if (provider.TryGet(parameter, out string? label))
+				return label;
+		}
+
+		if (parameter.HasDefaultValue)
+		{
+			object? value = parameter.DefaultValue;
+
+			foreach (IDefaultValueLabelProvider provider in _labelProviders)
+			{
+				if (provider.TryGet(parameter, value, out string? label))
+					return label;
+			}
+
+			return GetDefaultValueLabel(value);
+		}
+
+		Throw.New.NotSupportedException($"Couldn't select a label for the default value of the given parameter ({parameter}).");
+		return default;
+	}
+	private string GetDefaultValueLabel(object? value)
+	{
+		foreach (IDefaultValueLabelProvider provider in _labelProviders)
+		{
+			if (provider.TryGet(value, out string? label))
+				return label;
+		}
+
+		Throw.New.NotSupportedException($"Couldn't select a label for the given default value ({value}).");
+		return default;
 	}
 	#endregion
 
