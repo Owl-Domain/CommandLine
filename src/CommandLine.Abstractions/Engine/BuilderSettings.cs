@@ -34,7 +34,7 @@ public sealed class BuilderSettings : IEngineSettings
 	public string HelpCommandName { get; set; } = "help";
 
 	/// <inheritdoc/>
-	public HashSet<string> FlagValueSeparators { get; } = [":", "=", " "];
+	public HashSet<string> FlagValueSeparators { get; } = ["=", ":", " "];
 	IReadOnlyCollection<string> IEngineSettings.FlagValueSeparators => FlagValueSeparators;
 
 	/// <inheritdoc/>

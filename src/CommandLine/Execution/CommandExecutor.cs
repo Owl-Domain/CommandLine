@@ -14,9 +14,6 @@ public sealed class CommandExecutor : ICommandExecutor
 	/// <inheritdoc/>
 	public ICommandExecutorResult Execute(ICommandValidatorResult validatorResult, CommandExecutionDelegate? callback = null)
 	{
-		if (validatorResult.Successful is false)
-			return new CommandExecutorResult(false, validatorResult.WasCancelled, validatorResult, new DiagnosticBag(), default, default);
-
 		Stopwatch watch = Stopwatch.StartNew();
 		DiagnosticBag diagnostics = [];
 
@@ -77,6 +74,9 @@ public sealed class CommandExecutor : ICommandExecutor
 				return new CommandExecutorResult(diagnostics.Any() is false, false, validatorResult, diagnostics, watch.Elapsed, context.ResultValue);
 			}
 		}
+
+		if (validatorResult.Successful is false)
+			return new CommandExecutorResult(false, validatorResult.WasCancelled, validatorResult, new DiagnosticBag(), default, default);
 
 		if (validatorResult.ParserResult.LeafCommand is not ICommandParseResult command)
 		{
