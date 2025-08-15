@@ -7,6 +7,15 @@ public sealed class BuilderSettings : IEngineSettings
 {
 	#region Properties
 	/// <inheritdoc/>
+	public string? Name { get; set; }
+
+	/// <inheritdoc/>
+	public string? Description { get; set; }
+
+	/// <inheritdoc/>
+	public string? Version { get; set; }
+
+	/// <inheritdoc/>
 	public bool AllowFlagShadowing { get; set; } = false;
 
 	/// <inheritdoc/>
@@ -34,7 +43,7 @@ public sealed class BuilderSettings : IEngineSettings
 	public string HelpCommandName { get; set; } = "help";
 
 	/// <inheritdoc/>
-	public HashSet<string> FlagValueSeparators { get; } = [":", "=", " "];
+	public HashSet<string> FlagValueSeparators { get; } = ["=", ":", " "];
 	IReadOnlyCollection<string> IEngineSettings.FlagValueSeparators => FlagValueSeparators;
 
 	/// <inheritdoc/>
@@ -57,9 +66,42 @@ public sealed class BuilderSettings : IEngineSettings
 
 	/// <inheritdoc/>
 	public string FlagArgumentSeparator { get; set; } = "--";
+
+	/// <inheritdoc/>
+	public bool IncludeVersionCommand { get; set; } = true;
+
+	/// <inheritdoc/>
+	public string VersionCommandName { get; set; } = "version";
 	#endregion
 
 	#region Methods
+	/// <summary>Sets the <see cref="Name"/> setting.</summary>
+	/// <param name="name">The name of the project.</param>
+	/// <returns>The used builder instance.</returns>
+	public BuilderSettings WithName(string name)
+	{
+		Name = name;
+		return this;
+	}
+
+	/// <summary>Sets the <see cref="Description"/> setting.</summary>
+	/// <param name="description">The description of the project.</param>
+	/// <returns>The used builder instance.</returns>
+	public BuilderSettings WithDescription(string description)
+	{
+		Description = description;
+		return this;
+	}
+
+	/// <summary>Sets the <see cref="Version"/> setting.</summary>
+	/// <param name="version">The version of the project.</param>
+	/// <returns>The used builder instance.</returns>
+	public BuilderSettings WithVersion(string version)
+	{
+		Version = version;
+		return this;
+	}
+
 	/// <summary>Sets the <see cref="MergeLongAndShortFlags"/> setting to <see langword="true"/>.</summary>
 	/// <param name="prefix">The prefix to use for both long and short flags.</param>
 	/// <returns>The used builder instance.</returns>
@@ -247,6 +289,29 @@ public sealed class BuilderSettings : IEngineSettings
 		WithMergedFlagsPrefix("/");
 		ShortHelpFlagName = '?';
 
+		return this;
+	}
+
+	/// <summary>Sets the <see cref="IncludeVersionCommand"/> setting to <see langword="true"/>.</summary>
+	/// <param name="commandName">The name of the version command.</param>
+	/// <returns>The used builder instance.</returns>
+	/// <exception cref="ArgumentException">Thrown if the given <paramref name="commandName"/> is invalid.</exception>
+	public BuilderSettings WithVersionCommand(string commandName)
+	{
+		commandName.ThrowIfNullOrEmptyOrWhitespace(nameof(commandName));
+
+		IncludeVersionCommand = true;
+		VersionCommandName = commandName;
+
+		return this;
+	}
+
+
+	/// <summary>Sets the <see cref="IncludeVersionCommand"/> setting to <see langword="false"/>.</summary>
+	/// <returns>The used settings instance.</returns>
+	public BuilderSettings WithoutVersionCommand()
+	{
+		IncludeVersionCommand = false;
 		return this;
 	}
 	#endregion

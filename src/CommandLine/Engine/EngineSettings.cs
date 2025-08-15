@@ -7,6 +7,15 @@ public sealed class EngineSettings : IEngineSettings
 {
 	#region Properties
 	/// <inheritdoc/>
+	public required string? Name { get; init; }
+
+	/// <inheritdoc/>
+	public required string? Description { get; init; }
+
+	/// <inheritdoc/>
+	public required string? Version { get; init; }
+
+	/// <inheritdoc/>
 	public required bool AllowFlagShadowing { get; init; }
 
 	/// <inheritdoc/>
@@ -56,6 +65,12 @@ public sealed class EngineSettings : IEngineSettings
 
 	/// <inheritdoc/>
 	public required string FlagArgumentSeparator { get; init; }
+
+	/// <inheritdoc/>
+	public required bool IncludeVersionCommand { get; init; }
+
+	/// <inheritdoc/>
+	public required string VersionCommandName { get; init; }
 	#endregion
 
 	#region Functions
@@ -83,11 +98,18 @@ public sealed class EngineSettings : IEngineSettings
 		if (settings.ValidationTimeout < TimeSpan.Zero) errors.Add($"The {nameof(ValidationTimeout)} setting must not be negative.");
 		if (settings.ExecutionTimeout < TimeSpan.Zero) errors.Add($"The {nameof(ExecutionTimeout)} setting must not be negative.");
 
+		if (settings.IncludeVersionCommand && string.IsNullOrWhiteSpace(settings.VersionCommandName))
+			errors.Add($"{nameof(IncludeVersionCommand)} setting was set to true, but the {nameof(VersionCommandName)} setting ({settings.VersionCommandName}) was invalid.");
+
 		if (errors.Count > 0)
 			Throw.New.ArgumentException(nameof(settings), string.Join(Environment.NewLine, errors));
 
 		return new EngineSettings()
 		{
+			Name = settings.Name,
+			Description = settings.Description,
+			Version = settings.Version,
+
 			AllowFlagShadowing = settings.AllowFlagShadowing,
 
 			LongFlagPrefix = settings.LongFlagPrefix,
@@ -110,6 +132,9 @@ public sealed class EngineSettings : IEngineSettings
 			ParsingTimeout = settings.ParsingTimeout,
 			ValidationTimeout = settings.ValidationTimeout,
 			ExecutionTimeout = settings.ExecutionTimeout,
+
+			IncludeVersionCommand = settings.IncludeVersionCommand,
+			VersionCommandName = settings.VersionCommandName,
 		};
 	}
 	#endregion

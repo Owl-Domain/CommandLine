@@ -6,6 +6,15 @@ namespace OwlDomain.CommandLine.Engine;
 public interface IEngineSettings
 {
 	#region Properties
+	/// <summary>The name of the project.</summary>
+	string? Name { get; }
+
+	/// <summary>The description of the project.</summary>
+	string? Description { get; }
+
+	/// <summary>The version of the project.</summary>
+	string? Version { get; }
+
 	/// <summary>Whether flag shadowing is allowed.</summary>
 	/// <remarks>
 	/// 	This indicates whether the flags from outer command groups can be shadows
@@ -79,5 +88,12 @@ public interface IEngineSettings
 
 	/// <summary>The separator used to mark the end of flags, where everything after it is going to be parsed as arguments.</summary>
 	string FlagArgumentSeparator { get; }
+
+	/// <summary>Whether the help command should be included in every command group.</summary>
+	bool IncludeVersionCommand { get; }
+
+	/// <summary>The name of the virtual version command.</summary>
+	/// <remarks><see cref="IncludeVersionCommand"/> must be set to <see langword="true"/> for this setting to matter.</remarks>
+	string VersionCommandName { get; }
 	#endregion
 }

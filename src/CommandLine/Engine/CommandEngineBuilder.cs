@@ -31,7 +31,7 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 	private readonly List<VirtualFlag> _virtualFlags = [];
 	#endregion
 
-	#region Methods
+	#region Customisation methods
 	/// <inheritdoc/>
 	public ICommandEngineBuilder From(Type @class)
 	{
@@ -101,16 +101,18 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 		_virtualFlags.Add(new(flag, groupPredicate, commandPredicate));
 		return this;
 	}
+	#endregion
 
+	#region Build methods
 	/// <inheritdoc/>
 	public ICommandEngine Build()
 	{
 		if (_classes.Count is 0) Throw.New.InvalidOperationException("No classes were provided to extract the commands from.");
 		if (_classes.Count > 1) Throw.New.NotSupportedException("Extracting commands from multiple classes is not supported yet.");
 
-		IEngineSettings settings = EngineSettings.From(_settings);
-
 		EnsureDefaults();
+
+		IEngineSettings settings = EngineSettings.From(_settings);
 		SetupVirtual(settings, out IVirtualFlags virtualFlags, out IVirtualCommands virtualCommands);
 
 		Dictionary<string, ICommandGroupInfo> childGroups = [];
@@ -154,9 +156,7 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 			virtualCommands,
 			virtualFlags);
 	}
-	#endregion
 
-	#region Build helpers
 	[MemberNotNull(
 		nameof(_commandParser), nameof(_valueParserSelector), nameof(_commandValidator),
 		nameof(_commandExecutor), nameof(_documentationProvider), nameof(_documentationPrinter),
@@ -181,7 +181,52 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 		_documentationProvider ??= new DocumentationProvider();
 		_documentationPrinter ??= new DocumentationPrinter();
 		_rootLabelProvider ??= new RootDefaultValueLabelProvider(_labelProviders);
+
+		EnsureProjectInfo();
 	}
+
+	private void EnsureProjectInfo()
+	{
+		Debug.Assert(_nameExtractor is not null);
+
+		Assembly? assembly = Assembly.GetEntryAssembly();
+
+		if (assembly is null)
+			return;
+
+		if (_settings.Name is null)
+		{
+			string? assemblyName = assembly.GetName().Name;
+
+			if (assembly.TryGetCustomAttribute(out AssemblyProductAttribute? product))
+				_settings.Name = _nameExtractor.GetCommandName(product.Product);
+			else if (assembly.TryGetCustomAttribute(out AssemblyTitleAttribute? title))
+				_settings.Name = title.Title;
+			else if (assemblyName is not null)
+				_settings.Name = _nameExtractor.GetCommandName(assemblyName);
+		}
+
+		if (_settings.Description is null)
+		{
+			if (assembly.TryGetCustomAttribute(out AssemblyDescriptionAttribute? description))
+				_settings.Description = description.Description;
+		}
+
+		if (_settings.Version is null)
+		{
+			string? assemblyVersion = assembly.GetName().Version?.ToString();
+
+			if (assembly.TryGetCustomAttribute(out AssemblyVersionAttribute? version))
+				_settings.Version = version.Version;
+			else if (assembly.TryGetCustomAttribute(out AssemblyFileVersionAttribute? fileVersion))
+				_settings.Version = fileVersion.Version;
+			else if (assemblyVersion is not null)
+				_settings.Version = assemblyVersion;
+		}
+	}
+	#endregion
+
+	#region Build helpers
 	private IReadOnlyCollection<IMethodCommandInfo> GetCommands(
 		IEngineSettings settings,
 		Type classType,
@@ -323,14 +368,13 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 		commands = SetupVirtualCommands(settings);
 		flags = SetupVirtualFlags(settings);
 
-		if (commands.Help is not null)
-			WithVirtualCommand(commands.Help, group => true);
+		if (commands.Help is not null) WithVirtualCommand(commands.Help, group => true);
+		if (commands.Version is not null) WithVirtualCommand(commands.Version, group => group.Name is null);
 
-		if (flags.Help is not null)
-			WirthVirtualFlag(flags.Help, group => true, cmd => true);
+		if (flags.Help is not null) WirthVirtualFlag(flags.Help, group => true, cmd => true);
 
-		if (commands.Help is not null || flags.Help is not null)
-			_commandExecutor.OnExecute += HelpExecutionHandler;
+		if (commands.Help is not null || flags.Help is not null) _commandExecutor.OnExecute += HelpExecutionHandler;
+		if (commands.Version is not null) _commandExecutor.OnExecute += VersionExecutionHelper;
 	}
 	private IVirtualFlags SetupVirtualFlags(IEngineSettings settings)
 	{
@@ -344,8 +388,11 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 		return new VirtualCommands()
 		{
 			Help = TryCreateHelpCommand(settings),
+			Version = TryCreateVersionCommand(settings),
 		};
 	}
+
+	#region Help flag/command
 	private IVirtualFlagInfo? TryCreateHelpFlag(IEngineSettings settings)
 	{
 		if (settings.IncludeHelpFlag is false)
@@ -398,6 +445,30 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 			return;
 		}
 	}
+	#endregion
+
+	#region Version command
+	private static IVirtualCommandInfo? TryCreateVersionCommand(IEngineSettings settings)
+	{
+		if (settings.IncludeVersionCommand is false || settings.Version is null)
+			return null;
+
+		TextDocumentationNode summary = new("Shows the current version of the program.");
+		DocumentationInfo documentation = new(summary, null);
+
+		return new VirtualCommandInfo(settings.VersionCommandName, null, [], [], documentation, true);
+	}
+	private static void VersionExecutionHelper(ICommandExecutionContext context)
+	{
+		if (context.CommandTarget == context.Engine.VirtualCommands.Version)
+		{
+			// Todo(Nightowl): Remove printing later, when end-to-end running is done;
+			Console.WriteLine(context.Engine.Settings.Version);
+
+			context.Handle(context.Engine.Settings.Version);
+		}
+	}
+	#endregion
 	#endregion
 
 	#region Value parser helpers

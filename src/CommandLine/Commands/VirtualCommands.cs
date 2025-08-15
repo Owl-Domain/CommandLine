@@ -8,5 +8,8 @@ public sealed class VirtualCommands : IVirtualCommands
 	#region Properties
 	/// <inheritdoc/>
 	public IVirtualCommandInfo? Help { get; init; }
+
+	/// <inheritdoc/>
+	public IVirtualCommandInfo? Version { get; init; }
 	#endregion
 }
