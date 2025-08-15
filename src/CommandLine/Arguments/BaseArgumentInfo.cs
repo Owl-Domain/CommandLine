@@ -56,6 +56,9 @@ public abstract class BaseArgumentInfo<T> : IArgumentInfo<T>
 		name.ThrowIfEmptyOrWhitespace(nameof(name));
 		position.ThrowIfLessThan(0, nameof(position));
 
+		if (isRequired is false && isNullable is false && defaultValue == null)
+			Throw.New.ArgumentException(nameof(defaultValue), "A default value of <null> cannot be used unless the argument is marked as nullable.");
+
 		Name = name;
 		Position = position;
 		IsRequired = isRequired;
