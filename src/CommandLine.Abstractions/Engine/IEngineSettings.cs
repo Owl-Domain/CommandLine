@@ -88,5 +88,12 @@ public interface IEngineSettings
 
 	/// <summary>The separator used to mark the end of flags, where everything after it is going to be parsed as arguments.</summary>
 	string FlagArgumentSeparator { get; }
+
+	/// <summary>Whether the help command should be included in every command group.</summary>
+	bool IncludeVersionCommand { get; }
+
+	/// <summary>The name of the virtual version command.</summary>
+	/// <remarks><see cref="IncludeVersionCommand"/> must be set to <see langword="true"/> for this setting to matter.</remarks>
+	string VersionCommandName { get; }
 	#endregion
 }

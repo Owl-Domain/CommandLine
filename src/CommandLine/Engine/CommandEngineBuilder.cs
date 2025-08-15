@@ -1,4 +1,3 @@
-using System.Security.Principal;
 using OwlDomain.Documentation.Document.Nodes;
 
 namespace OwlDomain.CommandLine.Engine;
@@ -369,14 +368,13 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 		commands = SetupVirtualCommands(settings);
 		flags = SetupVirtualFlags(settings);
 
-		if (commands.Help is not null)
-			WithVirtualCommand(commands.Help, group => true);
+		if (commands.Help is not null) WithVirtualCommand(commands.Help, group => true);
+		if (commands.Version is not null) WithVirtualCommand(commands.Version, group => group.Name is null);
 
-		if (flags.Help is not null)
-			WirthVirtualFlag(flags.Help, group => true, cmd => true);
+		if (flags.Help is not null) WirthVirtualFlag(flags.Help, group => true, cmd => true);
 
-		if (commands.Help is not null || flags.Help is not null)
-			_commandExecutor.OnExecute += HelpExecutionHandler;
+		if (commands.Help is not null || flags.Help is not null) _commandExecutor.OnExecute += HelpExecutionHandler;
+		if (commands.Version is not null) _commandExecutor.OnExecute += VersionExecutionHelper;
 	}
 	private IVirtualFlags SetupVirtualFlags(IEngineSettings settings)
 	{
@@ -390,8 +388,11 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 		return new VirtualCommands()
 		{
 			Help = TryCreateHelpCommand(settings),
+			Version = TryCreateVersionCommand(settings),
 		};
 	}
+
+	#region Help flag/command
 	private IVirtualFlagInfo? TryCreateHelpFlag(IEngineSettings settings)
 	{
 		if (settings.IncludeHelpFlag is false)
@@ -444,6 +445,30 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 			return;
 		}
 	}
+	#endregion
+
+	#region Version command
+	private static IVirtualCommandInfo? TryCreateVersionCommand(IEngineSettings settings)
+	{
+		if (settings.IncludeVersionCommand is false || settings.Version is null)
+			return null;
+
+		TextDocumentationNode summary = new("Shows the current version of the program.");
+		DocumentationInfo documentation = new(summary, null);
+
+		return new VirtualCommandInfo(settings.VersionCommandName, null, [], [], documentation, true);
+	}
+	private static void VersionExecutionHelper(ICommandExecutionContext context)
+	{
+		if (context.CommandTarget == context.Engine.VirtualCommands.Version)
+		{
+			// Todo(Nightowl): Remove printing later, when end-to-end running is done;
+			Console.WriteLine(context.Engine.Settings.Version);
+
+			context.Handle(context.Engine.Settings.Version);
+		}
+	}
+	#endregion
 	#endregion
 
 	#region Value parser helpers

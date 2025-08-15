@@ -66,6 +66,12 @@ public sealed class BuilderSettings : IEngineSettings
 
 	/// <inheritdoc/>
 	public string FlagArgumentSeparator { get; set; } = "--";
+
+	/// <inheritdoc/>
+	public bool IncludeVersionCommand { get; set; } = true;
+
+	/// <inheritdoc/>
+	public string VersionCommandName { get; set; } = "version";
 	#endregion
 
 	#region Methods
@@ -283,6 +289,29 @@ public sealed class BuilderSettings : IEngineSettings
 		WithMergedFlagsPrefix("/");
 		ShortHelpFlagName = '?';
 
+		return this;
+	}
+
+	/// <summary>Sets the <see cref="IncludeVersionCommand"/> setting to <see langword="true"/>.</summary>
+	/// <param name="commandName">The name of the version command.</param>
+	/// <returns>The used builder instance.</returns>
+	/// <exception cref="ArgumentException">Thrown if the given <paramref name="commandName"/> is invalid.</exception>
+	public BuilderSettings WithVersionCommand(string commandName)
+	{
+		commandName.ThrowIfNullOrEmptyOrWhitespace(nameof(commandName));
+
+		IncludeVersionCommand = true;
+		VersionCommandName = commandName;
+
+		return this;
+	}
+
+
+	/// <summary>Sets the <see cref="IncludeVersionCommand"/> setting to <see langword="false"/>.</summary>
+	/// <returns>The used settings instance.</returns>
+	public BuilderSettings WithoutVersionCommand()
+	{
+		IncludeVersionCommand = false;
 		return this;
 	}
 	#endregion

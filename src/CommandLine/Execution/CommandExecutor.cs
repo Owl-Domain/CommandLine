@@ -51,7 +51,7 @@ public sealed class CommandExecutor : ICommandExecutor
 
 		CommandExecutionContext context = new(diagnostics, validatorResult.Engine, groupTarget, commandTarget, arguments, flags, validatorResult, cancellationTokenSource);
 
-		if (callback is not null || OnExecute is null)
+		if (callback is not null || OnExecute is not null)
 		{
 			callback?.Invoke(context);
 			cancellationTokenSource.Token.ThrowIfCancellationRequested();
