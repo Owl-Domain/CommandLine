@@ -20,6 +20,9 @@ public sealed class PathValueParserSelector : BaseValueParserSelector
 		if (type == typeof(DirectoryInfo))
 			return new DirectoryInfoValueParser();
 
+		if (type == typeof(FileSystemInfo))
+			return new FileSystemInfoValueParser();
+
 		return default;
 	}
 	#endregion
