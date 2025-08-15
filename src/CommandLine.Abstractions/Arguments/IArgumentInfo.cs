@@ -18,6 +18,9 @@ public interface IArgumentInfo
 	/// <summary>Whether the argument has to be set when executing a command.</summary>
 	bool IsRequired { get; }
 
+	/// <summary>Whether the argument supports <see langword="null"/> values.</summary>
+	bool IsNullable { get; }
+
 	/// <summary>The default value for the argument.</summary>
 	object? DefaultValue { get; }
 

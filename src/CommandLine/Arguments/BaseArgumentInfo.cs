@@ -18,6 +18,9 @@ public abstract class BaseArgumentInfo<T> : IArgumentInfo<T>
 	public bool IsRequired { get; }
 
 	/// <inheritdoc/>
+	public bool IsNullable { get; }
+
+	/// <inheritdoc/>
 	public T? DefaultValue { get; }
 
 	/// <inheritdoc/>
@@ -35,6 +38,7 @@ public abstract class BaseArgumentInfo<T> : IArgumentInfo<T>
 	/// <param name="name">The name of the argument.</param>
 	/// <param name="position">The position of the argument.</param>
 	/// <param name="isRequired">Whether the argument has to be set when executing the command.</param>
+	/// <param name="isNullable">Whether the argument allows <see langword="null"/> values.</param>
 	/// <param name="defaultValue">The default value for the argument.</param>
 	/// <param name="parser">The value parser selected for the argument.</param>
 	/// <param name="documentation">The documentation for the argument.</param>
@@ -43,6 +47,7 @@ public abstract class BaseArgumentInfo<T> : IArgumentInfo<T>
 		string name,
 		int position,
 		bool isRequired,
+		bool isNullable,
 		T? defaultValue,
 		IValueParser<T> parser,
 		IDocumentationInfo? documentation,
@@ -54,6 +59,7 @@ public abstract class BaseArgumentInfo<T> : IArgumentInfo<T>
 		Name = name;
 		Position = position;
 		IsRequired = isRequired;
+		IsNullable = isNullable;
 		DefaultValue = defaultValue;
 		Parser = parser;
 		Documentation = documentation;

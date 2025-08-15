@@ -21,6 +21,9 @@ public abstract class BaseFlagInfo<T> : IFlagInfo<T>
 	public bool IsRequired { get; }
 
 	/// <inheritdoc/>
+	public bool IsNullable { get; }
+
+	/// <inheritdoc/>
 	public T? DefaultValue { get; }
 
 	/// <inheritdoc/>
@@ -39,6 +42,7 @@ public abstract class BaseFlagInfo<T> : IFlagInfo<T>
 	/// <param name="longName">The long name of the flag.</param>
 	/// <param name="shortName">The short name of the flag.</param>
 	/// <param name="isRequired">Whether the flag has to be set when executing the command.</param>
+	/// <param name="isNullable">Whether the flag allows <see langword="null"/> values.</param>
 	/// <param name="defaultValue">The default value for the flag.</param>
 	/// <param name="parser">The value parser selected for the flag.</param>
 	/// <param name="documentation">The documentation for the flag.</param>
@@ -48,6 +52,7 @@ public abstract class BaseFlagInfo<T> : IFlagInfo<T>
 		string? longName,
 		char? shortName,
 		bool isRequired,
+		bool isNullable,
 		T? defaultValue,
 		IValueParser<T> parser,
 		IDocumentationInfo? documentation,
@@ -63,6 +68,7 @@ public abstract class BaseFlagInfo<T> : IFlagInfo<T>
 		LongName = longName;
 		ShortName = shortName;
 		IsRequired = isRequired;
+		IsNullable = isNullable;
 		DefaultValue = defaultValue;
 		Parser = parser;
 		Documentation = documentation;
