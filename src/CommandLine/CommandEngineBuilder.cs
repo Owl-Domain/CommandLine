@@ -19,6 +19,7 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 	private readonly List<IValueParserSelector> _parserSelectors = [];
 	private readonly List<ICommandInjector> _injectors = [];
 	private readonly List<IDefaultValueLabelProvider> _labelProviders = [];
+	private IRootDefaultValueLabelProvider? _rootLabelProvider;
 	private INameExtractor? _nameExtractor;
 	private ICommandParser? _commandParser;
 	private IRootValueParserSelector? _valueParserSelector;
@@ -116,7 +117,7 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 		Dictionary<string, ICommandInfo> childCommands = [];
 
 		Type classType = _classes.Single();
-		IReadOnlyCollection<IFlagInfo> classFlags = GetFlags(classType, out IReadOnlyCollection<InjectedPropertyInfo> injectedClassProperties);
+		IReadOnlyCollection<IFlagInfo> classFlags = GetFlags(settings, classType, out IReadOnlyCollection<InjectedPropertyInfo> injectedClassProperties);
 		IDocumentationInfo? documentation = _documentationProvider.GetInfo(classType);
 
 		List<IFlagInfo> groupFlags = [.. classFlags];
@@ -136,7 +137,7 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 				groupFlags.Add(virtualFlag.Flag);
 		}
 
-		foreach (IMethodCommandInfo command in GetCommands(classType, group, classFlags, injectedClassProperties))
+		foreach (IMethodCommandInfo command in GetCommands(settings, classType, group, classFlags, injectedClassProperties))
 		{
 			Debug.Assert(command.Name is not null);
 			childCommands.Add(command.Name, command);
@@ -158,7 +159,8 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 	#region Build helpers
 	[MemberNotNull(
 		nameof(_commandParser), nameof(_valueParserSelector), nameof(_commandValidator),
-		nameof(_commandExecutor), nameof(_documentationProvider), nameof(_documentationPrinter))]
+		nameof(_commandExecutor), nameof(_documentationProvider), nameof(_documentationPrinter),
+		nameof(_rootLabelProvider))]
 	private void EnsureDefaults()
 	{
 		this.WithValueParserSelector<PathValueParserSelector>();
@@ -177,8 +179,10 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 		_commandExecutor ??= new CommandExecutor();
 		_documentationProvider ??= new DocumentationProvider();
 		_documentationPrinter ??= new DocumentationPrinter();
+		_rootLabelProvider ??= new RootDefaultValueLabelProvider(_labelProviders);
 	}
 	private IReadOnlyCollection<IMethodCommandInfo> GetCommands(
+		IEngineSettings settings,
 		Type classType,
 		ICommandGroupInfo group,
 		IReadOnlyCollection<IFlagInfo> classFlags,
@@ -199,7 +203,7 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 				Throw.New.InvalidOperationException($"Couldn't extract a command name from the method ({method}).");
 
 			List<IFlagInfo> commandFlags = method.IsStatic ? [] : [.. classFlags];
-			IReadOnlyList<IArgumentInfo> arguments = GetArguments(method, out IReadOnlyCollection<InjectedParameterInfo> injectedParameters);
+			IReadOnlyList<IArgumentInfo> arguments = GetArguments(settings, method, out IReadOnlyCollection<InjectedParameterInfo> injectedParameters);
 			IDocumentationInfo? documentation = _documentationProvider.GetInfo(method);
 
 			MethodCommandInfo command = new(method, name, group, commandFlags, arguments, documentation, injectedParameters, injectedClassProperties);
@@ -215,7 +219,7 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 
 		return commands;
 	}
-	private List<IFlagInfo> GetFlags(Type type, out IReadOnlyCollection<InjectedPropertyInfo> injectedProperties)
+	private List<IFlagInfo> GetFlags(IEngineSettings settings, Type type, out IReadOnlyCollection<InjectedPropertyInfo> injectedProperties)
 	{
 		Debug.Assert(_nameExtractor is not null);
 		Debug.Assert(_documentationProvider is not null);
@@ -250,7 +254,7 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 			IDefaultValueInfo? defaultValueInfo = null;
 			if (isRequired is false)
 			{
-				string label = GetDefaultValueLabel(property, type, ref container);
+				string label = GetDefaultValueLabel(settings, property, type, ref container);
 				defaultValueInfo = new DefaultValueInfo(label);
 			}
 
@@ -263,7 +267,7 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 
 		return flags;
 	}
-	private IReadOnlyList<IArgumentInfo> GetArguments(MethodInfo method, out IReadOnlyCollection<InjectedParameterInfo> injectedParameters)
+	private IReadOnlyList<IArgumentInfo> GetArguments(IEngineSettings settings, MethodInfo method, out IReadOnlyCollection<InjectedParameterInfo> injectedParameters)
 	{
 		Debug.Assert(_nameExtractor is not null);
 		Debug.Assert(_documentationProvider is not null);
@@ -296,7 +300,7 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 			IDefaultValueInfo? defaultValueInfo = null;
 			if (isRequired is false)
 			{
-				string label = GetDefaultValueLabel(parameter);
+				string label = GetDefaultValueLabel(settings, parameter);
 				defaultValueInfo = new DefaultValueInfo(label);
 			}
 
@@ -350,7 +354,7 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 		DocumentationInfo documentation = new(summary, null);
 
 		IValueParser<bool> parser = SelectValueParser<bool>();
-		string label = GetDefaultValueLabel(false);
+		string label = GetDefaultValueLabel(settings, false);
 
 		return new VirtualFlagInfo<bool>(
 			FlagKind.Toggle,
@@ -517,58 +521,54 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 	#endregion
 
 	#region Label helpers
-	private string GetDefaultValueLabel(PropertyInfo property, Type containerType, ref object? container)
+	private string GetDefaultValueLabel(IEngineSettings settings, PropertyInfo property, Type containerType, ref object? container)
 	{
-		foreach (IDefaultValueLabelProvider provider in _labelProviders)
-		{
-			if (provider.TryGet(property, out string? label))
-				return label;
-		}
+		Debug.Assert(_rootLabelProvider is not null);
+
+		if (_rootLabelProvider.TryGet(settings, property, out string? label))
+			return label;
 
 		container ??= Activator.CreateInstance(containerType);
 		Debug.Assert(container is not null);
 
 		object? value = property.GetValue(container);
 
-		foreach (IDefaultValueLabelProvider provider in _labelProviders)
-		{
-			if (provider.TryGet(property, value, out string? label))
-				return label;
-		}
+		if (_rootLabelProvider.TryGet(settings, property, value, out label))
+			return label;
 
-		return GetDefaultValueLabel(value);
+		if (_rootLabelProvider.TryGet(settings, value, out label))
+			return label;
+
+		Throw.New.NotSupportedException($"Couldn't select a label for the default value of the given property ({property}).");
+		return default;
 	}
-	private string GetDefaultValueLabel(ParameterInfo parameter)
+	private string GetDefaultValueLabel(IEngineSettings settings, ParameterInfo parameter)
 	{
-		foreach (IDefaultValueLabelProvider provider in _labelProviders)
-		{
-			if (provider.TryGet(parameter, out string? label))
-				return label;
-		}
+		Debug.Assert(_rootLabelProvider is not null);
+
+		if (_rootLabelProvider.TryGet(settings, parameter, out string? label))
+			return label;
 
 		if (parameter.HasDefaultValue)
 		{
 			object? value = parameter.DefaultValue;
 
-			foreach (IDefaultValueLabelProvider provider in _labelProviders)
-			{
-				if (provider.TryGet(parameter, value, out string? label))
-					return label;
-			}
+			if (_rootLabelProvider.TryGet(settings, parameter, value, out label))
+				return label;
 
-			return GetDefaultValueLabel(value);
+			if (_rootLabelProvider.TryGet(settings, value, out label))
+				return label;
 		}
 
 		Throw.New.NotSupportedException($"Couldn't select a label for the default value of the given parameter ({parameter}).");
 		return default;
 	}
-	private string GetDefaultValueLabel(object? value)
+	private string GetDefaultValueLabel(IEngineSettings settings, object? value)
 	{
-		foreach (IDefaultValueLabelProvider provider in _labelProviders)
-		{
-			if (provider.TryGet(value, out string? label))
-				return label;
-		}
+		Debug.Assert(_rootLabelProvider is not null);
+
+		if (_rootLabelProvider.TryGet(settings, value, out string? label))
+			return label;
 
 		Throw.New.NotSupportedException($"Couldn't select a label for the given default value ({value}).");
 		return default;

@@ -7,7 +7,7 @@ public sealed class PrimitiveDefaultValueLabelProvider : BaseDefaultValueLabelPr
 {
 	#region Methods
 	/// <inheritdoc/>
-	protected override string? TryGet(object? defaultValue)
+	protected override string? TryGet(IRootDefaultValueLabelProvider rootProvider, IEngineSettings settings, object? defaultValue)
 	{
 		if (defaultValue is not null && defaultValue.GetType().IsEnum)
 			return defaultValue.ToString();

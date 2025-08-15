@@ -11,7 +11,7 @@ public sealed class ToStringDefaultLabelProvider : BaseDefaultValueLabelProvider
 {
 	#region Methods
 	/// <inheritdoc/>
-	protected override string? TryGet(object? value)
+	protected override string? TryGet(IRootDefaultValueLabelProvider rootProvider, IEngineSettings settings, object? value)
 	{
 		// Note(Nightowl): This case should've been handled before anyway;
 		if (value is null) return null;
