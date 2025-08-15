@@ -1,4 +1,4 @@
-namespace OwlDomain.CommandLine;
+namespace OwlDomain.CommandLine.Engine;
 
 /// <summary>
 /// 	Represents the end-to-end result of running a command.

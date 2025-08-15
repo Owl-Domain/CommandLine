@@ -1,4 +1,4 @@
-namespace OwlDomain.CommandLine;
+namespace OwlDomain.CommandLine.Engine;
 
 /// <summary>Represents a delegate for command execution.</summary>
 /// <param name="context">The context for the executing command.</param>

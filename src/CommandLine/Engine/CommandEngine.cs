@@ -1,4 +1,4 @@
-namespace OwlDomain.CommandLine;
+namespace OwlDomain.CommandLine.Engine;
 
 /// <summary>
 /// 	Represents the command line engine.

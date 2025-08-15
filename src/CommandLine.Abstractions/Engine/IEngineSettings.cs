@@ -1,4 +1,4 @@
-namespace OwlDomain.CommandLine;
+namespace OwlDomain.CommandLine.Engine;
 
 /// <summary>
 /// 	Represents the settings used for the <see cref="ICommandEngine"/>.

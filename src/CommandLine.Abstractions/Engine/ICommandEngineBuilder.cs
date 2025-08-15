@@ -1,4 +1,4 @@
-namespace OwlDomain.CommandLine;
+namespace OwlDomain.CommandLine.Engine;
 
 /// <summary>
 /// 	Represents a builder for the <see cref="ICommandEngine"/>.
