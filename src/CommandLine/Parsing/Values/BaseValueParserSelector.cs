@@ -5,16 +5,31 @@ namespace OwlDomain.CommandLine.Parsing.Values;
 /// </summary>
 public abstract class BaseValueParserSelector : IValueParserSelector
 {
+	#region Fields
+	private readonly Dictionary<Type, WeakReference<IValueParser>> _cache = [];
+	#endregion
+
+	#region Properties
+	/// <summary>Whether this selector should cache the created value parsers automatically.</summary>
+	protected virtual bool CacheAutomatically => true;
+	#endregion
+
 	#region Methods
 	/// <inheritdoc/>
 	public bool TrySelect(IRootValueParserSelector rootSelector, Type type, [NotNullWhen(true)] out IValueParser? parser)
 	{
+		if (CacheAutomatically && TryGetCached(type, out parser))
+			return true;
+
 		parser = TrySelect(rootSelector, type);
 
 		if (parser is not null)
 		{
 			if (type.IsAssignableFrom(parser.ValueType) is false)
 				Throw.New.InvalidOperationException($"The selected parser ({parser.GetType()}) does not handle values of the required type ({type}).");
+
+			if (CacheAutomatically)
+				AddToCache(type, parser);
 
 			return true;
 		}
@@ -25,12 +40,18 @@ public abstract class BaseValueParserSelector : IValueParserSelector
 	/// <inheritdoc/>
 	public bool TrySelect(IRootValueParserSelector rootSelector, ParameterInfo parameter, [NotNullWhen(true)] out IValueParser? parser)
 	{
+		if (CacheAutomatically && TryGetCached(parameter.ParameterType, out parser))
+			return true;
+
 		parser = TrySelect(rootSelector, parameter);
 
 		if (parser is not null)
 		{
 			if (parameter.ParameterType.IsAssignableFrom(parser.ValueType) is false)
 				Throw.New.InvalidOperationException($"The selected parser ({parser.GetType()}) does not handle values of the required type ({parameter.ParameterType}).");
+
+			if (CacheAutomatically)
+				AddToCache(parameter.ParameterType, parser);
 
 			return true;
 		}
@@ -41,12 +62,18 @@ public abstract class BaseValueParserSelector : IValueParserSelector
 	/// <inheritdoc/>
 	public bool TrySelect(IRootValueParserSelector rootSelector, PropertyInfo property, [NotNullWhen(true)] out IValueParser? parser)
 	{
+		if (CacheAutomatically && TryGetCached(property.PropertyType, out parser))
+			return true;
+
 		parser = TrySelect(rootSelector, property);
 
 		if (parser is not null)
 		{
 			if (property.PropertyType.IsAssignableFrom(parser.ValueType) is false)
 				Throw.New.InvalidOperationException($"The selected parser ({parser.GetType()}) does not handle values of the required type ({property.PropertyType}).");
+
+			if (CacheAutomatically)
+				AddToCache(property.PropertyType, parser);
 
 			return true;
 		}
@@ -83,6 +110,40 @@ public abstract class BaseValueParserSelector : IValueParserSelector
 	{
 		Throw.New.NotImplementedException($"The ({GetType()}) value parser selector didn't implement any selection logic.");
 		return default;
+	}
+	#endregion
+
+	#region Helpers
+	/// <summary>Tries to get the value <paramref name="parser"/> that was cached for the given value <paramref name="type"/>.</summary>
+	/// <param name="type">The type of the value that the parser is cached for.</param>
+	/// <param name="parser">The cached parser.</param>
+	/// <returns>
+	/// 	<see langword="true"/> if the cached value <paramref name="parser"/>
+	/// 	could be obtained, <see langword="false"/> otherwise.
+	/// </returns>
+	protected bool TryGetCached(Type type, [NotNullWhen(true)] out IValueParser? parser)
+	{
+		if (_cache.TryGetValue(type, out WeakReference<IValueParser>? weakRef) && weakRef.TryGetTarget(out parser))
+			return true;
+
+		parser = default;
+		return false;
+	}
+
+	/// <summary>Adds the given value <paramref name="parser"/> to the cache for the given value <paramref name="type"/>.</summary>
+	/// <param name="type">The type of the value to cache the given <paramref name="parser"/> for.</param>
+	/// <param name="parser">The value parser to cache.</param>
+	/// <remarks>If a value parser is already cached for the given value <paramref name="type"/>, this method will replace it.</remarks>
+	protected void AddToCache(Type type, IValueParser parser)
+	{
+		if (_cache.TryGetValue(type, out WeakReference<IValueParser>? weakRef))
+		{
+			weakRef.SetTarget(parser);
+			return;
+		}
+
+		weakRef = new(parser);
+		_cache.Add(type, weakRef);
 	}
 	#endregion
 }
