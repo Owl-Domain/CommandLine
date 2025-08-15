@@ -92,7 +92,10 @@ public abstract class BaseValueParser<T> : IValueParser<T>
 	#endregion
 
 	#region Helpers
-	private static bool IsValueMissing(ITextParser parser)
+	/// <summary>Checks whether the next thing to parse is a missing value.</summary>
+	/// <param name="parser">The parser to use for the check.</param>
+	/// <returns><see langword="true"/> if the next thing to parse is a missing value, <see langword="false"/> otherwise.</returns>
+	public bool IsValueMissing(ITextParser parser)
 	{
 		if (parser.IsLazy)
 			return parser.IsAtEnd;
@@ -101,7 +104,11 @@ public abstract class BaseValueParser<T> : IValueParser<T>
 
 		return parser.IsAtEnd && parser.CurrentFragment.Length > 0;
 	}
-	private static bool IsEmptyValue(ITextParser parser)
+
+	/// <summary>Checks whether the next thing to parse is an empty value.</summary>
+	/// <param name="parser">The parser to use for the check.</param>
+	/// <returns><see langword="true"/> if the next thing to parse is an empty value, <see langword="false"/> otherwise.</returns>
+	public bool IsEmptyValue(ITextParser parser)
 	{
 		if (parser.IsLazy)
 			return false;

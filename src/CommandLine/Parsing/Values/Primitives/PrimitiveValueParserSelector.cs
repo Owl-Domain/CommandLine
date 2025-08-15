@@ -53,6 +53,9 @@ public sealed class PrimitiveValueParserSelector : BaseValueParserSelector
 		if (TryCreateGenericParser(type, typeof(IParsable<>), typeof(ParsableValueParser<>), out parser))
 			return parser;
 
+		if (TryCreateNullableParser(rootSelector, type, out parser))
+			return parser;
+
 		if (TryCreateCollectionParser(rootSelector, type, out parser))
 			return parser;
 
@@ -247,6 +250,27 @@ public sealed class PrimitiveValueParserSelector : BaseValueParserSelector
 
 		parser = default;
 		return false;
+	}
+	private static bool TryCreateNullableParser(IRootValueParserSelector rootSelector, Type type, [NotNullWhen(true)] out IValueParser? parser)
+	{
+		parser = default;
+
+		Type? valueType = Nullable.GetUnderlyingType(type);
+		if (valueType is null)
+			return false;
+
+		Debug.Assert(valueType.IsValueType);
+
+		if (rootSelector.TrySelect(valueType, out IValueParser? valueParser) is false)
+			return false;
+
+		Type parserType = typeof(NullableValueParser<>).MakeGenericType(valueType);
+
+		object? untyped = Activator.CreateInstance(parserType, [valueParser]);
+		Debug.Assert(untyped is not null);
+
+		parser = (IValueParser)untyped;
+		return true;
 	}
 	#endregion
 }
