@@ -10,15 +10,15 @@ public abstract class BaseValueParserSelector : IValueParserSelector
 	#endregion
 
 	#region Properties
-	/// <summary>Whether this selector should cache the created value parsers.</summary>
-	protected virtual bool AllowCaching => true;
+	/// <summary>Whether this selector should cache the created value parsers automatically.</summary>
+	protected virtual bool CacheAutomatically => true;
 	#endregion
 
 	#region Methods
 	/// <inheritdoc/>
 	public bool TrySelect(IRootValueParserSelector rootSelector, Type type, [NotNullWhen(true)] out IValueParser? parser)
 	{
-		if (AllowCaching && TryGetCached(type, out parser))
+		if (CacheAutomatically && TryGetCached(type, out parser))
 			return true;
 
 		parser = TrySelect(rootSelector, type);
@@ -28,7 +28,7 @@ public abstract class BaseValueParserSelector : IValueParserSelector
 			if (type.IsAssignableFrom(parser.ValueType) is false)
 				Throw.New.InvalidOperationException($"The selected parser ({parser.GetType()}) does not handle values of the required type ({type}).");
 
-			if (AllowCaching)
+			if (CacheAutomatically)
 				AddToCache(type, parser);
 
 			return true;
@@ -40,7 +40,7 @@ public abstract class BaseValueParserSelector : IValueParserSelector
 	/// <inheritdoc/>
 	public bool TrySelect(IRootValueParserSelector rootSelector, ParameterInfo parameter, [NotNullWhen(true)] out IValueParser? parser)
 	{
-		if (AllowCaching && TryGetCached(parameter.ParameterType, out parser))
+		if (CacheAutomatically && TryGetCached(parameter.ParameterType, out parser))
 			return true;
 
 		parser = TrySelect(rootSelector, parameter);
@@ -50,7 +50,7 @@ public abstract class BaseValueParserSelector : IValueParserSelector
 			if (parameter.ParameterType.IsAssignableFrom(parser.ValueType) is false)
 				Throw.New.InvalidOperationException($"The selected parser ({parser.GetType()}) does not handle values of the required type ({parameter.ParameterType}).");
 
-			if (AllowCaching)
+			if (CacheAutomatically)
 				AddToCache(parameter.ParameterType, parser);
 
 			return true;
@@ -62,7 +62,7 @@ public abstract class BaseValueParserSelector : IValueParserSelector
 	/// <inheritdoc/>
 	public bool TrySelect(IRootValueParserSelector rootSelector, PropertyInfo property, [NotNullWhen(true)] out IValueParser? parser)
 	{
-		if (AllowCaching && TryGetCached(property.PropertyType, out parser))
+		if (CacheAutomatically && TryGetCached(property.PropertyType, out parser))
 			return true;
 
 		parser = TrySelect(rootSelector, property);
@@ -72,7 +72,7 @@ public abstract class BaseValueParserSelector : IValueParserSelector
 			if (property.PropertyType.IsAssignableFrom(parser.ValueType) is false)
 				Throw.New.InvalidOperationException($"The selected parser ({parser.GetType()}) does not handle values of the required type ({property.PropertyType}).");
 
-			if (AllowCaching)
+			if (CacheAutomatically)
 				AddToCache(property.PropertyType, parser);
 
 			return true;
