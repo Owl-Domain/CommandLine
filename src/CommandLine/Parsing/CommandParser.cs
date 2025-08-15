@@ -682,7 +682,7 @@ public sealed class CommandParser : BaseCommandParser
 	private static bool TryParseName(ITextParser parser, out TextToken token, [NotNullWhen(true)] out string? name)
 	{
 		TextPoint start = parser.Point;
-		name = parser.AdvanceWhile(c => c is '-' or '_' || char.IsLetterOrDigit(c));
+		name = parser.AdvanceUntilBreak();
 		TextPoint end = parser.Point;
 
 		if (string.IsNullOrEmpty(name))
