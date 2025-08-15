@@ -9,6 +9,11 @@ public sealed class StringValueParser : BaseValueParser<string>
 {
 	#region Methods
 	/// <inheritdoc/>
+	protected override bool AllowEmptyValues => true;
+	#endregion
+
+	#region Methods
+	/// <inheritdoc/>
 	protected override string? TryParse(IValueParseContext context, ITextParser parser, out string? error)
 	{
 		if (parser.IsGreedy)

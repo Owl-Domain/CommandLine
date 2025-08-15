@@ -6,6 +6,15 @@ namespace OwlDomain.CommandLine.Parsing.Values;
 /// <typeparam name="T">The type of the value that will be parsed.</typeparam>
 public abstract class BaseValueParser<T> : IValueParser<T>
 {
+	#region Properties
+	/// <summary>Whether the parser should allow for empty values to be handled.</summary>
+	/// <remarks>
+	/// 	Empty values <b>not</b> the same as missing values. Empty values are a
+	/// 	special case where the user specifically passed in an empty value.
+	/// </remarks>
+	protected virtual bool AllowEmptyValues => false;
+	#endregion
+
 	#region Methods
 	/// <inheritdoc/>
 	public IValueParseResult<T> Parse(IValueParseContext context, ITextParser parser)
@@ -17,6 +26,11 @@ public abstract class BaseValueParser<T> : IValueParser<T>
 		TextPoint start = parser.Point;
 
 		if (IsValueMissing(parser))
+		{
+			value = default;
+			error = string.Empty;
+		}
+		else if (AllowEmptyValues is false && IsEmptyValue(parser))
 		{
 			value = default;
 			error = string.Empty;
@@ -86,6 +100,15 @@ public abstract class BaseValueParser<T> : IValueParser<T>
 		Debug.Assert(parser.IsGreedy);
 
 		return parser.IsAtEnd && parser.CurrentFragment.Length > 0;
+	}
+	private static bool IsEmptyValue(ITextParser parser)
+	{
+		if (parser.IsLazy)
+			return false;
+
+		Debug.Assert(parser.IsGreedy);
+
+		return parser.CurrentFragment.Length is 0;
 	}
 	#endregion
 }
