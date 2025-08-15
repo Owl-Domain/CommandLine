@@ -168,6 +168,7 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 		this.WithCommandInjector<EngineCommandInjector>();
 
 		this.WithDefaultValueLabelProvider<PrimitiveDefaultValueLabelProvider>();
+		this.WithDefaultValueLabelProvider<ToStringDefaultLabelProvider>();
 
 		_nameExtractor ??= NameExtractor.Instance;
 		_commandParser ??= new CommandParser();
