@@ -232,8 +232,11 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 				continue;
 			}
 
+			bool isNullable =
+				_nullabilityContext.Create(property).WriteState is NullabilityState.Nullable &&
+				property.GetCustomAttribute<DisallowNullAttribute>() is null;
+
 			bool isRequired = property.GetCustomAttribute<RequiredMemberAttribute>() is not null;
-			bool isNullable = _nullabilityContext.Create(property).WriteState is NullabilityState.Nullable;
 			object? defaultValue = isRequired ? null : property.GetValue(instance);
 
 			string? longName = _nameExtractor.GetLongFlagName(property);
@@ -271,8 +274,11 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 			string name = _nameExtractor.GetArgumentName(parameter.Name);
 			int position = parameter.Position;
 
+			bool isNullable =
+				_nullabilityContext.Create(parameter).WriteState is NullabilityState.Nullable &&
+				parameter.GetCustomAttribute<DisallowNullAttribute>() is null;
+
 			bool isRequired = parameter.HasDefaultValue is false;
-			bool isNullable = _nullabilityContext.Create(parameter).WriteState is NullabilityState.Nullable;
 			object? defaultValue = parameter.HasDefaultValue ? parameter.RawDefaultValue : null;
 			IValueParser parser = SelectValueParser(parameter);
 			IDocumentationInfo? documentation = _documentationProvider.GetInfo(parameter);
