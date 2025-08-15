@@ -7,6 +7,15 @@ public sealed class BuilderSettings : IEngineSettings
 {
 	#region Properties
 	/// <inheritdoc/>
+	public string? Name { get; set; }
+
+	/// <inheritdoc/>
+	public string? Description { get; set; }
+
+	/// <inheritdoc/>
+	public string? Version { get; set; }
+
+	/// <inheritdoc/>
 	public bool AllowFlagShadowing { get; set; } = false;
 
 	/// <inheritdoc/>
@@ -60,6 +69,33 @@ public sealed class BuilderSettings : IEngineSettings
 	#endregion
 
 	#region Methods
+	/// <summary>Sets the <see cref="Name"/> setting.</summary>
+	/// <param name="name">The name of the project.</param>
+	/// <returns>The used builder instance.</returns>
+	public BuilderSettings WithName(string name)
+	{
+		Name = name;
+		return this;
+	}
+
+	/// <summary>Sets the <see cref="Description"/> setting.</summary>
+	/// <param name="description">The description of the project.</param>
+	/// <returns>The used builder instance.</returns>
+	public BuilderSettings WithDescription(string description)
+	{
+		Description = description;
+		return this;
+	}
+
+	/// <summary>Sets the <see cref="Version"/> setting.</summary>
+	/// <param name="version">The version of the project.</param>
+	/// <returns>The used builder instance.</returns>
+	public BuilderSettings WithVersion(string version)
+	{
+		Version = version;
+		return this;
+	}
+
 	/// <summary>Sets the <see cref="MergeLongAndShortFlags"/> setting to <see langword="true"/>.</summary>
 	/// <param name="prefix">The prefix to use for both long and short flags.</param>
 	/// <returns>The used builder instance.</returns>

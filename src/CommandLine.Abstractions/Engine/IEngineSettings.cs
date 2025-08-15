@@ -6,6 +6,15 @@ namespace OwlDomain.CommandLine.Engine;
 public interface IEngineSettings
 {
 	#region Properties
+	/// <summary>The name of the project.</summary>
+	string? Name { get; }
+
+	/// <summary>The description of the project.</summary>
+	string? Description { get; }
+
+	/// <summary>The version of the project.</summary>
+	string? Version { get; }
+
 	/// <summary>Whether flag shadowing is allowed.</summary>
 	/// <remarks>
 	/// 	This indicates whether the flags from outer command groups can be shadows

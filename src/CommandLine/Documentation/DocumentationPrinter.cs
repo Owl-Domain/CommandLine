@@ -28,12 +28,25 @@ public sealed class DocumentationPrinter : IDocumentationPrinter
 	/// <inheritdoc/>
 	public void Print(ICommandEngine engine)
 	{
-		Print(engine, engine.RootGroup);
+		List<IRenderable> items = [];
+
+		TryGetProjectInfo(engine.Settings, items);
+		TryGetGroups(engine.RootGroup.Groups, items);
+		TryGetFlags(engine.Settings, engine.RootGroup.SharedFlags, items);
+		TryGetCommands(engine.RootGroup.Commands, items);
+
+		PrintItems(items);
 	}
 
 	/// <inheritdoc/>
 	public void Print(ICommandEngine engine, ICommandGroupInfo group)
 	{
+		if (group == engine.RootGroup)
+		{
+			Print(engine);
+			return;
+		}
+
 		List<IRenderable> items = [];
 
 		TryGetDocumentation(group.Documentation, items);
@@ -57,6 +70,31 @@ public sealed class DocumentationPrinter : IDocumentationPrinter
 		PrintItems(items);
 	}
 
+	private static void TryGetProjectInfo(IEngineSettings settings, List<IRenderable> items)
+	{
+		if (settings.Name is null && settings.Description is null && settings.Version is null)
+			return;
+
+		string? version = settings.Version;
+		if (version is not null && version.Length > 0 && char.IsDigit(version[0]))
+			version = "v" + version;
+
+		string header = (settings.Name, version) switch
+		{
+			(string name, string) => $"{name.EscapeMarkup()} - {version.EscapeMarkup()}",
+			(null, string) => $"program - {version.EscapeMarkup()}",
+			(string name, null) => name.EscapeMarkup(),
+
+			_ => "program",
+		};
+
+		string descriptionText = settings.Description?.EscapeMarkup() ?? "No description.";
+		Markup description = new(descriptionText.PadRight(header.Length + 2));
+
+		IRenderable container = GetContainer(header, description);
+
+		items.Add(container);
+	}
 	private static void TryGetDocumentation(IDocumentationInfo? info, List<IRenderable> items)
 	{
 		if (info is null)

@@ -7,6 +7,15 @@ public sealed class EngineSettings : IEngineSettings
 {
 	#region Properties
 	/// <inheritdoc/>
+	public required string? Name { get; init; }
+
+	/// <inheritdoc/>
+	public required string? Description { get; init; }
+
+	/// <inheritdoc/>
+	public required string? Version { get; init; }
+
+	/// <inheritdoc/>
 	public required bool AllowFlagShadowing { get; init; }
 
 	/// <inheritdoc/>
@@ -88,6 +97,10 @@ public sealed class EngineSettings : IEngineSettings
 
 		return new EngineSettings()
 		{
+			Name = settings.Name,
+			Description = settings.Description,
+			Version = settings.Version,
+
 			AllowFlagShadowing = settings.AllowFlagShadowing,
 
 			LongFlagPrefix = settings.LongFlagPrefix,
