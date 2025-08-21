@@ -8,29 +8,37 @@ public sealed class IPEndPointValueParserTests
 	#region Tests
 	[DynamicData(nameof(VariousTests), DynamicDataSourceType.Method)]
 	[TestMethod]
-	public void Parse_Various_Successful(string[] fragments, string expectedAddress, int expectedPort, bool isLazy)
+	public void Parse_Various_Successful(string[] fragments, string expectedAddress, int expectedPort, ParsingMode mode)
 	{
 		// Arrange
 		IFlagValueParseContext context = Substitute.For<IFlagValueParseContext>();
-		TextParser parser = new(fragments, isLazy);
+		TextParser parser = new(fragments, mode);
 		IPEndPointValueParser sut = new();
 
 		// Act
 		IValueParseResult<IPEndPoint> parseResult = sut.Parse(context, parser);
 
 		// Assert
-		CheckFailedResult(fragments, new(IPAddress.Parse(expectedAddress), expectedPort), isLazy, parseResult);
+		CheckFailedResult(fragments, new(IPAddress.Parse(expectedAddress), expectedPort), mode, parseResult);
 	}
 	#endregion
 
 	#region Helpers
 	[ExcludeFromCodeCoverage]
-	private static void CheckFailedResult(string[] fragments, IPEndPoint expectedValue, bool isLazy, IValueParseResult<IPEndPoint> result)
+	private static void CheckFailedResult(string[] fragments, IPEndPoint expectedValue, ParsingMode mode, IValueParseResult<IPEndPoint> result)
 	{
 		if (result.Successful is false)
 		{
-			string message = isLazy ? $"Lazy parsing failed for the command: {fragments[0]}" : $"Greedy parsing failed for the command: {string.Join("|", fragments)}";
+			string message = mode switch
+			{
+				ParsingMode.Lazy => $"Lazy parsing failed for the command: {fragments[0]}",
+				ParsingMode.Greedy => $"Greedy parsing failed for the command: {string.Join("|", fragments)}",
+
+				_ => throw new ArgumentOutOfRangeException(nameof(mode), mode, $"Unknown parsing mode.")
+			};
+
 			message += "\n\nDiagnostics:";
+
 			if (result.Error is not null)
 				message += $"\n- [{result.Location}]: {result.Error}";
 
@@ -41,7 +49,14 @@ public sealed class IPEndPointValueParserTests
 		TextTokenKind[] resultTokens = [.. tokens.Select(t => t.Kind)];
 		if (resultTokens.Length is not 1)
 		{
-			string message = isLazy ? $"Lazy parsing failed for the command: {fragments[0]}" : $"Greedy parsing failed for the command: {string.Join("|", fragments)}";
+			string message = mode switch
+			{
+				ParsingMode.Lazy => $"Lazy parsing failed for the command: {fragments[0]}",
+				ParsingMode.Greedy => $"Greedy parsing failed for the command: {string.Join("|", fragments)}",
+
+				_ => throw new ArgumentOutOfRangeException(nameof(mode), mode, $"Unknown parsing mode.")
+			};
+
 			message += $"\n\nExpected tokens:\n{TextTokenKind.Value}";
 			message += $"\n\nResult tokens:\n{string.Join(' ', resultTokens)}";
 
@@ -56,7 +71,14 @@ public sealed class IPEndPointValueParserTests
 
 		if (areEqual is false)
 		{
-			string message = isLazy ? $"Lazy parsing failed for the command: {fragments[0]}" : $"Greedy parsing failed for the command: {string.Join("|", fragments)}";
+			string message = mode switch
+			{
+				ParsingMode.Lazy => $"Lazy parsing failed for the command: {fragments[0]}",
+				ParsingMode.Greedy => $"Greedy parsing failed for the command: {string.Join("|", fragments)}",
+
+				_ => throw new ArgumentOutOfRangeException(nameof(mode), mode, $"Unknown parsing mode.")
+			};
+
 			message += $"\nExpected value: {expectedValue}";
 			message += $"\nActual value: {result.Value}";
 
@@ -95,7 +117,7 @@ public sealed class IPEndPointValueParserTests
 						new string[] { command },
 						address,
 						p.Number,
-						true
+						ParsingMode.Lazy
 					];
 
 					yield return
@@ -103,7 +125,7 @@ public sealed class IPEndPointValueParserTests
 						command.Split(' ', StringSplitOptions.RemoveEmptyEntries),
 						address,
 						p.Number,
-						false
+						ParsingMode.Greedy
 					];
 				}
 	}

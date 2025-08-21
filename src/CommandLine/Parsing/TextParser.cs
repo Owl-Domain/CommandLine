@@ -93,46 +93,6 @@ public sealed class TextParser : ITextParser
 	#region Constructors
 	/// <summary>Creates a new instance of the <see cref="TextParser"/>.</summary>
 	/// <param name="fragments">The text fragments to initialise the parser with.</param>
-	/// <param name="isLazy">Whether the parser should be greedy or lazy.</param>
-	/// <exception cref="ArgumentException">
-	/// 	Thrown if either the given <paramref name="fragments"/> collection
-	/// 	has zero fragments, or the fragments had incorrect index values.
-	/// </exception>
-	public TextParser(IReadOnlyList<TextFragment> fragments, bool isLazy)
-	{
-		if (fragments.Count is 0)
-			Throw.New.ArgumentException(nameof(fragments), $"The {nameof(TextParser)} requires at least one fragment.");
-
-		for (int i = 0; i < fragments.Count; i++)
-		{
-			if (fragments[i].Index != i)
-				Throw.New.ArgumentException(nameof(fragments), $"The fragment at index #{i:n0} had the incorrect index of #({fragments[i].Index:n0}).");
-		}
-
-		Fragments = fragments;
-		CurrentFragment = Fragments[0];
-		IsLazy = isLazy;
-	}
-
-	/// <summary>Creates a new instance of the <see cref="TextParser"/>.</summary>
-	/// <param name="fragments">The text fragments to initialise the parser with.</param>
-	/// <param name="isLazy">Whether the parser should be greedy or lazy.</param>
-	/// <exception cref="ArgumentException">
-	/// 	Thrown if either the given <paramref name="fragments"/> collection
-	/// 	has zero fragments, or the fragments had incorrect index values.
-	/// </exception>
-	public TextParser(IReadOnlyList<string> fragments, bool isLazy)
-	{
-		if (fragments.Count is 0)
-			Throw.New.ArgumentException(nameof(fragments), $"The {nameof(TextParser)} requires at least one fragment.");
-
-		Fragments = [.. fragments.Select((fragment, index) => new TextFragment(fragment, index))];
-		CurrentFragment = Fragments[0];
-		IsLazy = isLazy;
-	}
-
-	/// <summary>Creates a new instance of the <see cref="TextParser"/>.</summary>
-	/// <param name="fragments">The text fragments to initialise the parser with.</param>
 	/// <param name="mode">The parsing mode to start the parser in.</param>
 	/// <exception cref="ArgumentException">Thrown if the given <paramref name="fragments"/> collection has zero fragments.</exception>
 	/// <exception cref="ArgumentOutOfRangeException">Thrown if the given </exception>

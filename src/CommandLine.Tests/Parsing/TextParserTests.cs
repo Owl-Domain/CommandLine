@@ -4,10 +4,10 @@ namespace OwlDomain.CommandLine.Tests.Parsing;
 public sealed class TextParserTests
 {
 	#region Constructor tests
-	[DataRow(false, DisplayName = "Greedy")]
-	[DataRow(true, DisplayName = "Lazy")]
+	[DataRow(ParsingMode.Greedy)]
+	[DataRow(ParsingMode.Lazy)]
 	[TestMethod]
-	public void Constructor_WithTextFragments_SetsExpectedProperties(bool expectedIsLazy)
+	public void Constructor_WithTextFragments_SetsExpectedProperties(ParsingMode expectedMode)
 	{
 		// Arrange
 		TextFragment fragmentA = new("a", 0);
@@ -22,12 +22,12 @@ public sealed class TextParserTests
 		TextPoint expectedPoint = new(fragmentA, 0);
 
 		// Act
-		TextParser Act() => new(expectedFragments, expectedIsLazy);
+		TextParser Act() => new(expectedFragments, expectedMode);
 
 		// Assert
 		Assert.That
 			.DoesNotThrowAnyException(Act, out TextParser result)
-			.AreEqual(result.IsLazy, expectedIsLazy)
+			.AreEqual(result.Mode, expectedMode)
 			.AreEqual(result.CurrentFragment, fragmentA)
 			.AreEqual(result.Fragments, expectedFragments)
 			.AreEqual(result.Offset, expectedOffset)
@@ -46,7 +46,7 @@ public sealed class TextParserTests
 		const string expectedParameterName = "fragments";
 
 		// Act
-		void Act() => _ = new TextParser(fragments, false);
+		void Act() => _ = new TextParser(fragments, ParsingMode.Greedy);
 
 		// Assert
 		Assert.That
@@ -65,7 +65,7 @@ public sealed class TextParserTests
 		const string expectedParameterName = "fragments";
 
 		// Act
-		void Act() => _ = new TextParser(fragments, false);
+		void Act() => _ = new TextParser(fragments, ParsingMode.Greedy);
 
 		// Assert
 		Assert.That
@@ -84,7 +84,7 @@ public sealed class TextParserTests
 		const string expectedParameterName = "fragments";
 
 		// Act
-		void Act() => _ = new TextParser(fragments, false);
+		void Act() => _ = new TextParser(fragments, ParsingMode.Greedy);
 
 		// Assert
 		Assert.That
@@ -92,10 +92,10 @@ public sealed class TextParserTests
 			.AreEqual(exception.ParamName, expectedParameterName);
 	}
 
-	[DataRow(false, DisplayName = "Greedy")]
-	[DataRow(true, DisplayName = "Lazy")]
+	[DataRow(ParsingMode.Greedy)]
+	[DataRow(ParsingMode.Lazy)]
 	[TestMethod]
-	public void Constructor_WithStringFragments_SetsExpectedProperties(bool expectedIsLazy)
+	public void Constructor_WithStringFragments_SetsExpectedProperties(ParsingMode expectedMode)
 	{
 		// Arrange
 		string fragmentTextA = "a", fragmentTextB = "b";
@@ -111,12 +111,12 @@ public sealed class TextParserTests
 		TextPoint expectedPoint = new(expectedFragmentA, 0);
 
 		// Act
-		TextParser Act() => new([fragmentTextA, fragmentTextB], expectedIsLazy);
+		TextParser Act() => new([fragmentTextA, fragmentTextB], expectedMode);
 
 		// Assert
 		Assert.That
 			.DoesNotThrowAnyException(Act, out TextParser result)
-			.AreEqual(result.IsLazy, expectedIsLazy)
+			.AreEqual(result.Mode, expectedMode)
 			.AreEqual(result.Fragments.Count, expectedFragmentCount)
 			.AreEqual(result.CurrentFragment, expectedFragmentA)
 			.AreEqual(result.Fragments[0], expectedFragmentA)
@@ -137,7 +137,7 @@ public sealed class TextParserTests
 		const string expectedParameterName = "fragments";
 
 		// Act
-		void Act() => _ = new TextParser(fragments, false);
+		void Act() => _ = new TextParser(fragments, ParsingMode.Greedy);
 
 		// Assert
 		Assert.That
@@ -154,7 +154,7 @@ public sealed class TextParserTests
 	{
 		// Arrange
 		const string expectedParameterName = "amount";
-		TextParser sut = new(["a"], false);
+		TextParser sut = new(["a"], ParsingMode.Greedy);
 
 		// Act
 		void Act() => sut.Advance(expectedAmount);
@@ -180,7 +180,7 @@ public sealed class TextParserTests
 		char expectedCurrent = fragmentText[expectedAmount];
 		char expectedNext = fragmentText[expectedAmount + 1];
 
-		TextParser sut = new([fragment], false);
+		TextParser sut = new([fragment], ParsingMode.Greedy);
 
 		// Arrange assert
 		Assert.IsConclusiveIf
@@ -218,7 +218,7 @@ public sealed class TextParserTests
 		int expectedOffset = fragmentText.Length;
 		TextPoint expectedPoint = new(fragment, expectedOffset);
 
-		TextParser sut = new([fragment], false);
+		TextParser sut = new([fragment], ParsingMode.Greedy);
 
 		// Arrange assert
 		Assert.IsConclusiveIf
@@ -250,7 +250,7 @@ public sealed class TextParserTests
 	public void NextFragment_AtLastFragment_ThrowsInvalidOperationException()
 	{
 		// Arrange
-		TextParser sut = new(["a"], false);
+		TextParser sut = new(["a"], ParsingMode.Greedy);
 
 		// Arrange assert
 		Assert.IsConclusiveIf.IsTrue(sut.IsLastFragment);
@@ -269,7 +269,7 @@ public sealed class TextParserTests
 		TextFragment fragmentA = new("a", 0);
 		TextFragment fragmentB = new("b", 1);
 
-		TextParser sut = new([fragmentA, fragmentB], false);
+		TextParser sut = new([fragmentA, fragmentB], ParsingMode.Greedy);
 		sut.Advance();
 
 		// Arrange assert
@@ -298,7 +298,7 @@ public sealed class TextParserTests
 	public void SkipWhitespace_NotAtWhitespace_DoesNotMove(string fragmentText)
 	{
 		// Arrange
-		TextParser sut = new([fragmentText], false);
+		TextParser sut = new([fragmentText], ParsingMode.Greedy);
 
 		// Arrange assert
 		Assert.IsConclusiveIf.AreEqual(sut.Offset, 0);
@@ -320,7 +320,7 @@ public sealed class TextParserTests
 	public void SkipWhitespace_AtWhitespace_SkipsAllWhitespace(string fragmentText, string expectedFragmentText)
 	{
 		// Arrange
-		TextParser sut = new([fragmentText], false);
+		TextParser sut = new([fragmentText], ParsingMode.Greedy);
 
 		// Arrange assert
 		Assert.IsConclusiveIf.AreEqual(sut.Text.ToString(), fragmentText);
@@ -338,7 +338,7 @@ public sealed class TextParserTests
 	public void SkipTrivia_NotAtTrivia_DoesNotMove()
 	{
 		// Arrange
-		TextParser sut = new(["a"], false);
+		TextParser sut = new(["a"], ParsingMode.Greedy);
 
 		// Arrange assert
 		Assert.IsConclusiveIf.AreEqual(sut.Offset, 0);
@@ -357,7 +357,7 @@ public sealed class TextParserTests
 		const string fragmentText = "  \t  a";
 		const string expectedText = "a";
 
-		TextParser sut = new([fragmentText], false);
+		TextParser sut = new([fragmentText], ParsingMode.Greedy);
 
 		// Arrange assert
 		Assert.IsConclusiveIf.AreEqual(sut.Text.ToString(), fragmentText);
@@ -376,7 +376,7 @@ public sealed class TextParserTests
 		TextFragment fragmentA = new("a", 0);
 		TextFragment fragmentB = new("b", 1);
 
-		TextParser sut = new([fragmentA, fragmentB], false);
+		TextParser sut = new([fragmentA, fragmentB], ParsingMode.Greedy);
 		sut.Advance();
 
 		// Arrange assert
@@ -404,7 +404,7 @@ public sealed class TextParserTests
 		// Note(Nightowl): The white-space at the start of the next fragment should specifically not be skipped;
 		TextFragment fragmentB = new(" \t b", 1);
 
-		TextParser sut = new([fragmentA, fragmentB], false);
+		TextParser sut = new([fragmentA, fragmentB], ParsingMode.Greedy);
 		sut.Advance();
 
 		// Arrange assert
@@ -431,7 +431,7 @@ public sealed class TextParserTests
 	{
 		// Arrange
 		const string expectedResult = "a";
-		TextParser parser = new([expectedResult], false);
+		TextParser parser = new([expectedResult], ParsingMode.Greedy);
 
 		// Act
 		string result = parser.TextUntilBreak.ToString();
@@ -445,7 +445,7 @@ public sealed class TextParserTests
 	{
 		// Arrange
 		const string expectedResult = "a";
-		TextParser parser = new([expectedResult], true);
+		TextParser parser = new([expectedResult], ParsingMode.Lazy);
 
 		// Act
 		string result = parser.TextUntilBreak.ToString();
@@ -460,7 +460,7 @@ public sealed class TextParserTests
 		// Arrange
 		const string fragmentText = "a b";
 		const string expectedResult = "a";
-		TextParser parser = new([fragmentText], true);
+		TextParser parser = new([fragmentText], ParsingMode.Lazy);
 
 		// Act
 		string result = parser.TextUntilBreak.ToString();
@@ -475,7 +475,7 @@ public sealed class TextParserTests
 		// Arrange
 		const string fragmentText = "a b c";
 		const string expectedResult = "a";
-		TextParser parser = new([fragmentText], true);
+		TextParser parser = new([fragmentText], ParsingMode.Lazy);
 
 		// Act
 		string result = parser.TextUntilBreak.ToString();
