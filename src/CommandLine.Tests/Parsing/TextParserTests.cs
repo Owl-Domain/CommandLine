@@ -46,7 +46,7 @@ public sealed class TextParserTests
 		const string expectedParameterName = "fragments";
 
 		// Act
-		void Act() => _ = new TextParser(fragments, default);
+		void Act() => _ = new TextParser(fragments, false);
 
 		// Assert
 		Assert.That
@@ -65,7 +65,7 @@ public sealed class TextParserTests
 		const string expectedParameterName = "fragments";
 
 		// Act
-		void Act() => _ = new TextParser(fragments, default);
+		void Act() => _ = new TextParser(fragments, false);
 
 		// Assert
 		Assert.That
@@ -84,7 +84,7 @@ public sealed class TextParserTests
 		const string expectedParameterName = "fragments";
 
 		// Act
-		void Act() => _ = new TextParser(fragments, default);
+		void Act() => _ = new TextParser(fragments, false);
 
 		// Assert
 		Assert.That
@@ -137,7 +137,7 @@ public sealed class TextParserTests
 		const string expectedParameterName = "fragments";
 
 		// Act
-		void Act() => _ = new TextParser(fragments, default);
+		void Act() => _ = new TextParser(fragments, false);
 
 		// Assert
 		Assert.That
@@ -154,7 +154,7 @@ public sealed class TextParserTests
 	{
 		// Arrange
 		const string expectedParameterName = "amount";
-		TextParser sut = new(["a"], default);
+		TextParser sut = new(["a"], false);
 
 		// Act
 		void Act() => sut.Advance(expectedAmount);
@@ -180,7 +180,7 @@ public sealed class TextParserTests
 		char expectedCurrent = fragmentText[expectedAmount];
 		char expectedNext = fragmentText[expectedAmount + 1];
 
-		TextParser sut = new([fragment], default);
+		TextParser sut = new([fragment], false);
 
 		// Arrange assert
 		Assert.IsConclusiveIf
@@ -218,7 +218,7 @@ public sealed class TextParserTests
 		int expectedOffset = fragmentText.Length;
 		TextPoint expectedPoint = new(fragment, expectedOffset);
 
-		TextParser sut = new([fragment], default);
+		TextParser sut = new([fragment], false);
 
 		// Arrange assert
 		Assert.IsConclusiveIf
@@ -250,7 +250,7 @@ public sealed class TextParserTests
 	public void NextFragment_AtLastFragment_ThrowsInvalidOperationException()
 	{
 		// Arrange
-		TextParser sut = new(["a"], default);
+		TextParser sut = new(["a"], false);
 
 		// Arrange assert
 		Assert.IsConclusiveIf.IsTrue(sut.IsLastFragment);
@@ -269,7 +269,7 @@ public sealed class TextParserTests
 		TextFragment fragmentA = new("a", 0);
 		TextFragment fragmentB = new("b", 1);
 
-		TextParser sut = new([fragmentA, fragmentB], default);
+		TextParser sut = new([fragmentA, fragmentB], false);
 		sut.Advance();
 
 		// Arrange assert
@@ -298,7 +298,7 @@ public sealed class TextParserTests
 	public void SkipWhitespace_NotAtWhitespace_DoesNotMove(string fragmentText)
 	{
 		// Arrange
-		TextParser sut = new([fragmentText], default);
+		TextParser sut = new([fragmentText], false);
 
 		// Arrange assert
 		Assert.IsConclusiveIf.AreEqual(sut.Offset, 0);
@@ -320,7 +320,7 @@ public sealed class TextParserTests
 	public void SkipWhitespace_AtWhitespace_SkipsAllWhitespace(string fragmentText, string expectedFragmentText)
 	{
 		// Arrange
-		TextParser sut = new([fragmentText], default);
+		TextParser sut = new([fragmentText], false);
 
 		// Arrange assert
 		Assert.IsConclusiveIf.AreEqual(sut.Text.ToString(), fragmentText);
@@ -338,7 +338,7 @@ public sealed class TextParserTests
 	public void SkipTrivia_NotAtTrivia_DoesNotMove()
 	{
 		// Arrange
-		TextParser sut = new(["a"], default);
+		TextParser sut = new(["a"], false);
 
 		// Arrange assert
 		Assert.IsConclusiveIf.AreEqual(sut.Offset, 0);
@@ -357,7 +357,7 @@ public sealed class TextParserTests
 		const string fragmentText = "  \t  a";
 		const string expectedText = "a";
 
-		TextParser sut = new([fragmentText], default);
+		TextParser sut = new([fragmentText], false);
 
 		// Arrange assert
 		Assert.IsConclusiveIf.AreEqual(sut.Text.ToString(), fragmentText);
@@ -376,7 +376,7 @@ public sealed class TextParserTests
 		TextFragment fragmentA = new("a", 0);
 		TextFragment fragmentB = new("b", 1);
 
-		TextParser sut = new([fragmentA, fragmentB], default);
+		TextParser sut = new([fragmentA, fragmentB], false);
 		sut.Advance();
 
 		// Arrange assert
@@ -404,7 +404,7 @@ public sealed class TextParserTests
 		// Note(Nightowl): The white-space at the start of the next fragment should specifically not be skipped;
 		TextFragment fragmentB = new(" \t b", 1);
 
-		TextParser sut = new([fragmentA, fragmentB], default);
+		TextParser sut = new([fragmentA, fragmentB], false);
 		sut.Advance();
 
 		// Arrange assert

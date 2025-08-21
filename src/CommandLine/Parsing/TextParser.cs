@@ -6,8 +6,9 @@ namespace OwlDomain.CommandLine.Parsing;
 public sealed class TextParser : ITextParser
 {
 	#region Fields
-	private int _currentFragmentIndex;
 	private readonly HashSet<char> _breakCharacters = [];
+	private int _currentFragmentIndex;
+	private ParsingMode _mode;
 	#endregion
 
 	#region Properties
@@ -61,13 +62,28 @@ public sealed class TextParser : ITextParser
 	public bool IsAtEnd => Offset >= CurrentFragment.Length;
 
 	/// <inheritdoc/>
-	public bool IsLazy { get; set; }
+	public ParsingMode Mode
+	{
+		get => _mode;
+		set
+		{
+			value.ThrowIfNotDefined(nameof(value));
+			_mode = value;
+		}
+	}
+
+	/// <inheritdoc/>
+	public bool IsLazy
+	{
+		get => _mode is ParsingMode.Lazy;
+		set => _mode = value ? ParsingMode.Lazy : ParsingMode.Greedy;
+	}
 
 	/// <inheritdoc/>
 	public bool IsGreedy
 	{
-		get => IsLazy is false;
-		set => IsLazy = value is false;
+		get => _mode is ParsingMode.Greedy;
+		set => _mode = value ? ParsingMode.Greedy : ParsingMode.Lazy;
 	}
 
 	/// <inheritdoc/>
@@ -78,9 +94,13 @@ public sealed class TextParser : ITextParser
 	/// <summary>Creates a new instance of the <see cref="TextParser"/>.</summary>
 	/// <param name="fragments">The text fragments to initialise the parser with.</param>
 	/// <param name="isLazy">Whether the parser should be greedy or lazy.</param>
+	/// <exception cref="ArgumentException">
+	/// 	Thrown if either the given <paramref name="fragments"/> collection
+	/// 	has zero fragments, or the fragments had incorrect index values.
+	/// </exception>
 	public TextParser(IReadOnlyList<TextFragment> fragments, bool isLazy)
 	{
-		if (fragments.Count < 1)
+		if (fragments.Count is 0)
 			Throw.New.ArgumentException(nameof(fragments), $"The {nameof(TextParser)} requires at least one fragment.");
 
 		for (int i = 0; i < fragments.Count; i++)
@@ -97,14 +117,58 @@ public sealed class TextParser : ITextParser
 	/// <summary>Creates a new instance of the <see cref="TextParser"/>.</summary>
 	/// <param name="fragments">The text fragments to initialise the parser with.</param>
 	/// <param name="isLazy">Whether the parser should be greedy or lazy.</param>
+	/// <exception cref="ArgumentException">
+	/// 	Thrown if either the given <paramref name="fragments"/> collection
+	/// 	has zero fragments, or the fragments had incorrect index values.
+	/// </exception>
 	public TextParser(IReadOnlyList<string> fragments, bool isLazy)
 	{
-		if (fragments.Count < 1)
+		if (fragments.Count is 0)
 			Throw.New.ArgumentException(nameof(fragments), $"The {nameof(TextParser)} requires at least one fragment.");
 
 		Fragments = [.. fragments.Select((fragment, index) => new TextFragment(fragment, index))];
 		CurrentFragment = Fragments[0];
 		IsLazy = isLazy;
+	}
+
+	/// <summary>Creates a new instance of the <see cref="TextParser"/>.</summary>
+	/// <param name="fragments">The text fragments to initialise the parser with.</param>
+	/// <param name="mode">The parsing mode to start the parser in.</param>
+	/// <exception cref="ArgumentException">Thrown if the given <paramref name="fragments"/> collection has zero fragments.</exception>
+	/// <exception cref="ArgumentOutOfRangeException">Thrown if the given </exception>
+	public TextParser(IReadOnlyList<TextFragment> fragments, ParsingMode mode)
+	{
+		if (fragments.Count is 0)
+			Throw.New.ArgumentException(nameof(fragments), $"The {nameof(TextParser)} requires at least one fragment.");
+
+		for (int i = 0; i < fragments.Count; i++)
+		{
+			if (fragments[i].Index != i)
+				Throw.New.ArgumentException(nameof(fragments), $"The fragment at index #{i:n0} had the incorrect index of #({fragments[i].Index:n0}).");
+		}
+
+		mode.ThrowIfNotDefined(nameof(mode));
+
+		Fragments = fragments;
+		CurrentFragment = Fragments[0];
+		Mode = mode;
+	}
+
+	/// <summary>Creates a new instance of the <see cref="TextParser"/>.</summary>
+	/// <param name="fragments">The text fragments to initialise the parser with.</param>
+	/// <param name="mode">The parsing mode to start the parser in.</param>
+	/// <exception cref="ArgumentException">Thrown if the given <paramref name="fragments"/> collection has zero fragments.</exception>
+	/// <exception cref="ArgumentOutOfRangeException">Thrown if the given </exception>
+	public TextParser(IReadOnlyList<string> fragments, ParsingMode mode)
+	{
+		if (fragments.Count is 0)
+			Throw.New.ArgumentException(nameof(fragments), $"The {nameof(TextParser)} requires at least one fragment.");
+
+		mode.ThrowIfNotDefined(nameof(mode));
+
+		Fragments = [.. fragments.Select((fragment, index) => new TextFragment(fragment, index))];
+		CurrentFragment = Fragments[0];
+		Mode = mode;
 	}
 	#endregion
 
