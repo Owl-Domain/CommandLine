@@ -429,6 +429,18 @@ public sealed class CommandParserTests
 				false
 			];
 		}
+
+		yield return [
+			new string[] { "[", "a a", ",", "b b", "]" },
+			new TextTokenKind[] { TextTokenKind.Symbol, TextTokenKind.Value, TextTokenKind.Symbol, TextTokenKind.Value, TextTokenKind.Symbol },
+			false,
+		];
+
+		yield return [
+			new string[] { "[", "", ",", "", "]" },
+			new TextTokenKind[] { TextTokenKind.Symbol, TextTokenKind.Value, TextTokenKind.Symbol, TextTokenKind.Value, TextTokenKind.Symbol },
+			false,
+		];
 	}
 
 	[ExcludeFromCodeCoverage]
