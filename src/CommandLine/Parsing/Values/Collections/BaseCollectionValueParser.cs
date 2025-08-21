@@ -131,7 +131,8 @@ public abstract class BaseCollectionValueParser<TCollection, TValue>(IValueParse
 		bool oldIsLazy = parser.IsLazy;
 		try
 		{
-			parser.IsLazy = true;
+			if (ShouldGreedyParseFullFragment(parser) is false)
+				parser.IsLazy = true;
 
 			IValueParseResult<TValue> valueResult = ValueParser.Parse(context, parser);
 			return valueResult;
@@ -183,6 +184,22 @@ public abstract class BaseCollectionValueParser<TCollection, TValue>(IValueParse
 	#endregion
 
 	#region Helpers
+	private static bool ShouldGreedyParseFullFragment(ITextParser parser)
+	{
+		if (parser.IsLazy)
+			return false;
+
+		if (parser.IsAtEnd)
+			return parser.CurrentFragment.Length is 0;
+
+		foreach (char ch in parser.Text)
+		{
+			if (char.IsWhiteSpace(ch))
+				return true;
+		}
+
+		return false;
+	}
 	private static bool IsValueMissing(ITextParser parser)
 	{
 		if (parser.IsLazy)
