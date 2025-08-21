@@ -6,17 +6,17 @@ namespace OwlDomain.CommandLine.Tests.Parsing.Values.Networking;
 public sealed class IPAddressValueParserTests
 {
 	#region Tests
-	[DataRow(true, DisplayName = "Lazy mode")]
-	[DataRow(false, DisplayName = "Greedy mode")]
+	[DataRow(ParsingMode.Lazy)]
+	[DataRow(ParsingMode.Greedy)]
 	[TestMethod]
-	public void Parse_WithIPv4_Successful(bool isLazy)
+	public void Parse_WithIPv4_Successful(ParsingMode mode)
 	{
 		// Arrange
 		const string input = "127.0.0.1";
 		IPAddress expectedValue = IPAddress.Parse(input);
 
 		IFlagValueParseContext context = Substitute.For<IFlagValueParseContext>();
-		TextParser parser = new([input], isLazy);
+		TextParser parser = new([input], mode);
 		IPAddressValueParser sut = new();
 
 		// Act
@@ -29,17 +29,17 @@ public sealed class IPAddressValueParserTests
 			.AreEqual(parseResult.Value, expectedValue);
 	}
 
-	[DataRow(true, DisplayName = "Lazy mode")]
-	[DataRow(false, DisplayName = "Greedy mode")]
+	[DataRow(ParsingMode.Lazy)]
+	[DataRow(ParsingMode.Greedy)]
 	[TestMethod]
-	public void Parse_WithLongIPv6_Successful(bool isLazy)
+	public void Parse_WithLongIPv6_Successful(ParsingMode mode)
 	{
 		// Arrange
 		const string input = "0:0:0:0:0:0:0:1";
 		IPAddress expectedValue = IPAddress.Parse(input);
 
 		IFlagValueParseContext context = Substitute.For<IFlagValueParseContext>();
-		TextParser parser = new([input], isLazy);
+		TextParser parser = new([input], mode);
 		IPAddressValueParser sut = new();
 
 		// Act
@@ -52,17 +52,17 @@ public sealed class IPAddressValueParserTests
 			.AreEqual(parseResult.Value, expectedValue);
 	}
 
-	[DataRow(true, DisplayName = "Lazy mode")]
-	[DataRow(false, DisplayName = "Greedy mode")]
+	[DataRow(ParsingMode.Lazy)]
+	[DataRow(ParsingMode.Greedy)]
 	[TestMethod]
-	public void Parse_WithShortIPv6_Successful(bool isLazy)
+	public void Parse_WithShortIPv6_Successful(ParsingMode mode)
 	{
 		// Arrange
 		const string input = "::1";
 		IPAddress expectedValue = IPAddress.Parse(input);
 
 		IFlagValueParseContext context = Substitute.For<IFlagValueParseContext>();
-		TextParser parser = new([input], isLazy);
+		TextParser parser = new([input], mode);
 		IPAddressValueParser sut = new();
 
 		// Act

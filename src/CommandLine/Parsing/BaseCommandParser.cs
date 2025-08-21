@@ -9,7 +9,7 @@ public abstract class BaseCommandParser : ICommandParser
 	/// <inheritdoc/>
 	public ICommandParserResult Parse(ICommandEngine engine, string command)
 	{
-		TextParser parser = new([command], true);
+		TextParser parser = new([command], ParsingMode.Lazy);
 
 		return Parse(engine, parser);
 	}
@@ -17,7 +17,7 @@ public abstract class BaseCommandParser : ICommandParser
 	/// <inheritdoc/>
 	public ICommandParserResult Parse(ICommandEngine engine, string[] fragments)
 	{
-		TextParser parser = new(fragments, false);
+		TextParser parser = new(fragments, ParsingMode.Greedy);
 
 		return Parse(engine, parser);
 	}

@@ -39,6 +39,13 @@ public interface ITextParser
 	/// <summary>Whether the end of the current fragment has been reached.</summary>
 	bool IsAtEnd { get; }
 
+	/// <summary>The parsing mode of the text parser.</summary>
+	/// <exception cref="ArgumentOutOfRangeException">
+	/// 	Thrown if the value you're trying to set the mode to is not
+	/// 	defined in the <see cref="ParsingMode"/> <see langword="enum"/>.
+	/// </exception>
+	ParsingMode Mode { get; set; }
+
 	/// <summary>Whether the current fragment should be greedy or lazy parsed.</summary>
 	/// <remarks>Only specialised parsers should ever modify this value.</remarks>
 	bool IsLazy { get; set; }

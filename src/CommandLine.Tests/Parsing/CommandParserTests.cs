@@ -4,10 +4,10 @@ namespace OwlDomain.CommandLine.Tests.Parsing;
 public sealed class CommandParserTests
 {
 	#region Tests
-	[DataRow(true, DisplayName = "Lazy")]
-	[DataRow(false, DisplayName = "Greedy")]
+	[DataRow(ParsingMode.Lazy)]
+	[DataRow(ParsingMode.Greedy)]
 	[TestMethod]
-	public void Parse_SimpleCommand_Successful(bool isLazy)
+	public void Parse_SimpleCommand_Successful(ParsingMode mode)
 	{
 		// Arrange
 		const string commandName = "command";
@@ -25,7 +25,13 @@ public sealed class CommandParserTests
 		CommandParser sut = new();
 
 		// Act
-		ICommandParserResult result = isLazy ? sut.Parse(engine, commandName) : sut.Parse(engine, [commandName]);
+		ICommandParserResult result = mode switch
+		{
+			ParsingMode.Lazy => sut.Parse(engine, commandName),
+			ParsingMode.Greedy => sut.Parse(engine, [commandName]),
+
+			_ => throw new ArgumentOutOfRangeException(nameof(mode), mode, "Unknowing parsing mode.")
+		};
 		ICommandParseResult? commandResult = result.LeafCommand;
 
 		// Assert
@@ -47,10 +53,10 @@ public sealed class CommandParserTests
 			.AreEqual(commandResult.Flags.Count, 0);
 	}
 
-	[DataRow(true, DisplayName = "Lazy")]
-	[DataRow(false, DisplayName = "Greedy")]
+	[DataRow(ParsingMode.Lazy)]
+	[DataRow(ParsingMode.Greedy)]
 	[TestMethod]
-	public void Parse_CommandWithArgument_Successful(bool isLazy)
+	public void Parse_CommandWithArgument_Successful(ParsingMode mode)
 	{
 		// Arrange
 		const string commandName = "command";
@@ -73,7 +79,13 @@ public sealed class CommandParserTests
 		CommandParser sut = new();
 
 		// Act
-		ICommandParserResult result = isLazy ? sut.Parse(engine, $"{commandName} {argumentValue}") : sut.Parse(engine, [commandName, argumentValue]);
+		ICommandParserResult result = mode switch
+		{
+			ParsingMode.Lazy => sut.Parse(engine, $"{commandName} {argumentValue}"),
+			ParsingMode.Greedy => sut.Parse(engine, [commandName, argumentValue]),
+
+			_ => throw new ArgumentOutOfRangeException(nameof(mode), mode, "Unknowing parsing mode.")
+		};
 		ICommandParseResult? commandResult = result.LeafCommand;
 
 		// Assert
@@ -102,10 +114,10 @@ public sealed class CommandParserTests
 			.AreEqual(argumentResult.Value.Value, argumentValue);
 	}
 
-	[DataRow(true, DisplayName = "Lazy")]
-	[DataRow(false, DisplayName = "Greedy")]
+	[DataRow(ParsingMode.Lazy)]
+	[DataRow(ParsingMode.Greedy)]
 	[TestMethod]
-	public void Parse_ImplicitCommandWithArgument_Successful(bool isLazy)
+	public void Parse_ImplicitCommandWithArgument_Successful(ParsingMode mode)
 	{
 		// Arrange
 		const string argumentValue = "value";
@@ -128,7 +140,13 @@ public sealed class CommandParserTests
 		CommandParser sut = new();
 
 		// Act
-		ICommandParserResult result = isLazy ? sut.Parse(engine, argumentValue) : sut.Parse(engine, [argumentValue]);
+		ICommandParserResult result = mode switch
+		{
+			ParsingMode.Lazy => sut.Parse(engine, argumentValue),
+			ParsingMode.Greedy => sut.Parse(engine, [argumentValue]),
+
+			_ => throw new ArgumentOutOfRangeException(nameof(mode), mode, "Unknowing parsing mode.")
+		};
 		ICommandParseResult? commandResult = result.LeafCommand;
 
 		// Assert
@@ -155,10 +173,10 @@ public sealed class CommandParserTests
 			.AreEqual(argumentResult.Value.Value, argumentValue);
 	}
 
-	[DataRow(true, DisplayName = "Lazy")]
-	[DataRow(false, DisplayName = "Greedy")]
+	[DataRow(ParsingMode.Lazy)]
+	[DataRow(ParsingMode.Greedy)]
 	[TestMethod]
-	public void Parse_NestedCommand_Successful(bool isLazy)
+	public void Parse_NestedCommand_Successful(ParsingMode mode)
 	{
 		// Arrange
 		const string groupName = "group";
@@ -184,7 +202,13 @@ public sealed class CommandParserTests
 		CommandParser sut = new();
 
 		// Act
-		ICommandParserResult result = isLazy ? sut.Parse(engine, $"{groupName} {commandName}") : sut.Parse(engine, [groupName, commandName]);
+		ICommandParserResult result = mode switch
+		{
+			ParsingMode.Lazy => sut.Parse(engine, $"{groupName} {commandName}"),
+			ParsingMode.Greedy => sut.Parse(engine, [groupName, commandName]),
+
+			_ => throw new ArgumentOutOfRangeException(nameof(mode), mode, "Unknowing parsing mode.")
+		};
 		IGroupParseResult? groupResult = result.CommandOrGroup as IGroupParseResult;
 		ICommandParseResult? commandResult = result.LeafCommand;
 
@@ -212,10 +236,10 @@ public sealed class CommandParserTests
 			.AreEqual(commandResult.Flags.Count, 0);
 	}
 
-	[DataRow(true, DisplayName = "Lazy")]
-	[DataRow(false, DisplayName = "Greedy")]
+	[DataRow(ParsingMode.Lazy)]
+	[DataRow(ParsingMode.Greedy)]
 	[TestMethod]
-	public void Parse_ImplicitCommand_WithUnusedGroup_Successful(bool isLazy)
+	public void Parse_ImplicitCommand_WithUnusedGroup_Successful(ParsingMode mode)
 	{
 		// Arrange
 		ICommandInfo command = Substitute.For<ICommandInfo>();
@@ -235,7 +259,13 @@ public sealed class CommandParserTests
 		CommandParser sut = new();
 
 		// Act
-		ICommandParserResult result = isLazy ? sut.Parse(engine, "") : sut.Parse(engine, [""]);
+		ICommandParserResult result = mode switch
+		{
+			ParsingMode.Lazy => sut.Parse(engine, ""),
+			ParsingMode.Greedy => sut.Parse(engine, [""]),
+
+			_ => throw new ArgumentOutOfRangeException(nameof(mode), mode, "Unknowing parsing mode.")
+		};
 		ICommandParseResult? commandResult = result.LeafCommand;
 
 		// Assert
@@ -257,7 +287,7 @@ public sealed class CommandParserTests
 
 	[DynamicData(nameof(VariousCommandTests), DynamicDataSourceType.Method)]
 	[TestMethod]
-	public void Parse_VariousTests_Successful(string[] fragments, TextTokenKind[] expectedTokens, bool isLazy)
+	public void Parse_VariousTests_Successful(string[] fragments, TextTokenKind[] expectedTokens, ParsingMode mode)
 	{
 		// Arrange
 		const string groupName = "group";
@@ -316,16 +346,21 @@ public sealed class CommandParserTests
 		CommandParser sut = new();
 
 		// Act
-		ICommandParserResult result = isLazy ? sut.Parse(engine, fragments[0]) : sut.Parse(engine, fragments);
+		ICommandParserResult result = mode switch
+		{
+			ParsingMode.Lazy => sut.Parse(engine, fragments[0]),
+			ParsingMode.Greedy => sut.Parse(engine, fragments),
+			_ => throw new ArgumentOutOfRangeException(nameof(mode), mode, "Unknown parsing mode.")
+		};
 
 		// Assert
-		CheckFailedResult(result, isLazy, fragments, expectedTokens);
+		CheckFailedResult(result, mode, fragments, expectedTokens);
 	}
 
 
 	[DynamicData(nameof(ArrayCollectionValueTests), DynamicDataSourceType.Method)]
 	[TestMethod]
-	public void Parse_ArrayCollectionTests_Successful(string[] fragments, TextTokenKind[] expectedTokens, bool isLazy)
+	public void Parse_ArrayCollectionTests_Successful(string[] fragments, TextTokenKind[] expectedTokens, ParsingMode mode)
 	{
 		// Arrange
 		IValueParser<string> stringParser = new StringValueParser();
@@ -347,20 +382,32 @@ public sealed class CommandParserTests
 		CommandParser sut = new();
 
 		// Act
-		ICommandParserResult result = isLazy ? sut.Parse(engine, fragments[0]) : sut.Parse(engine, fragments);
+		ICommandParserResult result = mode switch
+		{
+			ParsingMode.Lazy => sut.Parse(engine, fragments[0]),
+			ParsingMode.Greedy => sut.Parse(engine, fragments),
+			_ => throw new ArgumentOutOfRangeException(nameof(mode), mode, "Unknown parsing mode.")
+		};
 
 		// Assert
-		CheckFailedResult(result, isLazy, fragments, expectedTokens);
+		CheckFailedResult(result, mode, fragments, expectedTokens);
 	}
 	#endregion
 
 	#region Helpers
 	[ExcludeFromCodeCoverage]
-	private static void CheckFailedResult(ICommandParserResult result, bool isLazy, string[] fragments, TextTokenKind[] expectedTokens)
+	private static void CheckFailedResult(ICommandParserResult result, ParsingMode mode, string[] fragments, TextTokenKind[] expectedTokens)
 	{
 		if (result.Successful is false)
 		{
-			string message = isLazy ? $"Lazy parsing failed for the command: {fragments[0]}" : $"Greedy parsing failed for the command: {string.Join("|", fragments)}";
+			string message = mode switch
+			{
+				ParsingMode.Lazy => $"Lazy parsing failed for the command: {fragments[0]}",
+				ParsingMode.Greedy => $"Greedy parsing failed for the command: {string.Join("|", fragments)}",
+
+				_ => throw new ArgumentOutOfRangeException(nameof(mode), mode, $"Unknown parsing mode.")
+			};
+
 			message += "\n\nDiagnostics:";
 
 			foreach (IDiagnostic diagnostic in result.Diagnostics)
@@ -373,7 +420,14 @@ public sealed class CommandParserTests
 		TextTokenKind[] resultTokens = [.. tokens.Select(t => t.Kind)];
 		if (resultTokens.Length != expectedTokens.Length || (resultTokens.SequenceEqual(expectedTokens) is false))
 		{
-			string message = isLazy ? $"Lazy parsing failed for the command: {fragments[0]}" : $"Greedy parsing failed for the command: {string.Join("|", fragments)}";
+			string message = mode switch
+			{
+				ParsingMode.Lazy => $"Lazy parsing failed for the command: {fragments[0]}",
+				ParsingMode.Greedy => $"Greedy parsing failed for the command: {string.Join("|", fragments)}",
+
+				_ => throw new ArgumentOutOfRangeException(nameof(mode), mode, $"Unknown parsing mode.")
+			};
+
 			message += $"\n\nExpected tokens:\n{string.Join(' ', expectedTokens)}";
 			message += $"\n\nResult tokens:\n{string.Join(' ', resultTokens)}";
 
@@ -410,14 +464,14 @@ public sealed class CommandParserTests
 			[
 				new string[] { cmd.Replace(" | ", "").Replace("|", "") },
 				allTokens,
-				true
+				ParsingMode.Lazy
 			];
 
 			yield return
 			[
 				new string[] { cmd.Replace(" | ", " ").Replace("|", " ") },
 				allTokens,
-				true
+				ParsingMode.Lazy
 			];
 
 			string[] fragments = cmd.Split("|", StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
@@ -426,20 +480,22 @@ public sealed class CommandParserTests
 			[
 				fragments,
 				allTokens,
-				false
+				ParsingMode.Greedy
 			];
 		}
 
-		yield return [
+		yield return
+		[
 			new string[] { "[", "a a", ",", "b b", "]" },
 			new TextTokenKind[] { TextTokenKind.Symbol, TextTokenKind.Value, TextTokenKind.Symbol, TextTokenKind.Value, TextTokenKind.Symbol },
-			false,
+			ParsingMode.Greedy
 		];
 
-		yield return [
+		yield return
+		[
 			new string[] { "[", "", ",", "", "]" },
 			new TextTokenKind[] { TextTokenKind.Symbol, TextTokenKind.Value, TextTokenKind.Symbol, TextTokenKind.Value, TextTokenKind.Symbol },
-			false,
+			ParsingMode.Greedy
 		];
 	}
 
@@ -515,7 +571,7 @@ public sealed class CommandParserTests
 						[
 							new string[] { cmd.Replace(" | ", " ").Replace("|", "") },
 							allTokens,
-							true
+							ParsingMode.Lazy
 						];
 
 						string[] fragments = cmd.Split("|", StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
@@ -527,7 +583,7 @@ public sealed class CommandParserTests
 						[
 							fragments,
 							allTokens,
-							false
+							ParsingMode.Greedy
 						];
 					}
 	}
