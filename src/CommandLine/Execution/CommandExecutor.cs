@@ -30,8 +30,14 @@ public sealed class CommandExecutor : ICommandExecutor
 		catch (OperationCanceledException)
 		{
 			watch.Stop();
-
 			return new CommandExecutorResult(false, true, validatorResult, diagnostics, watch.Elapsed, default);
+		}
+		catch (Exception exception) when (Debugger.IsAttached is false)
+		{
+			diagnostics.Add(DiagnosticSource.Execution, default, exception);
+
+			watch.Stop();
+			return new CommandExecutorResult(false, false, validatorResult, diagnostics, watch.Elapsed, default);
 		}
 	}
 	private ICommandExecutorResult Execute(

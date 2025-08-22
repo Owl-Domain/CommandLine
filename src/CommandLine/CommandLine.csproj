@@ -24,6 +24,7 @@
 	  <PackageReference Include="OwlDomain.Documentation" Version="1.0.4" />
 
 	  <PackageReference Include="Spectre.Console" Version="0.50.0" />
+	  <PackageReference Include="Spectre.Console.Json" Version="0.50.0" />
 	</ItemGroup>
 
 	<!-- NuGet package -->

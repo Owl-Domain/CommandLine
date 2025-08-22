@@ -10,6 +10,7 @@ namespace OwlDomain.CommandLine.Engine;
 /// <param name="validator">The validator to use for validating the parsed commands.</param>
 /// <param name="executor">The executor to use for executing the validated commands.</param>
 /// <param name="documentationPrinter">The documentation printer for the engine.</param>
+/// <param name="outputPrinter">The command output printer for the engine.</param>
 /// <param name="virtualCommands">The known virtual commands that have been added to the engine.</param>
 /// <param name="virtualFlags">The known virtual flags that have been added to the engine.</param>
 public sealed class CommandEngine(
@@ -20,6 +21,7 @@ public sealed class CommandEngine(
 	ICommandValidator validator,
 	ICommandExecutor executor,
 	IDocumentationPrinter documentationPrinter,
+	IOutputPrinter outputPrinter,
 	IVirtualCommands virtualCommands,
 	IVirtualFlags virtualFlags)
 	: ICommandEngine
@@ -51,6 +53,9 @@ public sealed class CommandEngine(
 
 	/// <inheritdoc/>
 	public IVirtualFlags VirtualFlags { get; } = virtualFlags;
+
+	/// <inheritdoc/>
+	public IOutputPrinter OutputPrinter { get; } = outputPrinter;
 	#endregion
 
 	#region Functions
@@ -100,14 +105,14 @@ public sealed class CommandEngine(
 
 		DiagnosticBag diagnostics =
 		[
-			..parserResult.Diagnostics,
+			.. parserResult.Diagnostics,
 			.. validatorResult.Diagnostics,
 			.. executorResult.Diagnostics
 		];
 
 		watch.Stop();
 
-		return new CommandRunResult(
+		CommandRunResult result = new(
 			executorResult.Successful,
 			executorResult.WasCancelled,
 			parserResult,
@@ -115,6 +120,33 @@ public sealed class CommandEngine(
 			executorResult,
 			diagnostics,
 			watch.Elapsed);
+
+		OutputPrinter.Print(result);
+
+		return result;
+	}
+
+	/// <inheritdoc/>
+	public void Repl(Func<string> promptCallback)
+	{
+		while (true)
+		{
+			string prompt = promptCallback.Invoke();
+
+			Console.Write(prompt);
+			string? input = Console.ReadLine();
+
+			if (input is null)
+				return;
+
+			if (string.IsNullOrWhiteSpace(input))
+				continue;
+
+			ICommandRunResult result = Run(input);
+
+			if (result.ExecutorResult.Result is not null)
+				Console.WriteLine();
+		}
 	}
 	#endregion
 }
