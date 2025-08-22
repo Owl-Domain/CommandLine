@@ -17,7 +17,9 @@ public abstract class BaseCommandParser : ICommandParser
 	/// <inheritdoc/>
 	public ICommandParserResult Parse(ICommandEngine engine, string[] fragments)
 	{
-		TextParser parser = new(fragments, ParsingMode.Greedy);
+		TextParser parser = fragments.Length is 0 ?
+			new([""], ParsingMode.Lazy) :
+			new(fragments, ParsingMode.Greedy);
 
 		return Parse(engine, parser);
 	}
@@ -47,7 +49,7 @@ public abstract class BaseCommandParser : ICommandParser
 		catch (OperationCanceledException)
 		{
 			watch.Stop();
-			return new CommandParserResult(false, false, engine, this, new DiagnosticBag(), null, [], watch.Elapsed);
+			return new CommandParserResult(false, true, engine, this, new DiagnosticBag(), null, [], watch.Elapsed);
 		}
 	}
 	#endregion

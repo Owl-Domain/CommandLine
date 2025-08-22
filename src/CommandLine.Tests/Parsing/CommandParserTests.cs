@@ -576,9 +576,6 @@ public sealed class CommandParserTests
 
 						string[] fragments = cmd.Split("|", StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
 
-						if (fragments.Length is 0)
-							continue; // Note(Nightowl): No fragments means nothing to parse in greedy mode;
-
 						yield return
 						[
 							fragments,
