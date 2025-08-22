@@ -11,17 +11,15 @@ namespace OwlDomain.CommandLine.Documentation;
 public sealed class DocumentationPrinter : IDocumentationPrinter
 {
 	#region Constants
-	private const string HeaderStyle = "bold purple";
-	private const string SymbolStyle = "yellow";
-	private const string FlagPrefixStyle = SymbolStyle;
-	private const string FlagNameStyle = "blue";
-	private const string FlagValueStyle = "italic cyan";
-	private const string RequiredStyle = "bold yellow";
-	private const string OptionalStyle = "italic gray";
-	private const string GroupNameStyle = "green";
-	private const string CommandNameStyle = "lime";
-	private const string DefaultLabelStyle = "seagreen1";
+	private const string ColumnHeaderStyle = "bold";
+	private const string HeaderStyle = "bold italic";
+	private const string GroupStyle = "blue";
+	private const string CommandStyle = "yellow";
 	private const string ArgumentStyle = "cyan";
+	private const string FlagStyle = "fuchsia";
+	private const string RequiredStyle = "bold";
+	private const string OptionalStyle = "italic";
+	private const string DefaultLabelStyle = "italic";
 	#endregion
 
 	#region Methods
@@ -126,16 +124,16 @@ public sealed class DocumentationPrinter : IDocumentationPrinter
 		ICommandGroupInfo? parent = command.Group;
 		while (parent is not null && parent.Name is not null)
 		{
-			parts.Insert(0, $"[{GroupNameStyle}]{parent.Name}[/]");
+			parts.Insert(0, $"[{GroupStyle}]{parent.Name}[/]");
 			parent = parent.Parent;
 		}
 
 		if (command.Name is not null)
-			parts.Add($"[{CommandNameStyle}]{command.Name.EscapeMarkup()}[/]");
+			parts.Add($"[{CommandStyle}]{command.Name.EscapeMarkup()}[/]");
 
-		string shortPrefix = $"[{FlagPrefixStyle}]{settings.ShortFlagPrefix.EscapeMarkup()}[/]";
-		string longPrefix = $"[{FlagPrefixStyle}]{settings.LongFlagPrefix.EscapeMarkup()}[/]";
-		string separator = $"[{SymbolStyle}]{settings.FlagValueSeparators.First()}[/]";
+		string shortPrefix = $"[{FlagStyle}]{settings.ShortFlagPrefix.EscapeMarkup()}[/]";
+		string longPrefix = $"[{FlagStyle}]{settings.LongFlagPrefix.EscapeMarkup()}[/]";
+		string separator = $"{settings.FlagValueSeparators.First()}";
 
 		if (chained.Length > 0)
 		{
@@ -143,7 +141,7 @@ public sealed class DocumentationPrinter : IDocumentationPrinter
 			foreach (IFlagInfo flag in chained)
 			{
 				string name = $"{flag.ShortName}".EscapeMarkup();
-				current += $"[{FlagNameStyle}]{name}[/]";
+				current += $"[{FlagStyle}]{name}[/]";
 			}
 
 			parts.Add(current);
@@ -155,20 +153,20 @@ public sealed class DocumentationPrinter : IDocumentationPrinter
 			string? name = flag.LongName is not null ? flag.LongName : $"{flag.ShortName}";
 			Debug.Assert(name is not null);
 
-			current += $"[{FlagNameStyle}]{name.EscapeMarkup()}[/]";
+			current += $"[{FlagStyle}]{name.EscapeMarkup()}[/]";
 
 			if (flag.Kind is FlagKind.Regular)
 			{
 				string value = flag.LongName is not null ? flag.LongName.EscapeMarkup() : "value";
 				current += separator;
-				current += $"[gray]<[/][{FlagValueStyle}]{value}[/][gray]>[/]";
+				current += $"<[{FlagStyle}]{value}[/]>";
 			}
 
 			parts.Add(current);
 		}
 
 		foreach (IArgumentInfo argument in arguments)
-			parts.Add($"[gray]<[/][{ArgumentStyle}]{argument.Name.EscapeMarkup()}[/][gray]>[/]");
+			parts.Add($"<[{ArgumentStyle}]{argument.Name.EscapeMarkup()}[/]>");
 
 		string text = string.Join(' ', parts);
 		Markup markup = new(text);
@@ -303,7 +301,7 @@ public sealed class DocumentationPrinter : IDocumentationPrinter
 	private static TableColumn GetTableColumn(string header)
 	{
 		string escaped = header.EscapeMarkup();
-		IRenderable markup = new Markup($"[bold white]{escaped}[/]");
+		IRenderable markup = new Markup($"[{ColumnHeaderStyle}]{escaped}[/]");
 		return new(markup);
 	}
 	private static IRenderable GetContainer(string header, IRenderable content)
@@ -338,7 +336,7 @@ public sealed class DocumentationPrinter : IDocumentationPrinter
 			return new("");
 
 		string escaped = name.EscapeMarkup();
-		return new($"[{CommandNameStyle}]{escaped}[/]");
+		return new($"[{CommandStyle}]{escaped}[/]");
 	}
 	private static Markup GetGroupName(string? name)
 	{
@@ -346,7 +344,7 @@ public sealed class DocumentationPrinter : IDocumentationPrinter
 			return new("");
 
 		string escaped = name.EscapeMarkup();
-		return new($"[{GroupNameStyle}]{escaped}[/]");
+		return new($"[{GroupStyle}]{escaped}[/]");
 	}
 	private static Markup GetIsRequired(bool isRequired)
 	{
@@ -363,7 +361,7 @@ public sealed class DocumentationPrinter : IDocumentationPrinter
 		string prefix = settings.ShortFlagPrefix.EscapeMarkup();
 		string name = $"{flag.ShortName}".EscapeMarkup();
 
-		return new Markup($"[{FlagPrefixStyle}]{prefix}[/][{FlagNameStyle}]{name}[/]");
+		return new Markup($"[{FlagStyle}]{prefix}{name}[/]");
 	}
 	private static Markup GetLongFlag(IEngineSettings settings, IFlagInfo flag)
 	{
@@ -373,7 +371,7 @@ public sealed class DocumentationPrinter : IDocumentationPrinter
 		string prefix = settings.LongFlagPrefix.EscapeMarkup();
 		string name = flag.LongName.EscapeMarkup();
 
-		return new Markup($"[{FlagPrefixStyle}]{prefix}[/][{FlagNameStyle}]{name}[/]");
+		return new Markup($"[{FlagStyle}]{prefix}{name}[/]");
 	}
 	private static Markup GetDocumentation(IDocumentationNode? node)
 	{
