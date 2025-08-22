@@ -121,18 +121,17 @@ public sealed class DocumentationProvider : IDocumentationProvider
 				return null;
 
 			IDocumentationNode summary = new DocumentationNodeCollection(param.Children);
-			return new DocumentationInfo(summary, null);
+			return new DocumentationInfo(summary);
 		}
 
 		if (node is IDocumentationNodeCollection collection)
 		{
 			IDocumentationNode? summary = collection.Children.FirstOrDefault(c => c is ISummaryTagDocumentationNode);
-			if (summary is null)
-				return null;
-
 			IDocumentationNode? remarks = collection.Children.FirstOrDefault(c => c is IRemarksTagDocumentationNode);
+			IDocumentationNode? example = collection.Children.FirstOrDefault(c => c is IExampleTagDocumentationNode);
+			IDocumentationNode? returns = collection.Children.FirstOrDefault(c => c is IReturnsTagDocumentationNode);
 
-			return new DocumentationInfo(summary, remarks);
+			return new DocumentationInfo(summary, remarks, example, returns);
 		}
 
 		return null;
