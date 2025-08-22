@@ -15,5 +15,8 @@ public sealed class ToggleFlagParseResult(
 	#region Properties
 	/// <inheritdoc/>
 	public IFlagInfo FlagInfo { get; } = flagInfo;
+
+	/// <inheritdoc/>
+	public override IReadOnlyCollection<IFlagInfo> AffectedFlags { get; } = [flagInfo];
 	#endregion
 }

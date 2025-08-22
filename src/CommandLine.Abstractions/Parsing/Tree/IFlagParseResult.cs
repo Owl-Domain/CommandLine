@@ -11,5 +11,8 @@ public interface IFlagParseResult : IParseResult
 
 	/// <summary>The name of the parsed flag.</summary>
 	TextToken Name { get; }
+
+	/// <summary>The flags that are affected by this parse result.</summary>
+	IReadOnlyCollection<IFlagInfo> AffectedFlags { get; }
 	#endregion
 }

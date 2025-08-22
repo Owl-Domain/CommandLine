@@ -17,6 +17,9 @@ public sealed class RepeatFlagParseResult(IFlagInfo flagInfo, TextToken prefix, 
 
 	/// <inheritdoc/>
 	public int Repetition { get; } = repetition;
+
+	/// <inheritdoc/>
+	public override IReadOnlyCollection<IFlagInfo> AffectedFlags { get; } = [flagInfo];
 	#endregion
 
 	#region Helpers

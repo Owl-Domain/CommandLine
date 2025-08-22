@@ -202,6 +202,21 @@ public sealed class CommandParser : BaseCommandParser
 			arguments.Add(result);
 		}
 
+		IEnumerable<IFlagInfo> missingFlags = command.Flags
+			.Where(flag => flag.ValueInfo.IsRequired)
+			.Except(flags.SelectMany(flag => flag.AffectedFlags));
+
+		foreach (IFlagInfo flag in missingFlags)
+		{
+			string name =
+				flag.LongName is not null ?
+				$"{context.Engine.Settings.LongFlagPrefix}{flag.LongName}" :
+				$"{context.Engine.Settings.ShortFlagPrefix}{flag.ShortName}";
+
+			TextPoint point = context.Parser.Point;
+			context.Diagnostics.Add(DiagnosticSource.Parsing, new(point, point), $"Expected value for the {name} flag.");
+		}
+
 		return new CommandParseResult(command, nameToken, flags, arguments);
 	}
 	private static bool TryParseArgument(Context context, IArgumentInfo argument, [NotNullWhen(true)] out IArgumentParseResult? result)

@@ -15,5 +15,8 @@ public sealed class ChainFlagParseResult(
 	#region Properties
 	/// <inheritdoc/>
 	public IReadOnlyList<IFlagInfo> FlagInfos { get; } = flagInfos;
+
+	/// <inheritdoc/>
+	public override IReadOnlyCollection<IFlagInfo> AffectedFlags => FlagInfos;
 	#endregion
 }

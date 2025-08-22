@@ -14,6 +14,9 @@ public abstract class BaseFlagParseResult(TextToken prefix, TextToken name) : IF
 
 	/// <inheritdoc/>
 	public TextToken Name { get; } = name;
+
+	/// <inheritdoc/>
+	public abstract IReadOnlyCollection<IFlagInfo> AffectedFlags { get; }
 	#endregion
 
 	#region Methods

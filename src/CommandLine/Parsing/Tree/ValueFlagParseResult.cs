@@ -25,6 +25,9 @@ public sealed class ValueFlagParseResult(
 
 	/// <inheritdoc/>
 	public IValueParseResult Value { get; } = value;
+
+	/// <inheritdoc/>
+	public override IReadOnlyCollection<IFlagInfo> AffectedFlags { get; } = [flagInfo];
 	#endregion
 
 	#region Methods
