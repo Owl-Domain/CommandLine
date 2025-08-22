@@ -125,5 +125,28 @@ public sealed class CommandEngine(
 
 		return result;
 	}
+
+	/// <inheritdoc/>
+	public void Repl(Func<string> promptCallback)
+	{
+		while (true)
+		{
+			string prompt = promptCallback.Invoke();
+
+			Console.Write(prompt);
+			string? input = Console.ReadLine();
+
+			if (input is null)
+				return;
+
+			if (string.IsNullOrWhiteSpace(input))
+				continue;
+
+			ICommandRunResult result = Run(input);
+
+			if (result.ExecutorResult.Result is not null)
+				Console.WriteLine();
+		}
+	}
 	#endregion
 }

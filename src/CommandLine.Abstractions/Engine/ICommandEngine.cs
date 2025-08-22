@@ -93,5 +93,27 @@ public interface ICommandEngine
 	/// 	where you only have access to the full command.
 	/// </remarks>
 	ICommandRunResult Run(string command, CommandExecutionDelegate? callback = null);
+
+	/// <summary>Enters REPL mode where several commands can be executed.</summary>
+	/// <param name="promptCallback">The callback to use when getting the prompt for the next command.</param>
+	void Repl(Func<string> promptCallback);
+	#endregion
+}
+
+/// <summary>
+/// 	Contains various extension methods related to the <see cref="ICommandEngine"/>.
+/// </summary>
+public static class ICommandEngineExtensions
+{
+	#region Methods
+	/// <summary>Enters REPL mode where several commands can be executed.</summary>
+	/// <param name="engine">The engine to enter the REPL mode in.</param>
+	/// <param name="prompt">The text to use for the command prompt.</param>
+	public static void Repl(this ICommandEngine engine, string prompt = "> ")
+	{
+		string Callback() => prompt;
+
+		engine.Repl(Callback);
+	}
 	#endregion
 }
