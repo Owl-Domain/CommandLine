@@ -402,7 +402,7 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 			return null;
 
 		TextDocumentationNode summary = new("Shows the help information about the available commands.");
-		DocumentationInfo documentation = new(summary, null);
+		DocumentationInfo documentation = new(summary);
 
 		IValueParser<bool> parser = SelectValueParser<bool>();
 		string label = GetDefaultValueLabel(settings, false);
@@ -421,7 +421,7 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 			return null;
 
 		TextDocumentationNode summary = new("Shows the help information about the available commands.");
-		DocumentationInfo documentation = new(summary, null);
+		DocumentationInfo documentation = new(summary);
 
 		return new VirtualCommandInfo(settings.HelpCommandName, null, [], [], documentation, false);
 	}
@@ -457,7 +457,7 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 			return null;
 
 		TextDocumentationNode summary = new("Shows the current version of the program.");
-		DocumentationInfo documentation = new(summary, null);
+		DocumentationInfo documentation = new(summary);
 
 		return new VirtualCommandInfo(settings.VersionCommandName, null, [], [], documentation, true);
 	}

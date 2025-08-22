@@ -378,28 +378,68 @@ public sealed class DocumentationPrinter : IDocumentationPrinter
 		if (node is null)
 			return new("");
 
+		StringBuilder builder = new();
+		AddMarkupContent(builder, node);
+
+		string content = builder.ToString();
+		return new(content);
+	}
+	private static void AddMarkupContent(StringBuilder builder, IEnumerable<IDocumentationNode> nodes)
+	{
+		foreach (IDocumentationNode node in nodes)
+			AddMarkupContent(builder, node);
+	}
+	private static void AddMarkupContent(StringBuilder builder, IDocumentationNode? node)
+	{
+		if (node is null)
+			return;
+
 		if (node is ITextDocumentationNode rootText)
 		{
 			string escaped = rootText.Text.EscapeMarkup();
-			return new(escaped);
+			builder.Append(escaped);
 		}
-
-		if (node is IDocumentationNodeCollection collection)
+		else if (node is ILineBreakTagDocumentationNode)
+			builder.AppendLine();
+		else if (node is ITagDocumentationNode nameRef && nameRef.NameReference is not null)
 		{
-			StringBuilder builder = new();
-
-			foreach (IDocumentationNode child in collection.Children)
-			{
-				if (child is ITextDocumentationNode text) builder.Append(text.Text);
-			}
-
-			string fullText = builder.ToString();
-			string escaped = fullText.EscapeMarkup();
-
-			return new(escaped);
+			string escaped = nameRef.NameReference.EscapeMarkup();
+			builder.Append(escaped);
 		}
+		else if (node is IBoldTagDocumentationNode bold)
+		{
+			builder.Append("[bold]");
+			AddMarkupContent(builder, bold.Children);
+			builder.Append("[/]");
+		}
+		else if (node is IItalicTagDocumentationNode italic)
+		{
+			builder.Append("[italic]");
+			AddMarkupContent(builder, italic.Children);
+			builder.Append("[/]");
+		}
+		else if (node is ITagDocumentationNode link && link.Link is not null)
+		{
+			if (link.Children.Count is 0)
+			{
+				builder
+					.Append("[link]")
+					.Append(link.Link.ToString().EscapeMarkup())
+					.Append("[/]");
+			}
+			else
+			{
+				builder
+					.Append("[link=")
+					.Append(link.Link.ToString().EscapeMarkup())
+					.Append(']');
 
-		return new("");
+				AddMarkupContent(builder, link.Children);
+				builder.Append("[/]");
+			}
+		}
+		else if (node is IDocumentationNodeCollection collection)
+			AddMarkupContent(builder, collection.Children);
 	}
 	#endregion
 }
