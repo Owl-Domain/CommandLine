@@ -4,7 +4,7 @@ namespace OwlDomain.CommandLine.Diagnostics;
 /// 	Represents a diagnostic.
 /// </summary>
 [DebuggerDisplay($"{{{nameof(DebuggerDisplay)}(), nq}}")]
-public sealed class Diagnostic : IDiagnostic
+public class Diagnostic : IDiagnostic
 {
 	#region Properties
 	/// <inheritdoc/>
@@ -39,7 +39,7 @@ public sealed class Diagnostic : IDiagnostic
 	[ExcludeFromCodeCoverage]
 	private string DebuggerDisplay()
 	{
-		const string typeName = nameof(Diagnostic);
+		string typeName = GetType().Name;
 		const string sourceName = nameof(Source);
 		const string messageName = nameof(Message);
 

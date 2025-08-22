@@ -16,6 +16,9 @@ public sealed class DiagnosticBag : IDiagnosticBag, ICollection<IDiagnostic>
 
 	/// <inheritdoc/>
 	bool ICollection<IDiagnostic>.IsReadOnly => false;
+
+	/// <inheritdoc/>
+	public IEnumerable<IExceptionDiagnostic> Exceptions => _diagnostics.OfType<IExceptionDiagnostic>().OrderBy(s => s.Source);
 	#endregion
 
 	#region Methods
@@ -31,6 +34,17 @@ public sealed class DiagnosticBag : IDiagnosticBag, ICollection<IDiagnostic>
 		Diagnostic diagnostic = new(source, location, message);
 		Add(diagnostic);
 	}
+
+	/// <summary>Creates a new exception diagnostic and adds it to the bag.</summary>
+	/// <param name="source">The source of the diagnostic.</param>
+	/// <param name="location">The location that the diagnostic is referring to.</param>
+	/// <param name="exception">The exception that caused the diagnostic.</param>
+	public void Add(DiagnosticSource source, TextLocation location, Exception exception)
+	{
+		ExceptionDiagnostic diagnostic = new(source, location, exception);
+		Add(diagnostic);
+	}
+
 
 	/// <inheritdoc/>
 	public bool Contains(IDiagnostic item) => _diagnostics.Contains(item);

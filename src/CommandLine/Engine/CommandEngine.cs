@@ -100,7 +100,7 @@ public sealed class CommandEngine(
 
 		DiagnosticBag diagnostics =
 		[
-			..parserResult.Diagnostics,
+			.. parserResult.Diagnostics,
 			.. validatorResult.Diagnostics,
 			.. executorResult.Diagnostics
 		];

@@ -79,9 +79,16 @@ public sealed class CommandParser : BaseCommandParser
 		Stopwatch watch = Stopwatch.StartNew();
 		Context context = new(engine, parser, cancellationToken);
 
-		IParseResult? result = ParseGroup(context, engine.RootGroup, false);
-
-		CheckForLeftOverInput(context);
+		IParseResult? result = null;
+		try
+		{
+			result = ParseGroup(context, engine.RootGroup, false);
+			CheckForLeftOverInput(context);
+		}
+		catch (Exception exception) when (exception is not OperationCanceledException && Debugger.IsAttached is false)
+		{
+			context.Diagnostics.Add(DiagnosticSource.Parsing, new(parser.Point, parser.Point), exception);
+		}
 
 		watch.Stop();
 		return new CommandParserResult(context.Diagnostics.Count is 0, false, context.Engine, this, context.Diagnostics, result, context.ExtraTokens, watch.Elapsed);

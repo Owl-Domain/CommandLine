@@ -30,6 +30,13 @@ public sealed class CommandValidator : ICommandValidator
 			watch.Stop();
 			return new CommandValidatorResult(false, true, parserResult, diagnostics, watch.Elapsed);
 		}
+		catch (Exception exception) when (Debugger.IsAttached is false)
+		{
+			diagnostics.Add(DiagnosticSource.Validation, default, exception);
+
+			watch.Stop();
+			return new CommandValidatorResult(false, false, parserResult, diagnostics, watch.Elapsed);
+		}
 	}
 	private ICommandValidatorResult Validate(
 		ICommandParserResult parserResult,
