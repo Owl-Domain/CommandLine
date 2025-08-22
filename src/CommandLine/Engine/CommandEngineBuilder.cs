@@ -27,6 +27,7 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 	private ICommandExecutor? _commandExecutor;
 	private IDocumentationProvider? _documentationProvider;
 	private IDocumentationPrinter? _documentationPrinter;
+	private IOutputPrinter? _outputPrinter;
 	private readonly List<VirtualCommand> _virtualCommands = [];
 	private readonly List<VirtualFlag> _virtualFlags = [];
 	#endregion
@@ -153,6 +154,7 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 			_commandValidator,
 			_commandExecutor,
 			_documentationPrinter,
+			_outputPrinter,
 			virtualCommands,
 			virtualFlags);
 	}
@@ -160,7 +162,7 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 	[MemberNotNull(
 		nameof(_commandParser), nameof(_valueParserSelector), nameof(_commandValidator),
 		nameof(_commandExecutor), nameof(_documentationProvider), nameof(_documentationPrinter),
-		nameof(_rootLabelProvider))]
+		nameof(_outputPrinter), nameof(_rootLabelProvider))]
 	private void EnsureDefaults()
 	{
 		this.WithValueParserSelector<PathValueParserSelector>();
@@ -180,6 +182,7 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 		_commandExecutor ??= new CommandExecutor();
 		_documentationProvider ??= new DocumentationProvider();
 		_documentationPrinter ??= new DocumentationPrinter();
+		_outputPrinter ??= new OutputPrinter();
 		_rootLabelProvider ??= new RootDefaultValueLabelProvider(_labelProviders);
 
 		EnsureProjectInfo();

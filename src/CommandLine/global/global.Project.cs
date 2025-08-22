@@ -27,6 +27,7 @@ global using OwlDomain.CommandLine.Validation;
 global using OwlDomain.CommandLine.Execution;
 global using OwlDomain.CommandLine.SpecialTypes;
 global using OwlDomain.CommandLine.Labels;
+global using OwlDomain.CommandLine.Output;
 
 
 global using DiagnosticSource = OwlDomain.CommandLine.Diagnostics.DiagnosticSource;

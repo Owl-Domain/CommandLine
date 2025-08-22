@@ -15,6 +15,7 @@ global using OwlDomain.CommandLine.Parsing.Values.Paths;
 global using OwlDomain.CommandLine.Validation;
 global using OwlDomain.CommandLine.Execution;
 global using OwlDomain.CommandLine.SpecialTypes;
+global using OwlDomain.CommandLine.Output;
 
 
 global using DiagnosticSource = OwlDomain.CommandLine.Diagnostics.DiagnosticSource;

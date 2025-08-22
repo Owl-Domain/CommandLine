@@ -32,6 +32,9 @@ public interface ICommandEngine
 	/// <summary>The documentation printer for the engine.</summary>
 	IDocumentationPrinter DocumentationPrinter { get; }
 
+	/// <summary>The command output printer for the engine.</summary>
+	IOutputPrinter OutputPrinter { get; }
+
 	/// <summary>The known virtual commands that have been added to the engine.</summary>
 	IVirtualCommands VirtualCommands { get; }
 
