@@ -17,7 +17,7 @@ public sealed class CommandExecutionContext(
 	ICommandGroupInfo groupTarget,
 	ICommandInfo? commandTarget,
 	IReadOnlyDictionary<IArgumentInfo, object?> arguments,
-	IReadOnlyDictionary<IFlagInfo, object?> flags,
+	IFlagExecutionContext flags,
 	ICommandValidatorResult validatorResult,
 	CancellationTokenSource cancellationTokenSource)
 	: ICommandExecutionContext
@@ -45,7 +45,7 @@ public sealed class CommandExecutionContext(
 	public IReadOnlyDictionary<IArgumentInfo, object?> Arguments { get; } = arguments;
 
 	/// <inheritdoc/>
-	public IReadOnlyDictionary<IFlagInfo, object?> Flags { get; } = flags;
+	public IFlagExecutionContext Flags { get; } = flags;
 
 	/// <inheritdoc/>
 	public ICommandValidatorResult ValidatorResult { get; } = validatorResult;

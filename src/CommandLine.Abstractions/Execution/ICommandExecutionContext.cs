@@ -28,7 +28,7 @@ public interface ICommandExecutionContext
 	IReadOnlyDictionary<IArgumentInfo, object?> Arguments { get; }
 
 	/// <summary>The flags that will be passed to the target upon execution.</summary>
-	IReadOnlyDictionary<IFlagInfo, object?> Flags { get; }
+	IFlagExecutionContext Flags { get; }
 
 	/// <summary>The result of validating the command that will be executed.</summary>
 	ICommandValidatorResult ValidatorResult { get; }
@@ -42,5 +42,47 @@ public interface ICommandExecutionContext
 	/// <param name="resultValue">The result of executing the command.</param>
 	/// <exception cref="InvalidOperationException">Thrown if the execution has already been handled.</exception>
 	void Handle(object? resultValue);
+	#endregion
+}
+
+/// <summary>
+/// 	Contains various extension methods related to the <see cref="ICommandExecutionContext"/>.
+/// </summary>
+public static class ICommandExecutionContextExtensions
+{
+	#region Methods
+	/// <summary>
+	/// 	Checks whether the given <paramref name="command"/> is the command
+	/// 	targetted by the given execution <paramref name="context"/>.
+	/// </summary>
+	/// <param name="context">The execution context to check.</param>
+	/// <param name="command">
+	/// 	The command to check for, if this is <see langword="null"/>
+	/// 	then the result will always be <see langword="false"/>.
+	/// </param>
+	/// <returns>
+	/// 	<see langword="true"/> if the given <paramref name="command"/> is the command targetted
+	/// 	by the given execution <paramref name="context"/>, <see langword="false"/> otherwise.
+	/// </returns>
+	public static bool IsCommand(this ICommandExecutionContext context, [NotNullWhen(true)] ICommandInfo? command)
+	{
+		return command is not null && context.CommandTarget == command;
+	}
+
+	/// <summary>checks whether the targetted command is the virtual help command.</summary>
+	/// <param name="context">The execution context to use for the check.</param>
+	/// <returns>
+	/// 	<see langword="true"/> if the targetted command is the
+	/// 	virtual help command, <see langword="false"/> otherwise.
+	/// </returns>
+	public static bool IsHelpCommand(this ICommandExecutionContext context) => context.IsCommand(context.Engine.VirtualCommands.Help);
+
+	/// <summary>checks whether the targetted command is the virtual version command.</summary>
+	/// <param name="context">The execution context to use for the check.</param>
+	/// <returns>
+	/// 	<see langword="true"/> if the targetted command is the
+	/// 	virtual version command, <see langword="false"/> otherwise.
+	/// </returns>
+	public static bool IsVersionCommand(this ICommandExecutionContext context) => context.IsCommand(context.Engine.VirtualCommands.Version);
 	#endregion
 }

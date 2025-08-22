@@ -44,12 +44,14 @@ public sealed class CommandExecutor : ICommandExecutor
 		cancellationTokenSource.Token.ThrowIfCancellationRequested();
 
 		IReadOnlyDictionary<IFlagInfo, object?> flags = GetFlags(validatorResult.ParserResult);
+		FlagExecutionContext flagContext = new(validatorResult.Engine, flags);
+
 		IReadOnlyDictionary<IArgumentInfo, object?> arguments = GetArguments(validatorResult.ParserResult);
 
 		ICommandGroupInfo? groupTarget = GetTargetGroup(validatorResult.ParserResult.CommandOrGroup, cancellationTokenSource.Token) ?? validatorResult.Engine.RootGroup;
 		ICommandInfo? commandTarget = GetTargetCommand(validatorResult.ParserResult.CommandOrGroup, cancellationTokenSource.Token);
 
-		CommandExecutionContext context = new(diagnostics, validatorResult.Engine, groupTarget, commandTarget, arguments, flags, validatorResult, cancellationTokenSource);
+		CommandExecutionContext context = new(diagnostics, validatorResult.Engine, groupTarget, commandTarget, arguments, flagContext, validatorResult, cancellationTokenSource);
 
 		if (callback is not null || OnExecute is not null)
 		{
