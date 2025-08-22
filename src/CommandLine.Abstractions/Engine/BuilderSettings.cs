@@ -72,6 +72,9 @@ public sealed class BuilderSettings : IEngineSettings
 
 	/// <inheritdoc/>
 	public string VersionCommandName { get; set; } = "version";
+
+	/// <inheritdoc/>
+	public NumberFormatInfo NumberFormat { get; set; } = NumberFormatInfo.InvariantInfo;
 	#endregion
 
 	#region Methods
@@ -312,6 +315,15 @@ public sealed class BuilderSettings : IEngineSettings
 	public BuilderSettings WithoutVersionCommand()
 	{
 		IncludeVersionCommand = false;
+		return this;
+	}
+
+	/// <summary>Sets the <see cref="NumberFormat"/> setting to the given <paramref name="format"/>.</summary>
+	/// <param name="format">The formatting information to use for parsing and displaying numbers.</param>
+	/// <returns>The used settings instance.</returns>
+	public BuilderSettings WithNumberFormat(NumberFormatInfo format)
+	{
+		NumberFormat = format;
 		return this;
 	}
 	#endregion

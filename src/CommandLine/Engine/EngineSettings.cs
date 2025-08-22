@@ -71,6 +71,9 @@ public sealed class EngineSettings : IEngineSettings
 
 	/// <inheritdoc/>
 	public required string VersionCommandName { get; init; }
+
+	/// <inheritdoc/>
+	public required NumberFormatInfo NumberFormat { get; init; }
 	#endregion
 
 	#region Functions
@@ -135,6 +138,8 @@ public sealed class EngineSettings : IEngineSettings
 
 			IncludeVersionCommand = settings.IncludeVersionCommand,
 			VersionCommandName = settings.VersionCommandName,
+
+			NumberFormat = settings.NumberFormat,
 		};
 	}
 	#endregion

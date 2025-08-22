@@ -95,5 +95,9 @@ public interface IEngineSettings
 	/// <summary>The name of the virtual version command.</summary>
 	/// <remarks><see cref="IncludeVersionCommand"/> must be set to <see langword="true"/> for this setting to matter.</remarks>
 	string VersionCommandName { get; }
+
+	/// <summary>The formatting information that is used when parsing and displaying numerical values.</summary>
+	/// <remarks>Beware that some number formats might cause problems when parsing collection values.</remarks>
+	NumberFormatInfo NumberFormat { get; }
 	#endregion
 }

@@ -14,7 +14,7 @@ public sealed class DecimalValueParser<T> : BaseValueParser<T>
 	{
 		string text = parser.AdvanceUntilBreak().Replace("_", "");
 
-		if (T.TryParse(text, NumberStyles.AllowExponent | NumberStyles.AllowTrailingSign, null, out T? result))
+		if (T.TryParse(text, NumberStyles.AllowExponent | NumberStyles.AllowTrailingSign, context.Engine.Settings.NumberFormat, out T? result))
 		{
 			error = default;
 			return result;

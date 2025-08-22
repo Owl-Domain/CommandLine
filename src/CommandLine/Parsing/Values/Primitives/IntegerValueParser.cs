@@ -12,11 +12,12 @@ public sealed class IntegerValueParser<T> : BaseValueParser<T>
 	/// <inheritdoc/>
 	protected override T? TryParse(IValueParseContext context, ITextParser parser, out string? error)
 	{
+		NumberFormatInfo format = context.Engine.Settings.NumberFormat;
 		string text = parser.AdvanceUntilBreak().Replace("_", "");
 
 		if (text.StartsWith("0x"))
 		{
-			if (T.TryParse(text.AsSpan(2), NumberStyles.AllowHexSpecifier, null, out T? value))
+			if (T.TryParse(text.AsSpan(2), NumberStyles.AllowHexSpecifier, format, out T? value))
 			{
 				error = default;
 				return value;
@@ -29,7 +30,7 @@ public sealed class IntegerValueParser<T> : BaseValueParser<T>
 #if NET8_0_OR_GREATER
 		if (text.StartsWith("0b"))
 		{
-			if (T.TryParse(text.AsSpan(2), NumberStyles.AllowBinarySpecifier, null, out T? value))
+			if (T.TryParse(text.AsSpan(2), NumberStyles.AllowBinarySpecifier, format, out T? value))
 			{
 				error = default;
 				return value;
@@ -40,7 +41,7 @@ public sealed class IntegerValueParser<T> : BaseValueParser<T>
 		}
 #endif
 
-		if (T.TryParse(text, NumberStyles.AllowExponent | NumberStyles.AllowTrailingSign, null, out T? result))
+		if (T.TryParse(text, NumberStyles.AllowExponent | NumberStyles.AllowTrailingSign, format, out T? result))
 		{
 			error = default;
 			return result;

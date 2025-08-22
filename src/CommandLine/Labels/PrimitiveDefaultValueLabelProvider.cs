@@ -18,20 +18,20 @@ public sealed class PrimitiveDefaultValueLabelProvider : BaseDefaultValueLabelPr
 			true => "true",
 			false => "false",
 
-			byte value => $"{value}",
-			ushort value => $"{value:n0}",
-			uint value => $"{value:n0}",
-			ulong value => $"{value:n0}",
+			byte value => value.ToString(settings.NumberFormat),
+			ushort value => value.ToString(settings.NumberFormat),
+			uint value => value.ToString(settings.NumberFormat),
+			ulong value => value.ToString(settings.NumberFormat),
 
-			sbyte value => $"{value}",
-			short value => $"{value:n0}",
-			int value => $"{value:n0}",
-			long value => $"{value:n0}",
+			sbyte value => value.ToString(settings.NumberFormat),
+			short value => value.ToString(settings.NumberFormat),
+			int value => value.ToString(settings.NumberFormat),
+			long value => value.ToString(settings.NumberFormat),
 
-			Half value => $"{value}",
-			float value => $"{value}",
-			double value => $"{value}",
-			decimal value => $"{value}",
+			Half value => value.ToString(settings.NumberFormat),
+			float value => value.ToString(settings.NumberFormat),
+			double value => value.ToString(settings.NumberFormat),
+			decimal value => value.ToString(settings.NumberFormat),
 
 			// Todo(Nightowl): Improve text type labels by escaping some characters;
 			char value => $"'{value}'",
