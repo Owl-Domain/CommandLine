@@ -30,6 +30,14 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CommandLine", "CommandLine\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CommandLine.Tests", "CommandLine.Tests\CommandLine.Tests.csproj", "{1E521F65-7DC3-4CB3-88E5-3B54D439D494}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{208BA388-4CEE-2CBF-559C-5607C099C1F8}"
+	ProjectSection(SolutionItems) = preProject
+		..\docs\builtin-parsers.md = ..\docs\builtin-parsers.md
+		..\docs\parsing-syntax.md = ..\docs\parsing-syntax.md
+		..\docs\custom-parsers.md = ..\docs\custom-parsers.md
+		..\docs\value-parser-selectors.md = ..\docs\value-parser-selectors.md
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
