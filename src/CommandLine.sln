@@ -33,6 +33,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{208BA388-4CEE-2CBF-559C-5607C099C1F8}"
 	ProjectSection(SolutionItems) = preProject
 		..\docs\readme.md = ..\docs\readme.md
+		..\docs\customisation.md = ..\docs\customisation.md
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "parsing", "parsing", "{FB1EB026-2289-776E-1754-C55FDA4FC6B6}"
