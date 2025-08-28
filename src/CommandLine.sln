@@ -32,10 +32,15 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CommandLine.Tests", "Comman
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{208BA388-4CEE-2CBF-559C-5607C099C1F8}"
 	ProjectSection(SolutionItems) = preProject
-		..\docs\builtin-parsers.md = ..\docs\builtin-parsers.md
-		..\docs\parsing-syntax.md = ..\docs\parsing-syntax.md
-		..\docs\custom-parsers.md = ..\docs\custom-parsers.md
-		..\docs\value-parser-selectors.md = ..\docs\value-parser-selectors.md
+		..\docs\readme.md = ..\docs\readme.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "parsing", "parsing", "{FB1EB026-2289-776E-1754-C55FDA4FC6B6}"
+	ProjectSection(SolutionItems) = preProject
+		..\docs\parsing\builtin-parsers.md = ..\docs\parsing\builtin-parsers.md
+		..\docs\parsing\custom-parsers.md = ..\docs\parsing\custom-parsers.md
+		..\docs\parsing\parsing-syntax.md = ..\docs\parsing\parsing-syntax.md
+		..\docs\parsing\value-parser-selectors.md = ..\docs\parsing\value-parser-selectors.md
 	EndProjectSection
 EndProject
 Global
@@ -66,5 +71,6 @@ Global
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{79D021D1-A794-4159-B895-C446E5DB3693} = {6575DD1B-13E4-46A6-A76A-1C04AB6260C0}
+		{FB1EB026-2289-776E-1754-C55FDA4FC6B6} = {208BA388-4CEE-2CBF-559C-5607C099C1F8}
 	EndGlobalSection
 EndGlobal
