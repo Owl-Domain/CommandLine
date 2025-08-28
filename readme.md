@@ -28,7 +28,8 @@ class Program
          .Build();
 
       engine.Run(args);
-      // Or
+
+      // or
       engine.Repl();
    }
 }
@@ -74,6 +75,71 @@ __Output from `add --help`:__
 - Virtual flags and commands, ie. `help` and `version`.
 - Co-operative cancellation support.
 - Support for return values.
+
+
+## Usage
+
+Using this library is quite simple, all you have to do is reference the main package
+`OwlDomain.CommandLine`, and then just like the main example shows, create a new instance
+of the `ICommandEngineBuilder` by doing `CommandEngine.New()`, ie:
+
+```cs
+using OwlDomain.CommandLine.Engine;
+
+ICommandEngineBuilder builder = CommandEngine.New();
+```
+
+This builder will let you customise a lot of different things *(read the [customisation](./docs/customisation.md) document for more information on this).*
+
+The only thing that you are required to do is register a class which contains the commands that you want to make available, you can do this through one of two ways:
+
+```cs
+builder.From(typeof(MyCommands));
+
+// or
+builder.From<MyCommands>();
+
+class MyCommands
+{
+   /* Your command implementations go here */
+}
+```
+
+> [!WARNING]
+> Currently you are required to register one *(and only one)* class for your commands.
+
+After this, you simply build the engine with the `Build()` command, and then choose between either the CLI mode, or the REPL mode like so:
+
+```cs
+ICommandEngine engine = builder.Build();
+
+// CLI mode, args is the args from the Main(string[] args) function.
+engine.Run(args);
+
+// or REPL mode, where several commands can be executed one by one.
+engine.Repl();
+```
+
+Defining your commands and flags should feel quite natural, each property
+is a flag, and each method is a command, you can mark a flag as required by using C#'s
+`required` keyword, and you can set a default argument/flag just as naturally, ie:
+
+```cs
+class MyCommands
+{
+   public required string RequiredFlag { get; init; }
+   public int OptionalFlag { get; init; } = 5;
+
+   public void Command(string requiredArgument, string optionalArgument = "default-value")
+   {
+      /* implementation here */
+   }
+}
+```
+
+> [!WARNING]
+> Currently, the default implementation for the name extractor only supports `camelCasing`
+> and `PascalCasing` for the properties, parameters and methods.
 
 
 ## Contributions
