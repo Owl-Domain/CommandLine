@@ -28,6 +28,9 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 	private IDocumentationProvider? _documentationProvider;
 	private IDocumentationPrinter? _documentationPrinter;
 	private IOutputPrinter? _outputPrinter;
+	private bool _includeDefaultCommandInjector = true;
+	private bool _includeDefaultValueParserSelectors = true;
+	private bool _includeDefaultValueLabelProviders = true;
 	private readonly List<VirtualCommand> _virtualCommands = [];
 	private readonly List<VirtualFlag> _virtualFlags = [];
 	#endregion
@@ -79,6 +82,97 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 		if (_labelProviders.Contains(provider) is false)
 			_labelProviders.Add(provider);
 
+		return this;
+	}
+
+	/// <inheritdoc/>
+	public ICommandEngineBuilder With(INameExtractor extractor)
+	{
+		_nameExtractor = extractor;
+		return this;
+	}
+
+	/// <inheritdoc/>
+	public ICommandEngineBuilder With(ICommandParser parser)
+	{
+		_commandParser = parser;
+		return this;
+	}
+
+	/// <inheritdoc/>
+	public ICommandEngineBuilder With(ICommandValidator validator)
+	{
+		_commandValidator = validator;
+		return this;
+	}
+
+	/// <inheritdoc/>
+	public ICommandEngineBuilder With(ICommandExecutor executor)
+	{
+		_commandExecutor = executor;
+		return this;
+	}
+
+	/// <inheritdoc/>
+	public ICommandEngineBuilder With(IDocumentationProvider provider)
+	{
+		_documentationProvider = provider;
+		return this;
+	}
+
+	/// <inheritdoc/>
+	public ICommandEngineBuilder With(IDocumentationPrinter printer)
+	{
+		_documentationPrinter = printer;
+		return this;
+	}
+
+	/// <inheritdoc/>
+	public ICommandEngineBuilder With(IOutputPrinter printer)
+	{
+		_outputPrinter = printer;
+		return this;
+	}
+
+	/// <inheritdoc/>
+	public ICommandEngineBuilder WithDefaultValueParsers()
+	{
+		_includeDefaultValueParserSelectors = true;
+		return this;
+	}
+
+	/// <inheritdoc/>
+	public ICommandEngineBuilder WithoutDefaultValueParsers()
+	{
+		_includeDefaultValueParserSelectors = false;
+		return this;
+	}
+
+	/// <inheritdoc/>
+	public ICommandEngineBuilder WithDefaultInjector()
+	{
+		_includeDefaultCommandInjector = true;
+		return this;
+	}
+
+	/// <inheritdoc/>
+	public ICommandEngineBuilder WithoutDefaultInjector()
+	{
+		_includeDefaultCommandInjector = false;
+		return this;
+	}
+
+	/// <inheritdoc/>
+	public ICommandEngineBuilder WithDefaultValueLabelProvider()
+	{
+		_includeDefaultValueLabelProviders = true;
+		return this;
+	}
+
+	/// <inheritdoc/>
+	public ICommandEngineBuilder WithoutDefaultValueLabelProvider()
+	{
+		_includeDefaultValueLabelProviders = false;
 		return this;
 	}
 
@@ -179,15 +273,22 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 		nameof(_outputPrinter), nameof(_rootLabelProvider))]
 	private void EnsureDefaults()
 	{
-		this.WithValueParserSelector<PathValueParserSelector>();
-		this.WithValueParserSelector<NetworkingValueParserSelector>();
-		this.WithValueParserSelector<PrimitiveValueParserSelector>();
+		if (_includeDefaultValueParserSelectors)
+		{
+			this.WithValueParserSelector<PathValueParserSelector>();
+			this.WithValueParserSelector<NetworkingValueParserSelector>();
+			this.WithValueParserSelector<PrimitiveValueParserSelector>();
+		}
 
-		this.WithCommandInjector<EngineCommandInjector>();
+		if (_includeDefaultCommandInjector)
+			this.WithCommandInjector<EngineCommandInjector>();
 
-		this.WithDefaultValueLabelProvider<PrimitiveDefaultValueLabelProvider>();
-		this.WithDefaultValueLabelProvider<CollectionDefaultValueLabelProvider>();
-		this.WithDefaultValueLabelProvider<ToStringDefaultLabelProvider>();
+		if (_includeDefaultValueLabelProviders)
+		{
+			this.WithDefaultValueLabelProvider<PrimitiveDefaultValueLabelProvider>();
+			this.WithDefaultValueLabelProvider<CollectionDefaultValueLabelProvider>();
+			this.WithDefaultValueLabelProvider<ToStringDefaultLabelProvider>();
+		}
 
 		_nameExtractor ??= NameExtractor.Instance;
 		_commandParser ??= new CommandParser();
