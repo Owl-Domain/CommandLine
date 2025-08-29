@@ -96,7 +96,8 @@ allows for parsing networking ports *(numbers between `0` and `65,535` inclusive
 for using special aliases for commonly used ports, ie. `http` would mean port `80`.
 
 > [!NOTE]
-> The aliasing behaviour cannot be changed right now.
+> The aliasing behaviour cannot be changed right now, unless you create a custom parser
+> for the `Port`, `IPEndPoint` and `DnsEndPoint` types.
 
 
 #### IPEndPoint

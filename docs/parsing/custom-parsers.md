@@ -15,7 +15,7 @@ Before implementing a custom parser, there are some things that you should under
 
 When a parsing operation is started, the parsing engine is fed with text fragments, in REPL mode this will be a single text fragment *(such as the full command input),* and in CLI mode, this will be one or more text fragments, where each fragment is a single argument that was passed in to the process.
 
-> [!WARNING]
+> [!IMPORTANT]
 > Process arguments *(understood by the OS/shell)* are different from command arguments *(understood by this library)* and they should not be confused.
 
 

@@ -11,3 +11,8 @@ To learn more about parsing, take a look at:
 - The [built-in parsers](./parsing/builtin-parsers.md) document for information on what built-in value parsers are available.
 - The [custom parsers](./parsing/custom-parsers.md) document for learning about how to create a custom value parser.
 - The [value parser selectors](./parsing/value-parser-selectors.md) document for learning about how to register custom value parsers.
+
+
+## Customisation
+
+To learn more about customisation, read the [customisation](./customisation.md) document.
