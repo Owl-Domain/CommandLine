@@ -1,7 +1,9 @@
 # OwlDomain.CommandLine
 
+[<img src="https://img.shields.io/nuget/v/OwlDomain.CommandLine?logo=nuget" alt="nuget.org package version">](https://www.nuget.org/packages/OwlDomain.CommandLine)
 [![Build](https://github.com/Owl-Domain/CommandLine/actions/workflows/build.yml/badge.svg)](https://github.com/Owl-Domain/CommandLine/actions/workflows/build.yml)
 [![Test](https://github.com/Owl-Domain/CommandLine/actions/workflows/test.yml/badge.svg)](https://github.com/Owl-Domain/CommandLine/actions/workflows/test.yml)
+[![Package](https://github.com/Owl-Domain/CommandLine/actions/workflows/package.yml/badge.svg)](https://github.com/Owl-Domain/CommandLine/actions/workflows/package.yml)
 
 ---
 
@@ -75,6 +77,18 @@ __Output from `add --help`:__
 - Virtual flags and commands, ie. `help` and `version`.
 - Co-operative cancellation support.
 - Support for return values.
+
+
+## Installation
+
+This library is available on [nuget.org](https://www.nuget.org/packages/OwlDomain.CommandLine). In order to use it, simply reference it from your .NET project,
+in a C# project *(a .csproj file)* this would look like so:
+
+```csproj
+<ItemGroup>
+  <PackageReference Include="OwlDomain.CommandLine" Version="1.0.0-public-test" />
+</ItemGroup>
+```
 
 
 ## Usage

@@ -1,2 +1,2 @@
-latest []:
-	- Initial release.
+v1.0.0-public-test [29/08/2025]:
+	- Initial public test pre-release.

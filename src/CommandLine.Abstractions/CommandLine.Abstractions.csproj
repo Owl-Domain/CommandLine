@@ -2,12 +2,13 @@
 
 	<!-- Project -->
 	<PropertyGroup Label="project">
-		<TargetFrameworks>net7.0;netstandard2.1</TargetFrameworks>
+		<TargetFrameworks>net7.0; netstandard2.1</TargetFrameworks>
 		<LangVersion>13</LangVersion>
 		<Nullable>enable</Nullable>
 
 		<AssemblyName>OwlDomain.CommandLine.Abstractions</AssemblyName>
 		<RootNamespace>OwlDomain.CommandLine</RootNamespace>
+		<Version>1.0.0-public-test</Version>
 
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>
 		<Deterministic>true</Deterministic>
