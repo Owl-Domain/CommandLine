@@ -108,23 +108,53 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 	/// <inheritdoc/>
 	public ICommandEngine Build()
 	{
-		if (_classes.Count is 0) Throw.New.InvalidOperationException("No classes were provided to extract the commands from.");
 		if (_classes.Count > 1) Throw.New.NotSupportedException("Extracting commands from multiple classes is not supported yet.");
 
 		EnsureDefaults();
 
 		IEngineSettings settings = EngineSettings.From(_settings);
 		SetupVirtual(settings, out IVirtualFlags virtualFlags, out IVirtualCommands virtualCommands);
+		ICommandGroupInfo group = BuildRootGroup(settings);
+
+		return new CommandEngine(
+			settings,
+			group,
+			_commandParser,
+			_valueParserSelector,
+			_commandValidator,
+			_commandExecutor,
+			_documentationPrinter,
+			_outputPrinter,
+			virtualCommands,
+			virtualFlags);
+	}
+	private CommandGroupInfo BuildRootGroup(IEngineSettings settings)
+	{
+		Debug.Assert(_documentationProvider is not null);
 
 		Dictionary<string, ICommandGroupInfo> childGroups = [];
 		Dictionary<string, ICommandInfo> childCommands = [];
+		List<IFlagInfo> groupFlags = [];
 
-		Type classType = _classes.Single();
-		IReadOnlyCollection<IFlagInfo> classFlags = GetFlags(settings, classType, out IReadOnlyCollection<InjectedPropertyInfo> injectedClassProperties);
-		IDocumentationInfo? documentation = _documentationProvider.GetInfo(classType);
+		Type? classType = _classes.SingleOrDefault();
+		CommandGroupInfo? group;
 
-		List<IFlagInfo> groupFlags = [.. classFlags];
-		CommandGroupInfo group = new(null, null, groupFlags, childGroups, childCommands, null, documentation);
+		if (classType is not null)
+		{
+			IReadOnlyCollection<IFlagInfo> classFlags = GetFlags(settings, classType, out IReadOnlyCollection<InjectedPropertyInfo> injectedClassProperties);
+			IDocumentationInfo? documentation = _documentationProvider.GetInfo(classType);
+
+			groupFlags = [.. classFlags];
+
+			group = new(null, null, groupFlags, childGroups, childCommands, null, documentation);
+			foreach (IMethodCommandInfo command in GetCommands(settings, classType, group, classFlags, injectedClassProperties))
+			{
+				Debug.Assert(command.Name is not null);
+				childCommands.Add(command.Name, command);
+			}
+		}
+		else
+			group = new(null, null, groupFlags, childGroups, childCommands, null, null);
 
 		foreach (VirtualCommand virtualCommand in _virtualCommands)
 		{
@@ -140,23 +170,7 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 				groupFlags.Add(virtualFlag.Flag);
 		}
 
-		foreach (IMethodCommandInfo command in GetCommands(settings, classType, group, classFlags, injectedClassProperties))
-		{
-			Debug.Assert(command.Name is not null);
-			childCommands.Add(command.Name, command);
-		}
-
-		return new CommandEngine(
-			settings,
-			group,
-			_commandParser,
-			_valueParserSelector,
-			_commandValidator,
-			_commandExecutor,
-			_documentationPrinter,
-			_outputPrinter,
-			virtualCommands,
-			virtualFlags);
+		return group;
 	}
 
 	[MemberNotNull(
