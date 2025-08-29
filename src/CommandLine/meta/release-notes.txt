@@ -1,2 +1,5 @@
+v1.0.0-public-test-2 [29/08/2025]:
+	- Fix group flags not being included in the parser result.
+
 v1.0.0-public-test [29/08/2025]:
 	- Initial public test pre-release.

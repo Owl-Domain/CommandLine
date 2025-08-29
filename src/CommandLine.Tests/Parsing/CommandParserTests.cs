@@ -41,8 +41,7 @@ public sealed class CommandParserTests
 			.AreEqual(result.Stage, DiagnosticSource.Parsing)
 			.AreEqual(result.Diagnostics.Count, 0)
 			.AreEqual(result.Arguments.Count, 0)
-			.AreEqual(result.Flags.Count, 0)
-			.AreSameInstance(result.CommandOrGroup, commandResult);
+			.AreEqual(result.Flags.Count, 0);
 
 		Assert.That
 			.IsNotNull(commandResult)
@@ -95,8 +94,7 @@ public sealed class CommandParserTests
 			.AreEqual(result.Stage, DiagnosticSource.Parsing)
 			.AreEqual(result.Diagnostics.Count, 0)
 			.AreEqual(result.Arguments.Count, 1)
-			.AreEqual(result.Flags.Count, 0)
-			.AreSameInstance(result.CommandOrGroup, commandResult);
+			.AreEqual(result.Flags.Count, 0);
 
 		Assert.That
 			.IsNotNull(commandResult)

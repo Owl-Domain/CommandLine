@@ -8,7 +8,7 @@
 
 		<AssemblyName>OwlDomain.CommandLine</AssemblyName>
 		<RootNamespace>OwlDomain.CommandLine</RootNamespace>
-		<Version>1.0.0-public-test</Version>
+		<Version>1.0.0-public-test-2</Version>
 
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>
 		<Deterministic>true</Deterministic>

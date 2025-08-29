@@ -145,7 +145,9 @@ public sealed class CommandParser : BaseCommandParser
 				if (group.Commands.TryGetValue(name, out ICommandInfo? command))
 				{
 					ICommandParseResult subCommand = ParseCommand(context, command, nameToken, ref flagArgumentSeparatorReached);
-					return subCommand;
+					GroupParseResult groupResult = new(group, null, groupFlags, subCommand);
+
+					return groupResult;
 				}
 			}
 

@@ -86,7 +86,7 @@ in a C# project *(a .csproj file)* this would look like so:
 
 ```csproj
 <ItemGroup>
-  <PackageReference Include="OwlDomain.CommandLine" Version="1.0.0-public-test" />
+  <PackageReference Include="OwlDomain.CommandLine" Version="1.0.0-public-test-2" />
 </ItemGroup>
 ```
 
@@ -156,6 +156,15 @@ class MyCommands
 > The default name extractor can work with a variety of different naming styles, such as
 > pascal case, camel case, kebab case, snake case, including a variety of capitalisations,
 > __however__, all of the resulting names will always be in `kebab-case` by default.
+
+As a final step, it is important to make your final project export it's documentation,
+as that is what the library uses to understand your C# comments, you can do so like this:
+
+```csproj
+<PropertyGroup>
+  <GenerateDocumentationFile>true</GenerateDocumentationFile>
+</PropertyGroup>
+```
 
 
 ## Contributions
