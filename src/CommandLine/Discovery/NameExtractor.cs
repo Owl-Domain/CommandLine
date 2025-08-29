@@ -37,7 +37,16 @@ public class NameExtractor : INameExtractor
 	public virtual string GetArgumentName(string originalName) => Convert(originalName);
 
 	/// <inheritdoc/>
-	public virtual char GetShortFlagName(string originalName) => char.ToLower(originalName[0]);
+	public virtual char GetShortFlagName(string originalName)
+	{
+		char name = originalName
+			.Where(char.IsLetterOrDigit)
+			.FirstOrDefault();
+
+		name = char.ToLower(name);
+
+		return name;
+	}
 
 	/// <inheritdoc/>
 	public virtual string GetLongFlagName(string originalName) => Convert(originalName);
@@ -63,7 +72,7 @@ public class NameExtractor : INameExtractor
 	/// <inheritdoc/>
 	public virtual char? GetShortFlagName(ParameterInfo parameter)
 	{
-		if (parameter.Name is null || parameter.Name.Length is 0)
+		if (parameter.Name is null || (parameter.Name.Any(char.IsLetterOrDigit) is false))
 			return null;
 
 		return GetShortFlagName(parameter.Name);
@@ -72,7 +81,7 @@ public class NameExtractor : INameExtractor
 	/// <inheritdoc/>
 	public virtual char? GetShortFlagName(PropertyInfo property)
 	{
-		if (property.Name is null || property.Name.Length is 0)
+		if (property.Name is null || (property.Name.Any(char.IsLetterOrDigit) is false))
 			return null;
 
 		return GetShortFlagName(property.Name);
@@ -106,9 +115,26 @@ public class NameExtractor : INameExtractor
 
 		StringBuilder builder = SharedBuilder;
 
-		for (int i = 0; i < name.Length; i++)
+		int start = 0;
+		while (start < name.Length && name[start] is '_' or '-')
+			start++;
+
+		int end = name.Length - 1;
+		while (end > start && name[end] is '_' or '-')
+			end--;
+
+		for (int i = start; i <= end; i++)
 		{
 			char current = name[i];
+
+			if (current is '_' or '-')
+			{
+				if (i > 0 && name[i - 1] is not '_' and not '-')
+					builder.Append('-');
+
+				continue;
+			}
+
 			char lower = char.ToLower(current);
 
 			if (i == name.Length - 1)

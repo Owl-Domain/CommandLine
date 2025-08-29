@@ -138,9 +138,10 @@ class MyCommands
 }
 ```
 
-> [!WARNING]
-> Currently, the default implementation for the name extractor only supports `camelCasing`
-> and `PascalCasing` for the properties, parameters and methods.
+> [!TIP]
+> The default name extractor can work with a variety of different naming styles, such as
+> pascal case, camel case, kebab case, snake case, including a variety of capitalisations,
+> __however__, all of the resulting names will always be in `kebab-case` by default.
 
 
 ## Contributions

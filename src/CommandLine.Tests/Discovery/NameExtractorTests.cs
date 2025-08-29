@@ -4,7 +4,7 @@ namespace OwlDomain.CommandLine.Tests.Discovery;
 public sealed class NameExtractorTests
 {
 	#region Command name tests
-	[DynamicData(nameof(GetTestNames), DynamicDataSourceType.Method)]
+	[DynamicData(nameof(GetNamesToTest), DynamicDataSourceType.Method)]
 	[TestMethod]
 	public void GetCommandName(string originalName, string expectedName)
 	{
@@ -18,7 +18,7 @@ public sealed class NameExtractorTests
 		Assert.That.AreEqual(result, expectedName);
 	}
 
-	[DynamicData(nameof(GetTestNames), DynamicDataSourceType.Method)]
+	[DynamicData(nameof(GetNamesToTest), DynamicDataSourceType.Method)]
 	[TestMethod]
 	public void GetArgumentName(string originalName, string expectedName)
 	{
@@ -32,7 +32,7 @@ public sealed class NameExtractorTests
 		Assert.That.AreEqual(result, expectedName);
 	}
 
-	[DynamicData(nameof(GetTestNames), DynamicDataSourceType.Method)]
+	[DynamicData(nameof(GetNamesToTest), DynamicDataSourceType.Method)]
 	[TestMethod]
 	public void GetLongFlagName(string originalName, string expectedName)
 	{
@@ -46,7 +46,7 @@ public sealed class NameExtractorTests
 		Assert.That.AreEqual(result, expectedName);
 	}
 
-	[DynamicData(nameof(GetTestNames), DynamicDataSourceType.Method)]
+	[DynamicData(nameof(GetNamesToTest), DynamicDataSourceType.Method)]
 	[TestMethod]
 	public void GetShortFlagName(string originalName, string expectedName)
 	{
@@ -64,14 +64,37 @@ public sealed class NameExtractorTests
 
 	#region Helpers
 	[ExcludeFromCodeCoverage]
-	private static IEnumerable<object?[]> GetTestNames()
+	private static IEnumerable<object?[]> GetNamesToTest()
 	{
-		return [
-			["Name", "name"],
-			["NAME", "name"],
-			["LongName", "long-name"],
-			["VeryLONGName", "very-long-name"]
-		];
+		string[] characters = ["", "-", "_", "----", "____"];
+
+		string[] prefixes = characters;
+		string[] suffixes = characters;
+		string[] separators = characters;
+
+		foreach (string prefix in prefixes)
+		{
+			foreach (string suffix in suffixes)
+			{
+				yield return [prefix + "name" + suffix, "name"];
+				yield return [prefix + "Name" + suffix, "name"];
+				yield return [prefix + "NAME" + suffix, "name"];
+
+				foreach (string separator in separators)
+				{
+					if (separator is not "")
+					{
+						yield return [prefix + "long" + separator + "name" + suffix, "long-name"];
+						yield return [prefix + "LONG" + separator + "NAME" + suffix, "long-name"];
+					}
+
+					yield return [prefix + "long" + separator + "Name" + suffix, "long-name"];
+					yield return [prefix + "Long" + separator + "Name" + suffix, "long-name"];
+					yield return [prefix + "LONG" + separator + "Name" + suffix, "long-name"];
+					yield return [prefix + "Long" + separator + "NAME" + suffix, "long-name"];
+				}
+			}
+		}
 	}
 	#endregion
 }
