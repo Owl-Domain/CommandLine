@@ -28,6 +28,9 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 	private IDocumentationProvider? _documentationProvider;
 	private IDocumentationPrinter? _documentationPrinter;
 	private IOutputPrinter? _outputPrinter;
+	private bool _includeDefaultCommandInjector = true;
+	private bool _includeDefaultValueParserSelectors = true;
+	private bool _includeDefaultValueLabelProviders = true;
 	private readonly List<VirtualCommand> _virtualCommands = [];
 	private readonly List<VirtualFlag> _virtualFlags = [];
 	#endregion
@@ -83,6 +86,97 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 	}
 
 	/// <inheritdoc/>
+	public ICommandEngineBuilder With(INameExtractor extractor)
+	{
+		_nameExtractor = extractor;
+		return this;
+	}
+
+	/// <inheritdoc/>
+	public ICommandEngineBuilder With(ICommandParser parser)
+	{
+		_commandParser = parser;
+		return this;
+	}
+
+	/// <inheritdoc/>
+	public ICommandEngineBuilder With(ICommandValidator validator)
+	{
+		_commandValidator = validator;
+		return this;
+	}
+
+	/// <inheritdoc/>
+	public ICommandEngineBuilder With(ICommandExecutor executor)
+	{
+		_commandExecutor = executor;
+		return this;
+	}
+
+	/// <inheritdoc/>
+	public ICommandEngineBuilder With(IDocumentationProvider provider)
+	{
+		_documentationProvider = provider;
+		return this;
+	}
+
+	/// <inheritdoc/>
+	public ICommandEngineBuilder With(IDocumentationPrinter printer)
+	{
+		_documentationPrinter = printer;
+		return this;
+	}
+
+	/// <inheritdoc/>
+	public ICommandEngineBuilder With(IOutputPrinter printer)
+	{
+		_outputPrinter = printer;
+		return this;
+	}
+
+	/// <inheritdoc/>
+	public ICommandEngineBuilder WithDefaultValueParsers()
+	{
+		_includeDefaultValueParserSelectors = true;
+		return this;
+	}
+
+	/// <inheritdoc/>
+	public ICommandEngineBuilder WithoutDefaultValueParsers()
+	{
+		_includeDefaultValueParserSelectors = false;
+		return this;
+	}
+
+	/// <inheritdoc/>
+	public ICommandEngineBuilder WithDefaultInjector()
+	{
+		_includeDefaultCommandInjector = true;
+		return this;
+	}
+
+	/// <inheritdoc/>
+	public ICommandEngineBuilder WithoutDefaultInjector()
+	{
+		_includeDefaultCommandInjector = false;
+		return this;
+	}
+
+	/// <inheritdoc/>
+	public ICommandEngineBuilder WithDefaultValueLabelProvider()
+	{
+		_includeDefaultValueLabelProviders = true;
+		return this;
+	}
+
+	/// <inheritdoc/>
+	public ICommandEngineBuilder WithoutDefaultValueLabelProvider()
+	{
+		_includeDefaultValueLabelProviders = false;
+		return this;
+	}
+
+	/// <inheritdoc/>
 	public ICommandEngineBuilder Customise(Action<BuilderSettings> callback)
 	{
 		callback.Invoke(_settings);
@@ -108,23 +202,53 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 	/// <inheritdoc/>
 	public ICommandEngine Build()
 	{
-		if (_classes.Count is 0) Throw.New.InvalidOperationException("No classes were provided to extract the commands from.");
 		if (_classes.Count > 1) Throw.New.NotSupportedException("Extracting commands from multiple classes is not supported yet.");
 
 		EnsureDefaults();
 
 		IEngineSettings settings = EngineSettings.From(_settings);
 		SetupVirtual(settings, out IVirtualFlags virtualFlags, out IVirtualCommands virtualCommands);
+		ICommandGroupInfo group = BuildRootGroup(settings);
+
+		return new CommandEngine(
+			settings,
+			group,
+			_commandParser,
+			_valueParserSelector,
+			_commandValidator,
+			_commandExecutor,
+			_documentationPrinter,
+			_outputPrinter,
+			virtualCommands,
+			virtualFlags);
+	}
+	private CommandGroupInfo BuildRootGroup(IEngineSettings settings)
+	{
+		Debug.Assert(_documentationProvider is not null);
 
 		Dictionary<string, ICommandGroupInfo> childGroups = [];
 		Dictionary<string, ICommandInfo> childCommands = [];
+		List<IFlagInfo> groupFlags = [];
 
-		Type classType = _classes.Single();
-		IReadOnlyCollection<IFlagInfo> classFlags = GetFlags(settings, classType, out IReadOnlyCollection<InjectedPropertyInfo> injectedClassProperties);
-		IDocumentationInfo? documentation = _documentationProvider.GetInfo(classType);
+		Type? classType = _classes.SingleOrDefault();
+		CommandGroupInfo? group;
 
-		List<IFlagInfo> groupFlags = [.. classFlags];
-		CommandGroupInfo group = new(null, null, groupFlags, childGroups, childCommands, null, documentation);
+		if (classType is not null)
+		{
+			IReadOnlyCollection<IFlagInfo> classFlags = GetFlags(settings, classType, out IReadOnlyCollection<InjectedPropertyInfo> injectedClassProperties);
+			IDocumentationInfo? documentation = _documentationProvider.GetInfo(classType);
+
+			groupFlags = [.. classFlags];
+
+			group = new(null, null, groupFlags, childGroups, childCommands, null, documentation);
+			foreach (IMethodCommandInfo command in GetCommands(settings, classType, group, classFlags, injectedClassProperties))
+			{
+				Debug.Assert(command.Name is not null);
+				childCommands.Add(command.Name, command);
+			}
+		}
+		else
+			group = new(null, null, groupFlags, childGroups, childCommands, null, null);
 
 		foreach (VirtualCommand virtualCommand in _virtualCommands)
 		{
@@ -140,23 +264,7 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 				groupFlags.Add(virtualFlag.Flag);
 		}
 
-		foreach (IMethodCommandInfo command in GetCommands(settings, classType, group, classFlags, injectedClassProperties))
-		{
-			Debug.Assert(command.Name is not null);
-			childCommands.Add(command.Name, command);
-		}
-
-		return new CommandEngine(
-			settings,
-			group,
-			_commandParser,
-			_valueParserSelector,
-			_commandValidator,
-			_commandExecutor,
-			_documentationPrinter,
-			_outputPrinter,
-			virtualCommands,
-			virtualFlags);
+		return group;
 	}
 
 	[MemberNotNull(
@@ -165,15 +273,22 @@ public sealed class CommandEngineBuilder : ICommandEngineBuilder
 		nameof(_outputPrinter), nameof(_rootLabelProvider))]
 	private void EnsureDefaults()
 	{
-		this.WithValueParserSelector<PathValueParserSelector>();
-		this.WithValueParserSelector<NetworkingValueParserSelector>();
-		this.WithValueParserSelector<PrimitiveValueParserSelector>();
+		if (_includeDefaultValueParserSelectors)
+		{
+			this.WithValueParserSelector<PathValueParserSelector>();
+			this.WithValueParserSelector<NetworkingValueParserSelector>();
+			this.WithValueParserSelector<PrimitiveValueParserSelector>();
+		}
 
-		this.WithCommandInjector<EngineCommandInjector>();
+		if (_includeDefaultCommandInjector)
+			this.WithCommandInjector<EngineCommandInjector>();
 
-		this.WithDefaultValueLabelProvider<PrimitiveDefaultValueLabelProvider>();
-		this.WithDefaultValueLabelProvider<CollectionDefaultValueLabelProvider>();
-		this.WithDefaultValueLabelProvider<ToStringDefaultLabelProvider>();
+		if (_includeDefaultValueLabelProviders)
+		{
+			this.WithDefaultValueLabelProvider<PrimitiveDefaultValueLabelProvider>();
+			this.WithDefaultValueLabelProvider<CollectionDefaultValueLabelProvider>();
+			this.WithDefaultValueLabelProvider<ToStringDefaultLabelProvider>();
+		}
 
 		_nameExtractor ??= NameExtractor.Instance;
 		_commandParser ??= new CommandParser();

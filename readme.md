@@ -91,7 +91,8 @@ ICommandEngineBuilder builder = CommandEngine.New();
 
 This builder will let you customise a lot of different things *(read the [customisation](./docs/customisation.md) document for more information on this).*
 
-The only thing that you are required to do is register a class which contains the commands that you want to make available, you can do this through one of two ways:
+One more thing that you can do *(and probably want to do)* is register a class which contains
+the commands that you want to make available, you can do this through one of two ways:
 
 ```cs
 builder.From(typeof(MyCommands));
@@ -106,7 +107,7 @@ class MyCommands
 ```
 
 > [!WARNING]
-> Currently you are required to register one *(and only one)* class for your commands.
+> Currently you can only register a maximum one class for your commands as group merging has not been implemented yet.
 
 After this, you simply build the engine with the `Build()` command, and then choose between either the CLI mode, or the REPL mode like so:
 
@@ -137,9 +138,10 @@ class MyCommands
 }
 ```
 
-> [!WARNING]
-> Currently, the default implementation for the name extractor only supports `camelCasing`
-> and `PascalCasing` for the properties, parameters and methods.
+> [!TIP]
+> The default name extractor can work with a variety of different naming styles, such as
+> pascal case, camel case, kebab case, snake case, including a variety of capitalisations,
+> __however__, all of the resulting names will always be in `kebab-case` by default.
 
 
 ## Contributions

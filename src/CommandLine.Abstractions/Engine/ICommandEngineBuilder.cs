@@ -41,6 +41,65 @@ public interface ICommandEngineBuilder
 	/// <remarks>The order in which the providers are added is the order in which they'll be used.</remarks>
 	ICommandEngineBuilder With(IDefaultValueLabelProvider provider);
 
+	/// <summary>Replaces the name extractor component of the engine.</summary>
+	/// <param name="extractor">The name extractor to use instead of the default one.</param>
+	/// <returns>The used builder instance.</returns>
+	ICommandEngineBuilder With(INameExtractor extractor);
+
+	/// <summary>Replaces the command parser component of the engine.</summary>
+	/// <param name="parser">The command parser to use instead of the default one.</param>
+	/// <returns>The used builder instance.</returns>
+	ICommandEngineBuilder With(ICommandParser parser);
+
+	/// <summary>Replaces the command validator component of the engine.</summary>
+	/// <param name="validator">The command validator to use instead of the default one.</param>
+	/// <returns>The used builder instance.</returns>
+	ICommandEngineBuilder With(ICommandValidator validator);
+
+	/// <summary>Replaces the command executor component of the engine.</summary>
+	/// <param name="executor">The command executor to use instead of the default one.</param>
+	/// <returns>The used builder instance.</returns>
+	ICommandEngineBuilder With(ICommandExecutor executor);
+
+	/// <summary>Replaces the documentation provider component of the engine.</summary>
+	/// <param name="provider">The documentation provider to use instead of the default one.</param>
+	/// <returns>The used builder instance.</returns>
+	ICommandEngineBuilder With(IDocumentationProvider provider);
+
+	/// <summary>Replaces the documentation printer component of the engine.</summary>
+	/// <param name="printer">The documentation printer to use instead of the default one.</param>
+	/// <returns>The used builder instance.</returns>
+	ICommandEngineBuilder With(IDocumentationPrinter printer);
+
+	/// <summary>Replaces the output printer component of the engine.</summary>
+	/// <param name="printer">The output printer to use instead of the default one.</param>
+	/// <returns>The used builder instance.</returns>
+	ICommandEngineBuilder With(IOutputPrinter printer);
+
+	/// <summary>Marks the builder to include the default value parsers in the engine.</summary>
+	/// <returns>The used builder instance.</returns>
+	ICommandEngineBuilder WithDefaultValueParsers();
+
+	/// <summary>Marks the builder to exclude the default value parsers from the engine.</summary>
+	/// <returns>The used builder instance.</returns>
+	ICommandEngineBuilder WithoutDefaultValueParsers();
+
+	/// <summary>Marks the builder to include the default command injector in the engine.</summary>
+	/// <returns>The used builder instance.</returns>
+	ICommandEngineBuilder WithDefaultInjector();
+
+	/// <summary>Marks the builder to exclude the default command injector from the engine.</summary>
+	/// <returns>The used builder instance.</returns>
+	ICommandEngineBuilder WithoutDefaultInjector();
+
+	/// <summary>Marks the builder to include the default value label provider in the engine.</summary>
+	/// <returns>The used builder instance.</returns>
+	ICommandEngineBuilder WithDefaultValueLabelProvider();
+
+	/// <summary>Marks the builder to exclude the default value label provider from the engine.</summary>
+	/// <returns>The used builder instance.</returns>
+	ICommandEngineBuilder WithoutDefaultValueLabelProvider();
+
 	/// <summary>Allows for customising the engine settings.</summary>
 	/// <param name="callback">The callback which can be used to customise the engine settings.</param>
 	/// <returns>The used builder instance.</returns>
@@ -98,7 +157,7 @@ public static class ICommandEngineBuilderExtensions
 		return builder.With(selector);
 	}
 
-	/// <summary>Creates and includes an instance of the command injector of the given <typeparamref name="T"/>.</summary>
+	/// <summary>Creates and includes an instance of the command injector of the given type <typeparamref name="T"/>.</summary>
 	/// <typeparam name="T">The type of the command injector to create and include.</typeparam>
 	/// <param name="builder">The builder to pass the created injector to.</param>
 	/// <returns>The used builder instance.</returns>
@@ -109,7 +168,7 @@ public static class ICommandEngineBuilderExtensions
 		return builder.With(injector);
 	}
 
-	/// <summary>Creates and includes an instance of the default value label provider of the given <typeparamref name="T"/>.</summary>
+	/// <summary>Creates and includes an instance of the default value label provider of the given type <typeparamref name="T"/>.</summary>
 	/// <typeparam name="T">The type of the default value provider to create and include.</typeparam>
 	/// <param name="builder">The builder to pass the created provider to.</param>
 	/// <returns>The used builder instance.</returns>
@@ -118,6 +177,76 @@ public static class ICommandEngineBuilderExtensions
 	{
 		T provider = new();
 		return builder.With(provider);
+	}
+
+	/// <summary>Creates and uses an instance of the name extractor of the given type <typeparamref name="T"/>.</summary>
+	/// <typeparam name="T">The type of the name extractor to create and use.</typeparam>
+	/// <param name="builder">The builder to pass the created extractor to.</param>
+	/// <returns>The used builder instance.</returns>
+	public static ICommandEngineBuilder WithNameExtractor<T>(this ICommandEngineBuilder builder) where T : INameExtractor, new()
+	{
+		T extractor = new();
+		return builder.With(extractor);
+	}
+
+	/// <summary>Creates and uses an instance of the command parser of the given type <typeparamref name="T"/>.</summary>
+	/// <typeparam name="T">The type of the command parser to create and use.</typeparam>
+	/// <param name="builder">The builder to pass the created parser to.</param>
+	/// <returns>The used builder instance.</returns>
+	public static ICommandEngineBuilder WithCommandParser<T>(this ICommandEngineBuilder builder) where T : ICommandParser, new()
+	{
+		T parser = new();
+		return builder.With(parser);
+	}
+
+	/// <summary>Creates and uses an instance of the command validator of the given type <typeparamref name="T"/>.</summary>
+	/// <typeparam name="T">The type of the command validator to create and use.</typeparam>
+	/// <param name="builder">The builder to pass the created validator to.</param>
+	/// <returns>The used builder instance.</returns>
+	public static ICommandEngineBuilder WithCommandValidator<T>(this ICommandEngineBuilder builder) where T : ICommandValidator, new()
+	{
+		T validator = new();
+		return builder.With(validator);
+	}
+
+	/// <summary>Creates and uses an instance of the command executor of the given type <typeparamref name="T"/>.</summary>
+	/// <typeparam name="T">The type of the command executor to create and use.</typeparam>
+	/// <param name="builder">The builder to pass the created executor to.</param>
+	/// <returns>The used builder instance.</returns>
+	public static ICommandEngineBuilder WithCommandExecutor<T>(this ICommandEngineBuilder builder) where T : ICommandExecutor, new()
+	{
+		T executor = new();
+		return builder.With(executor);
+	}
+
+	/// <summary>Creates and uses an instance of the documentation provider of the given type <typeparamref name="T"/>.</summary>
+	/// <typeparam name="T">The type of the documentation provider to create and use.</typeparam>
+	/// <param name="builder">The builder to pass the created provider to.</param>
+	/// <returns>The used builder instance.</returns>
+	public static ICommandEngineBuilder WithDocumentationProvider<T>(this ICommandEngineBuilder builder) where T : IDocumentationProvider, new()
+	{
+		T provider = new();
+		return builder.With(provider);
+	}
+
+	/// <summary>Creates and uses an instance of the documentation printer of the given type <typeparamref name="T"/>.</summary>
+	/// <typeparam name="T">The type of the documentation printer to create and use.</typeparam>
+	/// <param name="builder">The builder to pass the created printer to.</param>
+	/// <returns>The used builder instance.</returns>
+	public static ICommandEngineBuilder WithDocumentationPrinter<T>(this ICommandEngineBuilder builder) where T : IDocumentationPrinter, new()
+	{
+		T printer = new();
+		return builder.With(printer);
+	}
+
+	/// <summary>Creates and uses an instance of the output printer of the given type <typeparamref name="T"/>.</summary>
+	/// <typeparam name="T">The type of the output printer to create and use.</typeparam>
+	/// <param name="builder">The builder to pass the created printer to.</param>
+	/// <returns>The used builder instance.</returns>
+	public static ICommandEngineBuilder WithOutputPrinter<T>(this ICommandEngineBuilder builder) where T : IOutputPrinter, new()
+	{
+		T printer = new();
+		return builder.With(printer);
 	}
 	#endregion
 }
