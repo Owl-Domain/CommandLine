@@ -12,132 +12,135 @@ This project focuses on experimenting with a "zero boilerplate" approach to maki
 
 *(In reality it's a "zero or the minimal amount of necessary boilerplate" approach but that isn't quite as catchy).*
 
-Which will theoretically result in regular C# code like this:
+Which will result in regular C# code like this:
 
 ```cs
+using OwlDomain.CommandLine.Engine;
+
 namespace ListManager;
 
 class Program
 {
-	static void Main(string[] args)
-	{
-		CommandLineEngine.New()
-			.From<Commands>()
-			.Run(args);
-	}
+   static void Main(string[] args)
+   {
+      ICommandEngine engine = CommandEngine.New()
+         .From<Commands>()
+         .Build();
+
+      engine.Run(args);
+
+      // or
+      engine.Repl();
+   }
 }
 
 class Commands
 {
-	/// <summary>The list to manage.</summary>
-	public string List { get; init; } = "main";
+   /// <summary>The list to manage.</summary>
+   public required string List { get; init; }
 
-	/// <summary>Adds a new item to the list.</summary>
-	/// <param name="item">The item to add to the list.</param>
-	public void Add(string item) => throw new NotImplementedException();
+   /// <summary>Adds a new <paramref name="item"/> to the specified <see cref="List"/>.</summary>
+   /// <param name="item">The item to add to the specified <see cref="List"/>.</param>
+   public void Add(string item)
+   {
+      /* implementation code */
+   }
 
-	/// <summary>Removes an existing item from the list.</summary>
-	/// <param name="item">The item to remove from the list.</param>
-	public void Remove(string item) => throw new NotImplementedException();
+   /// <summary>Removes an <paramref name="item"/> from the specified <see cref="List"/>.</summary>
+   /// <param name="item">The item to remove from the specified <see cref="List"/>.</param>
+   public void Remove(string item)
+   {
+      /* implementation code */
+   }
 }
 ```
 
 Turning into a CLI that looks a little like this:
 
-```
-> list-manager -h
+__Output from `help`:__
+![Help overview of the created CLI program](.github/assets/help_overview.png)
 
-NAME
-    list-manager                        A CLI that manages lists.
+__Output from `add --help`:__
+![Help overview for the add command for the created CLI program](.github/assets/help_command.png)
 
-SUMMARY
-    list-manager add <item>             Adds a new item to the list.
-    list-manager remove <item>          Removes an existing item from the list.
-
-GLOBAL FLAGS
-    -l --list                           The list to manage. [Default: main]
-
-COMMANDS
-    list-manager add <item>             Adds a new item to the list.
-        ARGUMENTS
-            item                        The item to add to the list.
-
-    list-manager remove <item>          Removes an existing item from the list.
-        ARGUMENTS
-            item                        The item to remove from the list.
-```
+*(The displayed colors will depend on the colors you have selected for your terminal).*
 
 ## Features
 
-### Supported
+- Very customisable, almost every component can be fully replaced.
+- Long and short flags.
+- Required/optional flag and argument values.
+- CLI and REPL modes.
+- Customisable "dependency injection" like feature.
+- Virtual flags and commands, ie. `help` and `version`.
+- Co-operative cancellation support.
+- Support for return values.
 
-Currently there's no supported features since I didn't even write any code yet, I'm just making the initial readme.
 
+## Usage
 
-### Planned
+Using this library is quite simple, all you have to do is reference the main package
+`OwlDomain.CommandLine`, and then just like the main example shows, create a new instance
+of the `ICommandEngineBuilder` by doing `CommandEngine.New()`, ie:
 
-- Support for short flags:
-	- Customisable prefix, defaults to `-`.
-	- Boolean toggle flags (on/off) `-a -b -c`. (explicit values not allowed).
-	- Chaining boolean toggle flags `-abc`. (explicit values not allowed).
-	- Integer repeat type flags (longer repeat result in bigger value) `-v` or `-vv` or `-vvvvv`. (explicit values not allowed).
-	- Allow specifying explicit values such as `-f file` or `-f=file`, or `-f=file1,fil2`.
+```cs
+using OwlDomain.CommandLine.Engine;
 
-- Support for long flags:
-	- Customisable prefix, defaults to `--`.
-	- Allows longer names such as `--dostuff` or `--do-stuff`.
-	- Allows specifying values such as `--files file` or `--files=file`, or `--files=file1,file2`.
+ICommandEngineBuilder builder = CommandEngine.New();
+```
 
-- Windows style syntax for flags *(which is quite limiting)*:
-	- Uses `/` instead of `-` and `--` for specifying flags.
-	- No separation between short and long flags.
-	- No chaining.
-	- No integer repeat type flags.
-	- Use `:` instead of `=` for specifying flag values.
+This builder will let you customise a lot of different things *(read the [customisation](./docs/customisation.md) document for more information on this).*
 
-- Support for explicitly separation flags and arguments:
-	- Customisable character, defaults to `--` *(alone on it's own, not as a prefix like the long flags)*.
-	- e.g. `foo --some-flag -- --this-is-an-argument-not-a-flag`.
+The only thing that you are required to do is register a class which contains the commands that you want to make available, you can do this through one of two ways:
 
-- File/directory/path support:
-	- can parse the paths into [`FileInfo`](https://learn.microsoft.com/dotnet/api/system.io.fileinfo), [`DirectoryInfo`](https://learn.microsoft.com/dotnet/api/system.io.directoryinfo) and [`FileSystemInfo`](https://learn.microsoft.com/dotnet/api/system.io.filesysteminfo).
-	- Can parse the path into a regular `string` value (attribute will be required to specify it's a path).
-	- Validators for ensuring that the file/directory path exists, or does not exist.
-	- Automatic conversion of special directories like `.` *(current directory)* and `..` *(parent directory)*.
-	- Support for absolute and relative paths.
+```cs
+builder.From(typeof(MyCommands));
 
-- Implicit help flags and commands:
-	- Implicit `-h` and `--help` commands (`-?` and `/?` for Windows style syntax).
-	- Implicit `help` command in every command group (customisable).
+// or
+builder.From<MyCommands>();
 
-- String parsing support:
-	- `"` quoted strings.
-	- `'` quoted strings.
-	- Unquoted strings.
-	- Regex parsing & regex validators.
+class MyCommands
+{
+   /* Your command implementations go here */
+}
+```
 
-- Boolean parsing support:
-	- Strict `true` / `false` support.
-	- Loose `t` /  `f` support.
-	- Strict `yes` / `no` support.
-	- Loose `y` / `n` support.
-	- Fun `ye+a*h*` `na+h*` support *(not enabled by default, don't worry)*.
+> [!WARNING]
+> Currently you are required to register one *(and only one)* class for your commands.
 
-- Numeric parsing support:
-	- Binary and hexadecimal prefixes `0b` and `0x`.
-	- Octal prefix `0o` *(does anyone even use octal anymore?)*.
-	- Number separators (defaults to `_`, customisable).
-	- File size suffix parsing, (`B` or `KB` or `KiB` e.t.c).
-	- Time span suffix parsing, (`s` or `m` or `h` e.t.c).
+After this, you simply build the engine with the `Build()` command, and then choose between either the CLI mode, or the REPL mode like so:
 
-- [`IPAddress`](https://learn.microsoft.com/dotnet/api/system.net.ipaddress) parsing:
-	- IPv4 support.
-	- IPv6 support.
-	- [`IPEndPoint`](https://learn.microsoft.com/dotnet/api/system.net.ipendpoint) support (IP + port).
+```cs
+ICommandEngine engine = builder.Build();
 
-- sub-commands & command groups.
-- Type parsers (customisable).
-- Value validators (customisable).
+// CLI mode, args is the args from the Main(string[] args) function.
+engine.Run(args);
+
+// or REPL mode, where several commands can be executed one by one.
+engine.Repl();
+```
+
+Defining your commands and flags should feel quite natural, each property
+is a flag, and each method is a command, you can mark a flag as required by using C#'s
+`required` keyword, and you can set a default argument/flag just as naturally, ie:
+
+```cs
+class MyCommands
+{
+   public required string RequiredFlag { get; init; }
+   public int OptionalFlag { get; init; } = 5;
+
+   public void Command(string requiredArgument, string optionalArgument = "default-value")
+   {
+      /* implementation here */
+   }
+}
+```
+
+> [!WARNING]
+> Currently, the default implementation for the name extractor only supports `camelCasing`
+> and `PascalCasing` for the properties, parameters and methods.
+
 
 ## Contributions
 
