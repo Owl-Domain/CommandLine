@@ -1,5 +1,3 @@
-using OwlDomain.CommandLine.Parsing.Values.Collections;
-
 namespace OwlDomain.CommandLine.Parsing.Values.Primitives;
 
 /// <summary>
@@ -17,7 +15,10 @@ public sealed class PrimitiveValueParserSelector : BaseValueParserSelector
 		if (type == typeof(bool))
 			return new BooleanValueParser();
 
-		if (TryCreateGenericParser(type, typeof(IFloatingPoint<>), typeof(DecimalValueParser<>), out IValueParser? parser))
+		if (TryCreateEnumParser(type, out IValueParser? parser))
+			return parser;
+
+		if (TryCreateGenericParser(type, typeof(IFloatingPoint<>), typeof(DecimalValueParser<>), out parser))
 			return parser;
 
 		if (TryCreateGenericParser(type, typeof(IBinaryInteger<>), typeof(IntegerValueParser<>), out parser))
@@ -240,6 +241,26 @@ public sealed class PrimitiveValueParserSelector : BaseValueParserSelector
 		Type parserType = typeof(NullableValueParser<>).MakeGenericType(valueType);
 
 		object? untyped = Activator.CreateInstance(parserType, [valueParser]);
+		Debug.Assert(untyped is not null);
+
+		parser = (IValueParser)untyped;
+		return true;
+	}
+	private static bool TryCreateEnumParser(Type valueType, [NotNullWhen(true)] out IValueParser? parser)
+	{
+		parser = default;
+
+		if (valueType.IsEnum is false)
+			return false;
+
+		Type parserType =
+			valueType.GetCustomAttribute<FlagsAttribute>() is null ?
+			typeof(EnumValueParser<>) :
+			typeof(FlagEnumValueParser<>);
+
+		parserType = parserType.MakeGenericType(valueType);
+
+		object? untyped = Activator.CreateInstance(parserType);
 		Debug.Assert(untyped is not null);
 
 		parser = (IValueParser)untyped;
