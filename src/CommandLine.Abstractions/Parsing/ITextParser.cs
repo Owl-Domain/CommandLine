@@ -363,5 +363,31 @@ public static class ITextParserExtensions
 		token = default;
 		return false;
 	}
+
+	/// <summary>Checks whether the next thing to parse is a missing value.</summary>
+	/// <param name="parser">The parser to use for the check.</param>
+	/// <returns><see langword="true"/> if the next thing to parse is a missing value, <see langword="false"/> otherwise.</returns>
+	public static bool IsValueMissing(this ITextParser parser)
+	{
+		if (parser.IsLazy)
+			return parser.IsAtEnd;
+
+		Debug.Assert(parser.IsGreedy);
+
+		return parser.IsAtEnd && parser.CurrentFragment.Length > 0;
+	}
+
+	/// <summary>Checks whether the next thing to parse is an empty value.</summary>
+	/// <param name="parser">The parser to use for the check.</param>
+	/// <returns><see langword="true"/> if the next thing to parse is an empty value, <see langword="false"/> otherwise.</returns>
+	public static bool IsEmptyValue(this ITextParser parser)
+	{
+		if (parser.IsLazy)
+			return false;
+
+		Debug.Assert(parser.IsGreedy);
+
+		return parser.CurrentFragment.Length is 0;
+	}
 	#endregion
 }

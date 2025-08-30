@@ -25,12 +25,12 @@ public abstract class BaseValueParser<T> : IValueParser<T>
 		string? error;
 		TextPoint start = parser.Point;
 
-		if (IsValueMissing(parser))
+		if (parser.IsValueMissing())
 		{
 			value = default;
 			error = string.Empty;
 		}
-		else if (AllowEmptyValues is false && IsEmptyValue(parser))
+		else if (AllowEmptyValues is false && parser.IsEmptyValue())
 		{
 			error = context.ValueInfo.IsNullable ? default : string.Empty;
 			value = default;
@@ -88,34 +88,6 @@ public abstract class BaseValueParser<T> : IValueParser<T>
 	protected virtual T? TryParse(IArgumentValueParseContext context, ITextParser parser, out string? error)
 	{
 		return TryParse((IValueParseContext)context, parser, out error);
-	}
-	#endregion
-
-	#region Helpers
-	/// <summary>Checks whether the next thing to parse is a missing value.</summary>
-	/// <param name="parser">The parser to use for the check.</param>
-	/// <returns><see langword="true"/> if the next thing to parse is a missing value, <see langword="false"/> otherwise.</returns>
-	public bool IsValueMissing(ITextParser parser)
-	{
-		if (parser.IsLazy)
-			return parser.IsAtEnd;
-
-		Debug.Assert(parser.IsGreedy);
-
-		return parser.IsAtEnd && parser.CurrentFragment.Length > 0;
-	}
-
-	/// <summary>Checks whether the next thing to parse is an empty value.</summary>
-	/// <param name="parser">The parser to use for the check.</param>
-	/// <returns><see langword="true"/> if the next thing to parse is an empty value, <see langword="false"/> otherwise.</returns>
-	public bool IsEmptyValue(ITextParser parser)
-	{
-		if (parser.IsLazy)
-			return false;
-
-		Debug.Assert(parser.IsGreedy);
-
-		return parser.CurrentFragment.Length is 0;
 	}
 	#endregion
 }
