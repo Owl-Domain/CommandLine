@@ -23,7 +23,7 @@ public sealed class NullableValueParser<T>(IValueParser<T> valueParser) : BaseVa
 	{
 		error = default;
 
-		if (IsEmptyValue(parser))
+		if (parser.IsEmptyValue())
 		{
 			if (context.ValueInfo.IsNullable is false)
 				error = string.Empty;

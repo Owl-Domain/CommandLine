@@ -12,6 +12,11 @@ By default, the command engine has support for parsing quite a lot of different 
 
 Implicit parsers are always chosen as a fallback so as to give explicit parsers a higher priority.
 
+### Enums
+
+Any type that is an `enum` *(whether a regular `enum` or a flags `enum`)* will be parsed according the names of the `enum` values.
+By default the parser will be case-insensitive, unless that causes problems for a specific `enum` type.
+
 
 ### `Nullable<>`
 
